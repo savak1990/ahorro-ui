@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Terraform state and crash files
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+.terraform/
+terraform.tfvars
+terraform.tfvars.json

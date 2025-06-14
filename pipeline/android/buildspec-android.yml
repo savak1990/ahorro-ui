@@ -1,0 +1,39 @@
+version: 0.2
+
+env:
+  variables:
+    TIMESTAMP: "build-$(date +%Y-%m-%d-%H%M)"
+    BUILD_PREFIX: "ahorro-ui/android"
+
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+    commands:
+      - echo Installing Flutter...
+      - git clone https://github.com/flutter/flutter.git -b stable --depth 1
+      - export PATH="$PATH:`pwd`/flutter/bin"
+      - flutter doctor
+
+  build:
+    commands:
+      - echo Setup dependencies...
+      - flutter pub get
+      - echo Building Debug Android APK...
+      - flutter build apk --debug
+      - echo Building Release Android APK...
+      - flutter build apk --release
+      - echo Building Release Android App Bundle...
+      - flutter build appbundle --release
+      - mkdir -p output/${BUILD_PREFIX}/${TIMESTAMP}
+      - echo Copying APKs and AABs to output directory...
+      - cp build/app/outputs/flutter-apk/app-debug.apk output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-debug-${TIMESTAMP}.apk
+      - cp build/app/outputs/flutter-apk/app-release.apk output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-release-${TIMESTAMP}.apk
+      - cp build/app/outputs/bundle/release/app-release.aab output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-release-${TIMESTAMP}.aab
+
+artifacts:
+  files:
+    - output/**/*
+
+  discard-paths: no
+  base-directory: output
