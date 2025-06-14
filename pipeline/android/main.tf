@@ -37,6 +37,7 @@ data "aws_secretsmanager_secret_version" "ahorro_app" {
 
 locals {
   project_name       = "ahorro-ui-android"
+  codebuild_name     = "${local.project_name}-build"
   github_owner       = "savak1990"
   github_repo        = "ahorro-ui"
   github_branch      = "main"
@@ -92,7 +93,7 @@ resource "aws_codepipeline" "flutter_pipeline" {
 }
 
 resource "aws_codebuild_project" "flutter_build" {
-  name         = "${local.project_name}-build"
+  name         = local.codebuild_name
   service_role = aws_iam_role.codebuild_role.arn
   artifacts {
     type = "CODEPIPELINE"
@@ -100,7 +101,7 @@ resource "aws_codebuild_project" "flutter_build" {
 
   environment {
     compute_type    = "BUILD_GENERAL1_MEDIUM"
-    image           = "cirrusci/flutter:stable"
+    image           = "instrumentisto/flutter:latest"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
   }
@@ -109,6 +110,9 @@ resource "aws_codebuild_project" "flutter_build" {
     type      = "CODEPIPELINE"
     buildspec = "pipeline/android/buildspec-android.yml"
   }
+
+  project_visibility = "PUBLIC_READ"
+  # badge_enabled      = true
 }
 
 resource "aws_iam_role" "codepipeline_role" {
