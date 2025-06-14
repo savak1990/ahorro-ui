@@ -100,7 +100,7 @@ resource "aws_codebuild_project" "flutter_build" {
   }
 
   environment {
-    compute_type    = "BUILD_GENERAL1_MEDIUM"
+    compute_type    = "BUILD_GENERAL1_LARGE"
     image           = "instrumentisto/flutter:latest"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
