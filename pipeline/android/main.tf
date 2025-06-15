@@ -81,7 +81,6 @@ resource "aws_codebuild_project" "flutter_build" {
   }
 
   project_visibility = "PUBLIC_READ"
-  badge_enabled      = true
 }
 
 resource "aws_iam_role" "codebuild_role" {

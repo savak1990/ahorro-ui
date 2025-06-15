@@ -1,12 +1,11 @@
 # Ahorro Application
 
+Spending Application
+
 ## Project Health
 
-- **Android:** ![Android Build Status](https://codebuild.eu-west-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiSlNtUkc4bkwrWWZoUEFQY0M1cmIvdDU1dWFMZ21nRTlXVXIrZ3I2UDdXTTBVaW9xY3FKUE15aXF2djVRKzFUVVl6T0dHV3BZZE80TFh4TndweG80OENNPSIsIml2UGFyYW1ldGVyU3BlYyI6IkhIRC8raFZpSXoyZ21vZXIiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
-- **Web:** ![Web Build Status](https://codebuild.eu-west-1.amazonaws.com/badges?uuid=YOUR_WEB_BADGE_UUID&branch=main)
-- **iOS:** ![iOS Build Status](https://codebuild.eu-west-1.amazonaws.com/badges?uuid=YOUR_IOS_BADGE_UUID&branch=main)
-
-A new Flutter project.
+- [Android Build (CodeBuild)](https://eu-west-1.codebuild.aws.amazon.com/project/eyJlbmNyeXB0ZWREYXRhIjoiMDVYV0dsc2V1UW5ORHQvRGJQdzRrQlNQSVNRalJVUEs1S3Z4UUFYYTBjNERiOGtjOXo2eEZOQkp2U3UxRUNuNlBzdWVIb0xsOWkvbHRkd3JuVTR3Ykg4UG1ONmk1REtKNzUzTnpBNkYwNys5ejJBTVJXSTN6dz09IiwiaXZQYXJhbWV0ZXJTcGVjIjoiTzRFWHNNV3ZZWEpsRzFNaCIsIm1hdGVyaWFsU2V0U2VyaWFsIjoxfQ%3D%3D)
+- [Android Build (Zip)](https://ahorro-artifacts.s3.eu-west-1.amazonaws.com/test/2025-06-14T17-30/build.zip)
 
 ## Getting Started
 
