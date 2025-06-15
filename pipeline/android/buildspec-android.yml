@@ -16,20 +16,29 @@ phases:
 
   build:
     commands:
-      - echo Setup dependencies...
-      - flutter pub get
-      - echo Building Debug Android APK...
-      - flutter build apk --debug
-      - echo Building Release Android APK...
-      - flutter build apk --release
-      - echo Building Release Android App Bundle...
-      - flutter build appbundle --release
-      - export TIMESTAMP=$(date +%Y-%m-%d-%H%M)
-      - mkdir -p output/${BUILD_PREFIX}/${TIMESTAMP}
-      - echo Copying APKs and AABs to output directory...
-      - cp build/app/outputs/flutter-apk/app-debug.apk output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-debug-${TIMESTAMP}.apk
-      - cp build/app/outputs/flutter-apk/app-release.apk output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-release-${TIMESTAMP}.apk
-      - cp build/app/outputs/bundle/release/app-release.aab output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-release-${TIMESTAMP}.aab
+      - |
+        echo Setting up environment...
+        export TIMESTAMP=$(date +%Y-%m-%d-%H%M)
+        echo "Timestamp: $TIMESTAMP"
+
+        flutter pub get
+
+        echo Building Debug Android APK...
+        flutter build apk --debug
+
+        echo Building Release Android APK...
+        flutter build apk --release
+
+        echo Building Release Android App Bundle...
+        flutter build appbundle --release
+
+        echo Creating output directory...
+        mkdir -p output/$BUILD_PREFIX/build-$TIMESTAMP
+
+        echo Copying APKs and AABs to output directory...
+        cp build/app/outputs/flutter-apk/app-debug.apk output/ahorro-debug-$TIMESTAMP.apk
+        cp build/app/outputs/flutter-apk/app-release.apk output/ahorro-release-$TIMESTAMP.apk
+        cp build/app/outputs/bundle/release/app-release.aab output/ahorro-release-$TIMESTAMP.aab
 
 artifacts:
   files:
