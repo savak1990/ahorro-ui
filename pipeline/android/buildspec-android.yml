@@ -20,6 +20,7 @@ phases:
         echo Setting up environment...
         export TIMESTAMP=$(date +%Y-%m-%d-%H%M)
         echo "Timestamp: $TIMESTAMP"
+        env
 
         flutter pub get
 
