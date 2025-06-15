@@ -26,6 +26,14 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.homeTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.pushNamed(context, '/account');
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
