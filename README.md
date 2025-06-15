@@ -1,4 +1,6 @@
-# ahorro_ui
+# Ahorro Application
+
+![Android Build Status](https://codebuild.eu-west-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiSlNtUkc4bkwrWWZoUEFQY0M1cmIvdDU1dWFMZ21nRTlXVXIrZ3I2UDdXTTBVaW9xY3FKUE15aXF2djVRKzFUVVl6T0dHV3BZZE80TFh4TndweG80OENNPSIsIml2UGFyYW1ldGVyU3BlYyI6IkhIRC8raFZpSXoyZ21vZXIiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main)
 
 A new Flutter project.
 

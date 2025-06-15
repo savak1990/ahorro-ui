@@ -2,7 +2,6 @@ version: 0.2
 
 env:
   variables:
-    TIMESTAMP: "build-$(date +%Y-%m-%d-%H%M)"
     BUILD_PREFIX: "ahorro-ui/android"
 
 phases:
@@ -25,6 +24,7 @@ phases:
       - flutter build apk --release
       - echo Building Release Android App Bundle...
       - flutter build appbundle --release
+      - export TIMESTAMP=$(date +%Y-%m-%d-%H%M)
       - mkdir -p output/${BUILD_PREFIX}/${TIMESTAMP}
       - echo Copying APKs and AABs to output directory...
       - cp build/app/outputs/flutter-apk/app-debug.apk output/${BUILD_PREFIX}/${TIMESTAMP}/ahorro-debug-${TIMESTAMP}.apk

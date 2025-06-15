@@ -46,88 +46,42 @@ locals {
   github_oauth_token = jsondecode(data.aws_secretsmanager_secret_version.ahorro_app.secret_string)["github_token"]
 }
 
-resource "aws_codepipeline" "flutter_pipeline" {
-  name     = "${local.project_name}-pipeline"
-  role_arn = aws_iam_role.codepipeline_role.arn
-
-  artifact_store {
-    location = local.artifact_bucket
-    type     = "S3"
-  }
-
-  stage {
-    name = "Source"
-
-    action {
-      name             = "GitHub_Source"
-      category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
-      version          = "1"
-      output_artifacts = ["source_output"]
-      configuration = {
-        Owner      = local.github_owner
-        Repo       = local.github_repo
-        Branch     = local.github_branch
-        OAuthToken = local.github_oauth_token
-      }
-    }
-  }
-
-  stage {
-    name = "Build"
-
-    action {
-      name             = "Flutter_Build"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      input_artifacts  = ["source_output"]
-      output_artifacts = ["build_output"]
-      version          = "1"
-      configuration = {
-        ProjectName = aws_codebuild_project.flutter_build.name
-      }
-    }
-  }
-}
-
 resource "aws_codebuild_project" "flutter_build" {
   name         = local.codebuild_name
   service_role = aws_iam_role.codebuild_role.arn
+
   artifacts {
-    type = "CODEPIPELINE"
+    type      = "S3"
+    location  = local.artifact_bucket
+    path      = "ahorro-ui/android"
+    packaging = "ZIP"
+    name      = "build-ahorro-android.zip"
   }
 
   environment {
-    compute_type    = "BUILD_GENERAL1_LARGE"
+    compute_type    = "BUILD_GENERAL1_MEDIUM"
     image           = "instrumentisto/flutter:latest"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
   }
 
   source {
-    type      = "CODEPIPELINE"
-    buildspec = "pipeline/android/buildspec-android.yml"
+    type                = "GITHUB"
+    location            = "https://github.com/${local.github_owner}/${local.github_repo}.git"
+    git_clone_depth     = 1
+    buildspec           = "pipeline/android/buildspec-android.yml"
+    report_build_status = true
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      status     = "ENABLED"
+      group_name = "/aws/codebuild/${local.project_name}-build"
+    }
   }
 
   project_visibility = "PUBLIC_READ"
-  # badge_enabled      = true
-}
-
-resource "aws_iam_role" "codepipeline_role" {
-  name = "${local.project_name}-pipeline-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Action = "sts:AssumeRole",
-      Principal = {
-        Service = "codepipeline.amazonaws.com"
-      },
-      Effect = "Allow",
-    }]
-  })
+  badge_enabled      = true
 }
 
 resource "aws_iam_role" "codebuild_role" {
@@ -143,11 +97,6 @@ resource "aws_iam_role" "codebuild_role" {
       Effect = "Allow",
     }]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "codepipeline_policy" {
-  role       = aws_iam_role.codepipeline_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_policy" {
@@ -181,31 +130,6 @@ resource "aws_iam_role_policy_attachment" "codebuild_s3" {
   policy_arn = aws_iam_policy.s3_artifacts.arn
 }
 
-resource "aws_iam_role_policy_attachment" "codepipeline_s3" {
-  role       = aws_iam_role.codepipeline_role.name
-  policy_arn = aws_iam_policy.s3_artifacts.arn
-}
-
-resource "aws_iam_policy" "codepipeline_codebuild" {
-  name = "${local.project_name}-codebuild-access"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Action = [
-        "codebuild:BatchGetBuilds",
-        "codebuild:StartBuild"
-      ],
-      Resource = aws_codebuild_project.flutter_build.arn
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "codepipeline_codebuild" {
-  role       = aws_iam_role.codepipeline_role.name
-  policy_arn = aws_iam_policy.codepipeline_codebuild.arn
-}
-
 resource "aws_iam_policy" "codebuild_logs" {
   name = "${local.project_name}-codebuild-logs"
 
@@ -228,4 +152,46 @@ resource "aws_iam_policy" "codebuild_logs" {
 resource "aws_iam_role_policy_attachment" "codebuild_logs_attach" {
   role       = aws_iam_role.codebuild_role.name
   policy_arn = aws_iam_policy.codebuild_logs.arn
+}
+
+resource "aws_cloudwatch_event_rule" "weekly_build" {
+  name                = "${local.project_name}-weekly-build"
+  schedule_expression = "cron(0 17 ? * MON *)" // each Monday at 17:00 UTC
+  description         = "Trigger ahorro-ui android build project weekly"
+}
+
+resource "aws_iam_role" "codebuild_events_role" {
+  name = "${local.project_name}-events-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Service = "events.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "codebuild_events_policy" {
+  name = "${local.project_name}-events-policy"
+  role = aws_iam_role.codebuild_events_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "codebuild:StartBuild"
+      ],
+      Resource = aws_codebuild_project.flutter_build.arn
+    }]
+  })
+}
+
+resource "aws_cloudwatch_event_target" "weekly_build_target" {
+  rule      = aws_cloudwatch_event_rule.weekly_build.name
+  target_id = "CodeBuildProject"
+  arn       = aws_codebuild_project.flutter_build.arn
+  role_arn  = aws_iam_role.codebuild_events_role.arn
 }
