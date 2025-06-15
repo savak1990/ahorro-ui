@@ -42,7 +42,6 @@ phases:
 
 artifacts:
   files:
-    - output/**/*
-
+    - '**/*'
   discard-paths: no
   base-directory: output
