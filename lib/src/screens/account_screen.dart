@@ -42,18 +42,26 @@ class AccountScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 18),
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      await Amplify.Auth.signOut();
-                      if (context.mounted) {
-                        Navigator.pushReplacementNamed(context, '/');
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      try {
+                        await Amplify.Auth.signOut();
+                        // Не нужно явно навигировать, Authenticator сделает это автоматически
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error signing out: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       }
-                    } catch (e) {
-                      debugPrint('Error signing out: $e');
-                    }
-                  },
-                  child: const Text('Sign Out'),
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Sign Out'),
+                  ),
                 ),
               ],
             ),
