@@ -51,11 +51,12 @@ resource "aws_codebuild_project" "flutter_build" {
   service_role = aws_iam_role.codebuild_role.arn
 
   artifacts {
-    type      = "S3"
-    location  = local.artifact_bucket
-    path      = "ahorro-ui/android"
-    packaging = "ZIP"
-    name      = "build-ahorro-android.zip"
+    type                = "S3"
+    location            = local.artifact_bucket
+    path                = "ahorro-ui/android"
+    packaging           = "ZIP"
+    name                = "build-ahorro-android.zip"
+    encryption_disabled = true
   }
 
   environment {
