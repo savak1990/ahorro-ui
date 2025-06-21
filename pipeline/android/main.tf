@@ -85,7 +85,7 @@ resource "aws_codebuild_project" "flutter_build" {
 }
 
 resource "aws_iam_role" "codebuild_role" {
-  name = "codebuild-role"
+  name = "${local.project_name}-codebuild-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
