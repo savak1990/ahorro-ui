@@ -131,7 +131,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               // TODO: Добавить логику сохранения
               Navigator.pop(context);
             },
-            child: const Text('Сохранить'),
+            child: const Text('Save'),
           ),
           const SizedBox(height: 16),
         ],
