@@ -64,7 +64,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           
           // Заголовок
           Text(
-            'Новая операция',
+            'New transaction',
             style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),
@@ -75,17 +75,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             segments: const [
               ButtonSegment<TransactionType>(
                 value: TransactionType.income,
-                label: Text('Доход'),
+                label: Text('Income'),
                 icon: Icon(Icons.arrow_upward),
               ),
               ButtonSegment<TransactionType>(
                 value: TransactionType.expense,
-                label: Text('Расход'),
+                label: Text('Expense'),
                 icon: Icon(Icons.arrow_downward),
               ),
               ButtonSegment<TransactionType>(
                 value: TransactionType.movement,
-                label: Text('Перевод'),
+                label: Text('Movement'),
                 icon: Icon(Icons.swap_horiz),
               ),
             ],
@@ -103,8 +103,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             controller: _amountController,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'Сумма',
-              prefixText: '₽ ',
+              labelText: 'Amount',
               border: const OutlineInputBorder(),
             ),
           ),
@@ -115,7 +114,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             onTap: () => _selectDate(context),
             child: InputDecorator(
               decoration: const InputDecoration(
-                labelText: 'Дата',
+                labelText: 'Date',
                 border: OutlineInputBorder(),
                 suffixIcon: Icon(Icons.calendar_today),
               ),
