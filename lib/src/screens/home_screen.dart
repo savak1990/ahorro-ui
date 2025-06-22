@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 
 import '../constants/app_colors.dart';
+import 'add_transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -200,7 +201,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Implement add transaction
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            builder: (context) => const AddTransactionScreen(),
+          );
         },
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.surface,
