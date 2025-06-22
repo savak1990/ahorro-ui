@@ -1,10 +1,6 @@
+import 'package:ahorro_ui/src/models/transaction_type.dart';
+import 'package:ahorro_ui/src/services/api_service.dart';
 import 'package:flutter/material.dart';
-
-enum TransactionType {
-  income,
-  expense,
-  movement,
-}
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -16,11 +12,16 @@ class AddTransactionScreen extends StatefulWidget {
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TransactionType _selectedType = TransactionType.expense;
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _amountController.dispose();
+    _categoryController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -35,6 +36,75 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       setState(() {
         _selectedDate = picked;
       });
+    }
+  }
+
+  Future<void> _saveTransaction() async {
+    // Проверяем, что сумма не пустая
+    if (_amountController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an amount')),
+      );
+      return;
+    }
+
+    // Парсим сумму
+    final amount = double.tryParse(_amountController.text);
+    if (amount == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid amount')),
+      );
+      return;
+    }
+
+    // Проверяем, что категория не пустая
+    final category = _categoryController.text;
+    if (category.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a category')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await ApiService.postTransaction(
+        type: _selectedType,
+        amount: amount,
+        date: _selectedDate,
+        category: category,
+        description: _descriptionController.text,
+      );
+
+      // Показываем сообщение об успехе
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transaction saved successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // Закрываем bottom sheet
+      }
+    } catch (e) {
+      // Показываем сообщение об ошибке
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -109,6 +179,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
           const SizedBox(height: 24),
 
+          // Поле ввода категории
+          TextField(
+            controller: _categoryController,
+            decoration: const InputDecoration(
+              labelText: 'Category',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Поле ввода описания
+          TextField(
+            controller: _descriptionController,
+            decoration: const InputDecoration(
+              labelText: 'Description (optional)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // Выбор даты
           InkWell(
             onTap: () => _selectDate(context),
@@ -127,11 +217,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
           // Кнопка сохранения
           FilledButton(
-            onPressed: () {
-              // TODO: Добавить логику сохранения
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
+            onPressed: _isLoading ? null : _saveTransaction,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text('Save'),
           ),
           const SizedBox(height: 16),
         ],
