@@ -140,44 +140,94 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                     Card(
                       margin: EdgeInsets.zero,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Expense',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                Text(
-                                  '100 EUR',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: theme.colorScheme.error,
+                      child: Column(
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/transactions',
+                                arguments: {
+                                  'type': 'expense',
+                                  'month': currentDate,
+                                },
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.arrow_downward, color: theme.colorScheme.error),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Expense',
+                                        style: theme.textTheme.titleMedium,
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Income',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                Text(
-                                  '100 EUR',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: theme.colorScheme.primary,
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '100 EUR',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          color: theme.colorScheme.error,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.chevron_right),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const Divider(height: 1),
+                          InkWell(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/transactions',
+                                arguments: {
+                                  'type': 'income',
+                                  'month': currentDate,
+                                },
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.arrow_upward, color: theme.colorScheme.primary),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Income',
+                                        style: theme.textTheme.titleMedium,
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '100 EUR',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.chevron_right),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
