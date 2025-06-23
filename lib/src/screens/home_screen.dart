@@ -145,36 +145,80 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Expense',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                Text(
-                                  '100 EUR',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: theme.colorScheme.error,
+                            InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/transactions',
+                                  arguments: {
+                                    'type': 'expense',
+                                    'month': DateTime.now(),
+                                  },
+                                );
+                              },
+                              splashColor: theme.colorScheme.primary.withOpacity(0.1),
+                              hoverColor: theme.colorScheme.primary.withOpacity(0.05),
+                              mouseCursor: SystemMouseCursors.click,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Expense',
+                                    style: theme.textTheme.titleMedium,
                                   ),
-                                ),
-                              ],
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '100 EUR',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          color: theme.colorScheme.error,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Income',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                Text(
-                                  '100 EUR',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: theme.colorScheme.primary,
+                            InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/transactions',
+                                  arguments: {
+                                    'type': 'income',
+                                    'month': DateTime.now(),
+                                  },
+                                );
+                              },
+                              splashColor: theme.colorScheme.primary.withOpacity(0.1),
+                              hoverColor: theme.colorScheme.primary.withOpacity(0.05),
+                              mouseCursor: SystemMouseCursors.click,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Income',
+                                    style: theme.textTheme.titleMedium,
                                   ),
-                                ),
-                              ],
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '100 EUR',
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),

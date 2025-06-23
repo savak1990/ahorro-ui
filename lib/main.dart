@@ -205,6 +205,7 @@ class _MyAppState extends State<MyApp> {
         routes: {
           '/': (context) => const MainScreen(),
           '/account': (context) => const AccountScreen(),
+          '/transactions': (context) => const TransactionsScreen(),
         },
       ),
     );
