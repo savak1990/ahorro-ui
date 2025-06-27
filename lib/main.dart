@@ -68,13 +68,17 @@ class _MyAppState extends State<MyApp> {
           useMaterial3: true,
           primaryColor: AppColors.primary,
           scaffoldBackgroundColor: AppColors.background,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primary,
+          colorScheme: const ColorScheme(
             primary: AppColors.primary,
             secondary: AppColors.accent,
             surface: AppColors.surface,
             background: AppColors.background,
             error: AppColors.error,
+            onPrimary: Colors.white,
+            onSecondary: Colors.white,
+            onSurface: AppColors.textPrimary,
+            onBackground: AppColors.textPrimary,
+            onError: Colors.white,
             brightness: Brightness.light,
           ),
           appBarTheme: const AppBarTheme(
@@ -136,13 +140,17 @@ class _MyAppState extends State<MyApp> {
           useMaterial3: true,
           primaryColor: AppColors.primary,
           scaffoldBackgroundColor: const Color(0xFF121212),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primary,
+          colorScheme: const ColorScheme(
             primary: AppColors.surface,
             secondary: AppColors.accent,
-            surface: const Color(0xFF1E1E1E),
-            background: const Color(0xFF121212),
+            surface: Color(0xFF1E1E1E),
+            background: Color(0xFF121212),
             error: AppColors.error,
+            onPrimary: AppColors.primary,
+            onSecondary: AppColors.primary,
+            onSurface: AppColors.surface,
+            onBackground: AppColors.surface,
+            onError: Colors.white,
             brightness: Brightness.dark,
           ),
           appBarTheme: const AppBarTheme(
