@@ -298,11 +298,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           flex: 2,
                           child: TextField(
                             controller: item.nameController,
-                            decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                            decoration: const InputDecoration(
+                              labelText: 'Name',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Cost
+                        // Amount
                         Expanded(
                           flex: 1,
                           child: TextField(
@@ -311,12 +316,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             decoration: InputDecoration(
                               labelText: 'Amount',
                               border: OutlineInputBorder(),
-                              errorText: item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null ? ' ' : null,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                               focusedBorder: OutlineInputBorder(
                                 borderSide: BorderSide(
                                   color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
                                       ? Colors.red
                                       : Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
+                                      ? Colors.red
+                                      : Colors.grey.shade400,
                                 ),
                               ),
                             ),
@@ -327,22 +340,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         // Category
                         Expanded(
                           flex: 2,
-                          child: InkWell(
-                            onTap: () => _selectCategory(context, item),
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Category',
-                                border: OutlineInputBorder(),
-                                suffixIcon: Icon(Icons.arrow_drop_down),
-                              ),
-                              child: Text(
-                                item.categoryController.text.isEmpty 
-                                    ? 'Select category' 
-                                    : item.categoryController.text,
-                                style: TextStyle(
-                                  color: item.categoryController.text.isEmpty 
-                                      ? Colors.grey[600] 
-                                      : null,
+                          child: SizedBox(
+                            height: 48,
+                            child: InkWell(
+                              onTap: () => _selectCategory(context, item),
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Category',
+                                  border: OutlineInputBorder(),
+                                  suffixIcon: Icon(Icons.arrow_drop_down),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                                ),
+                                child: Text(
+                                  item.categoryController.text.isEmpty 
+                                      ? 'Select' 
+                                      : item.categoryController.text,
+                                  style: TextStyle(
+                                    color: item.categoryController.text.isEmpty 
+                                        ? Colors.grey[600] 
+                                        : null,
+                                  ),
                                 ),
                               ),
                             ),
@@ -381,14 +399,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               const SizedBox(height: 24),
             ],
             // Description input field
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 24),
+            if (_selectedType == TransactionType.movement)
+              ...[
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
             // Date selection
             InkWell(
               onTap: () => _selectDate(context),

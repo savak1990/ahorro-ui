@@ -174,7 +174,7 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog> {
                                                 height: 30,
                                                 errorBuilder: (context, error, stackTrace) => const Icon(Icons.category, size: 30),
                                               )
-                                            : const Icon(Icons.category, size: 30),
+                                            : Icon(getCategoryIcon(cat.name), size: 30),
                                         Text(
                                           cat.name,
                                           textAlign: TextAlign.center,
@@ -206,4 +206,53 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog> {
       ),
     );
   }
+}
+
+IconData getCategoryIcon(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('grocery') || n.contains('supermarket') || n.contains('food')) return Icons.shopping_cart;
+  if (n.contains('car')) return Icons.directions_car;
+  if (n.contains('salary') || n.contains('income')) return Icons.attach_money;
+  if (n.contains('bonus')) return Icons.card_giftcard;
+  if (n.contains('coffee') || n.contains('tea')) return Icons.coffee;
+  if (n.contains('bar') || n.contains('pub')) return Icons.local_bar;
+  if (n.contains('book')) return Icons.menu_book;
+  if (n.contains('clothing') || n.contains('clothes')) return Icons.checkroom;
+  if (n.contains('beauty') || n.contains('personal care')) return Icons.spa;
+  if (n.contains('fee') || n.contains('bank')) return Icons.account_balance;
+  if (n.contains('cash')) return Icons.money;
+  if (n.contains('travel') || n.contains('trip')) return Icons.flight;
+  if (n.contains('course') || n.contains('training')) return Icons.school;
+  if (n.contains('withdrawal')) return Icons.outbox;
+  if (n.contains('vacation') || n.contains('free time')) return Icons.beach_access;
+  if (n.contains('business')) return Icons.business_center;
+  if (n.contains('credit')) return Icons.credit_card;
+  if (n.contains('market')) return Icons.store;
+  if (n.contains('rent')) return Icons.home;
+  if (n.contains('insurance')) return Icons.verified_user;
+  if (n.contains('health')) return Icons.health_and_safety;
+  if (n.contains('gift')) return Icons.card_giftcard;
+  if (n.contains('restaurant') || n.contains('dining')) return Icons.restaurant;
+  if (n.contains('utility') || n.contains('utilities')) return Icons.electrical_services;
+  if (n.contains('phone') || n.contains('mobile')) return Icons.phone_android;
+  if (n.contains('internet')) return Icons.wifi;
+  if (n.contains('tax')) return Icons.receipt_long;
+  if (n.contains('pet')) return Icons.pets;
+  if (n.contains('child') || n.contains('kids')) return Icons.child_care;
+  if (n.contains('sport') || n.contains('fitness')) return Icons.fitness_center;
+  if (n.contains('electronics')) return Icons.devices;
+  if (n.contains('repair') || n.contains('maintenance')) return Icons.build;
+  if (n.contains('transport') || n.contains('bus') || n.contains('taxi')) return Icons.directions_bus;
+  if (n.contains('parking')) return Icons.local_parking;
+  if (n.contains('charity') || n.contains('donation')) return Icons.volunteer_activism;
+  if (n.contains('investment')) return Icons.trending_up;
+  if (n.contains('withdrawal')) return Icons.outbox;
+  if (n.contains('shopping')) return Icons.shopping_bag;
+  if (n.contains('entertainment') || n.contains('movie') || n.contains('cinema')) return Icons.movie;
+  if (n.contains('subscription')) return Icons.subscriptions;
+  if (n.contains('medical')) return Icons.medical_services;
+  if (n.contains('phone')) return Icons.phone;
+  if (n.contains('utilities')) return Icons.lightbulb;
+  if (n.contains('groceries')) return Icons.local_grocery_store;
+  return Icons.category;
 } 
