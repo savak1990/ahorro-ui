@@ -71,15 +71,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _saveTransaction() async {
-    double amount = 0.0;
-    String category = '';
     if (_selectedType == TransactionType.movement) {
       if (_movementAmountController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter the amount')),);
         return;
       }
-      amount = double.tryParse(_movementAmountController.text) ?? 0.0;
+      final amount = double.tryParse(_movementAmountController.text) ?? 0.0;
       if (amount == 0.0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid amount')),);
@@ -92,9 +90,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
       for (final item in _items) {
-        if (item.nameController.text.isEmpty || item.amountController.text.isEmpty || item.categoryController.text.isEmpty) {
+        if (item.nameController.text.isEmpty || item.amountController.text.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fill all fields for each item')),);
+            const SnackBar(content: Text('Fill name and amount for each item')),);
           return;
         }
         if (double.tryParse(item.amountController.text) == null) {
@@ -103,33 +101,48 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           return;
         }
       }
-      amount = _totalAmount;
-      category = _items.first.categoryController.text;
     }
-    // Проверка счета
-    if (_selectedType == TransactionType.movement) {
-      if (_accountFromController.text.isEmpty || _accountToController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill both accounts for transfer')),);
-        return;
-      }
-    } else {
-      if (_accountFromController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill the account')),);
-        return;
-      }
-    }
+
     setState(() { _isLoading = true; });
     try {
-      await ApiService.postTransaction(
-        type: _selectedType,
-        amount: amount,
-        date: _selectedDate,
-        category: category,
-        description: _descriptionController.text,
-        // TODO: account info можно добавить в API
-      );
+      if (_selectedType == TransactionType.movement) {
+        // Для movement используем простой запрос с одной записью
+        await ApiService.postTransaction(
+          type: _selectedType,
+          amount: double.parse(_movementAmountController.text),
+          date: _selectedDate,
+          category: 'Transfer',
+          description: 'Transfer from ${_accountFromController.text.isEmpty ? 'Unknown' : _accountFromController.text} to ${_accountToController.text.isEmpty ? 'Unknown' : _accountToController.text}',
+          merchant: 'Transfer',
+        );
+      } else {
+        // Для income/expense формируем transactionEntries из _items
+        final transactionEntries = _items.map((item) {
+          return TransactionEntry(
+            description: item.nameController.text,
+            amount: double.parse(item.amountController.text),
+            categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Замоканное значение
+          );
+        }).toList();
+
+        // Определяем merchant из описания или названия первого item
+        String merchant = _descriptionController.text.isNotEmpty 
+            ? _descriptionController.text 
+            : (_items.isNotEmpty ? _items.first.nameController.text : 'Unknown');
+
+        await ApiService.postTransaction(
+          type: _selectedType,
+          amount: _totalAmount, // Общая сумма для обратной совместимости
+          date: _selectedDate,
+          category: _items.isNotEmpty && _items.first.categoryController.text.isNotEmpty 
+              ? _items.first.categoryController.text 
+              : 'Uncategorized', // Категория первого item для обратной совместимости
+          description: _descriptionController.text,
+          merchant: merchant,
+          transactionEntries: transactionEntries,
+        );
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Transaction saved successfully!'), backgroundColor: Colors.green),
