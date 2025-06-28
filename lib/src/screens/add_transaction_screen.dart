@@ -289,92 +289,126 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 itemCount: _items.length,
                 itemBuilder: (context, i) {
                   final item = _items[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        // Name
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: item.nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Name',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Amount
-                        Expanded(
-                          flex: 1,
-                          child: TextField(
-                            controller: item.amountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Amount',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
-                                      ? Colors.red
-                                      : Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
-                                      ? Colors.red
-                                      : Colors.grey.shade400,
-                                ),
-                              ),
-                            ),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Category
-                        Expanded(
-                          flex: 2,
-                          child: SizedBox(
-                            height: 48,
-                            child: InkWell(
-                              onTap: () => _selectCategory(context, item),
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  labelText: 'Category',
-                                  border: OutlineInputBorder(),
-                                  suffixIcon: Icon(Icons.arrow_drop_down),
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                                ),
-                                child: Text(
-                                  item.categoryController.text.isEmpty 
-                                      ? 'Select' 
-                                      : item.categoryController.text,
-                                  style: TextStyle(
-                                    color: item.categoryController.text.isEmpty 
-                                        ? Colors.grey[600] 
-                                        : null,
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Первая строка: Name и Amount
+                            Row(
+                              children: [
+                                // Name (60% ширины)
+                                Expanded(
+                                  flex: 3,
+                                  child: TextField(
+                                    controller: item.nameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Name',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                // Amount (40% ширины)
+                                Expanded(
+                                  flex: 2,
+                                  child: TextField(
+                                    controller: item.amountController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: 'Amount',
+                                      border: const OutlineInputBorder(),
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                      labelStyle: TextStyle(
+                                        color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
+                                            ? Colors.red
+                                            : null,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            // Вторая строка: Category и кнопка удаления
+                            Row(
+                              children: [
+                                // Category как иконка + название
+                                Expanded(
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => _selectCategory(context, item),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 20,
+                                            height: 20,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: item.selectedCategoryId.isNotEmpty
+                                                ? Icon(
+                                                    getCategoryIcon(item.categoryController.text),
+                                                    size: 14,
+                                                    color: Theme.of(context).colorScheme.primary,
+                                                  )
+                                                : const Icon(Icons.category, size: 14, color: Colors.grey),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              item.categoryController.text.isEmpty
+                                                  ? 'Select category'
+                                                  : item.categoryController.text,
+                                              style: TextStyle(
+                                                color: item.categoryController.text.isEmpty
+                                                    ? Colors.grey[600]
+                                                    : null,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                          const Icon(Icons.arrow_drop_down, color: Colors.grey, size: 20),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Кнопка удаления
+                                if (_items.length > 1)
+                                  IconButton(
+                                    icon: Icon(Icons.delete_outline, color: Colors.grey[500], size: 20),
+                                    onPressed: () => _removeItem(i),
+                                    tooltip: 'Delete',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                  ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        // Delete button
-                        if (_items.length > 1)
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => _removeItem(i),
-                          ),
-                      ],
-                    ),
+                      ),
+                      // Тонкая линия между items
+                      if (i < _items.length - 1)
+                        Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          color: Colors.grey[300],
+                        ),
+                    ],
                   );
                 },
               ),
@@ -386,15 +420,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   label: const Text('Add item'),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Total amount
-              TextField(
-                controller: TextEditingController(text: _totalAmount == 0 ? '' : _totalAmount.toStringAsFixed(2)),
-                enabled: false,
-                decoration: const InputDecoration(
-                  labelText: 'Total amount',
-                  border: OutlineInputBorder(),
-                ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    _totalAmount == 0 ? '0' : _totalAmount.toStringAsFixed(2),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
             ],
