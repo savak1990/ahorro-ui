@@ -8,8 +8,6 @@ import '../config/app_config.dart';
 import '../models/transaction_type.dart';
 
 class ApiService {
-  static const String _baseUrl = AppConfig.baseUrl;
-
   static Future<void> postTransaction({
     required TransactionType type,
     required double amount,
@@ -31,7 +29,7 @@ class ApiService {
       final cognitoSession = session as CognitoAuthSession;
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
 
-      final url = Uri.parse(_baseUrl);
+      final url = Uri.parse(AppConfig.transactionsUrl);
       final headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -95,7 +93,7 @@ class ApiService {
       final cognitoSession = session as CognitoAuthSession;
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
 
-      final url = Uri.parse('$_baseUrl?userId=$userId');
+      final url = Uri.parse('${AppConfig.transactionsUrl}?userId=$userId');
       final headers = {
         'Authorization': 'Bearer $token',
       };
@@ -160,6 +158,60 @@ class ApiService {
   static String _generateOperationId() {
     // Generate UUID for operationId
     return '3fa85f64-5717-4562-b3fc-2c963f66afa6'; // Mocked value
+  }
+
+  static Future<CategoriesResponse> getCategories() async {
+    try {
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse(AppConfig.categoriesUrl);
+      final headers = {
+        'Authorization': 'Bearer $token',
+      };
+
+      debugPrint('GET Categories Request URL: $url');
+      debugPrint('GET Categories Request Headers: $headers');
+
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      debugPrint('GET Categories Response Status Code: ${response.statusCode}');
+      debugPrint('GET Categories Response Body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get categories. Status code: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      final categoriesList = data['categories'] as List;
+
+      final categories = categoriesList.map((item) {
+        return CategoryData(
+          id: item['categoryId'] ?? '', // API returns categoryId, not id
+          name: item['name'] ?? '',
+          groupId: item['groupId'] ?? 'default', // Default group if not provided
+          groupName: item['groupName'] ?? 'General', // Default group name
+          groupIndex: item['groupIndex'] ?? 0, // Default index
+          imageUrl: item['imageUrl'],
+        );
+      }).toList();
+
+      return CategoriesResponse(
+        categories: categories,
+        nextToken: data['nextToken'],
+      );
+    } on Exception catch (e) {
+      debugPrint('Error getting categories: $e');
+      rethrow;
+    }
   }
 }
 
@@ -269,6 +321,53 @@ class TransactionEntryData {
       operationId: json['operationId'] ?? '',
       approvedAt: DateTime.tryParse(json['approvedAt'] ?? '') ?? DateTime.now(),
       transactedAt: DateTime.tryParse(json['transactedAt'] ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
+class CategoriesResponse {
+  final List<CategoryData> categories;
+  final String? nextToken;
+
+  CategoriesResponse({
+    required this.categories,
+    this.nextToken,
+  });
+
+  factory CategoriesResponse.fromJson(Map<String, dynamic> json) {
+    final items = json['items'] as List? ?? [];
+    return CategoriesResponse(
+      categories: items.map((item) => CategoryData.fromJson(item)).toList(),
+      nextToken: json['nextToken'],
+    );
+  }
+}
+
+class CategoryData {
+  final String id;
+  final String name;
+  final String groupId;
+  final String groupName;
+  final int groupIndex;
+  final String? imageUrl;
+
+  CategoryData({
+    required this.id,
+    required this.name,
+    required this.groupId,
+    required this.groupName,
+    required this.groupIndex,
+    this.imageUrl,
+  });
+
+  factory CategoryData.fromJson(Map<String, dynamic> json) {
+    return CategoryData(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      groupId: json['groupId'] ?? '',
+      groupName: json['groupName'] ?? '',
+      groupIndex: json['groupIndex'] ?? 0,
+      imageUrl: json['imageUrl'],
     );
   }
 } 
