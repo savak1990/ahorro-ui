@@ -46,7 +46,7 @@ class TransactionTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Дата
+              // Date
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -61,10 +61,10 @@ class TransactionTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: 16),
-              // Иконка категории
+              // Category icon
               Icon(categoryIcon, size: 28, color: Colors.black),
               const SizedBox(width: 16),
-              // Категория, счет, описание
+              // Category, account, description
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,12 +87,12 @@ class TransactionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              // Сумма
+              // Amount
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    amount.toStringAsFixed(0),
+                    amount.toStringAsFixed(2),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 20,
