@@ -16,6 +16,8 @@ class ApiService {
     required DateTime date,
     required String category,
     String? description,
+    String? merchant,
+    List<TransactionEntry>? transactionEntries,
   }) async {
     try {
       final session = await Amplify.Auth.fetchAuthSession();
@@ -34,15 +36,26 @@ class ApiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       };
+
+      // Формируем transactionEntries из переданных данных или создаем один элемент
+      final entries = transactionEntries ?? [
+        TransactionEntry(
+          description: description ?? '',
+          amount: (amount * 100).round().toDouble(), // Умножаем на 100 для хранения в центах
+          categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Замоканное значение
+        ),
+      ];
+
       final body = json.encode({
-        'user_id': userId,
-        'group_id': '11111', // Замоканное значение
+        'userId': userId,
+        'groupId': '6a785a55-fced-4f13-af78-5c19a39c9abc', // Замоканное значение
+        'balanceId': '847ac10b-58cc-4372-a567-0e02b2c3d479', // Замоканное значение
         'type': type.name,
-        'amount': amount,
-        'balance_id': '11111', // Замоканное значение
-        'category': category,
-        'description': description ?? '',
-        'transacted_at': date.toIso8601String(),
+        'merchant': merchant ?? 'Unknown',
+        'operationId': _generateOperationId(),
+        'approvedAt': date.toUtc().toIso8601String(),
+        'transactedAt': date.toUtc().toIso8601String(),
+        'transactionEntries': entries.map((e) => e.toJson()).toList(),
       });
 
       debugPrint('Request URL: $url');
@@ -68,5 +81,30 @@ class ApiService {
       // Перебрасываем исключение, чтобы UI мог его обработать
       rethrow;
     }
+  }
+
+  static String _generateOperationId() {
+    // Генерируем UUID для operationId
+    return '3fa85f64-5717-4562-b3fc-2c963f66afa6'; // Замоканное значение
+  }
+}
+
+class TransactionEntry {
+  final String description;
+  final double amount;
+  final String categoryId;
+
+  TransactionEntry({
+    required this.description,
+    required this.amount,
+    required this.categoryId,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'description': description,
+      'amount': (amount * 100).round().toDouble(), // Умножаем на 100 для хранения в центах
+      'categoryId': categoryId,
+    };
   }
 } 
