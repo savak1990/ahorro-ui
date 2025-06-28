@@ -27,7 +27,6 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = type == 'expense';
-    final isIncome = type == 'income';
     final amountColor = isExpense ? Colors.red : Colors.green;
     return Card(
       color: Colors.grey.shade100,

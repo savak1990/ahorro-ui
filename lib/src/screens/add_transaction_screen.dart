@@ -1,5 +1,6 @@
 import 'package:ahorro_ui/src/models/transaction_type.dart';
 import 'package:ahorro_ui/src/services/api_service.dart';
+import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import 'package:flutter/material.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -70,73 +71,114 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
+  Future<void> _selectCategory(BuildContext context, _TransactionItem item) async {
+    final result = await showDialog<CategoryData>(
+      context: context,
+      builder: (context) => CategoryPickerDialog(
+        selectedCategoryId: item.selectedCategoryId,
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        item.selectedCategoryId = result.id;
+        item.categoryController.text = result.name;
+      });
+    }
+  }
+
   Future<void> _saveTransaction() async {
+    debugPrint('[_saveTransaction] Start');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Saving transaction...'), duration: Duration(seconds: 1)),
+    );
     if (_selectedType == TransactionType.movement) {
       if (_movementAmountController.text.isEmpty) {
+        debugPrint('[_saveTransaction] Movement amount is empty');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter the amount')),);
         return;
       }
       final amount = double.tryParse(_movementAmountController.text) ?? 0.0;
       if (amount == 0.0) {
+        debugPrint('[_saveTransaction] Movement amount is zero or invalid');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid amount')),);
         return;
       }
     } else {
       if (_items.isEmpty || _totalAmount == 0) {
+        debugPrint('[_saveTransaction] No items or total amount is zero');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please add at least one item with amount')),);
         return;
       }
+      bool hasAmountError = false;
       for (final item in _items) {
-        if (item.nameController.text.isEmpty || item.amountController.text.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fill name and amount for each item')),);
-          return;
+        if (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null) {
+          hasAmountError = true;
         }
-        if (double.tryParse(item.amountController.text) == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid amount in one of the items')),);
-          return;
-        }
+      }
+      if (hasAmountError) {
+        debugPrint('[_saveTransaction] Invalid or empty amount in one of the items');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fill valid amount for each item')),);
+        setState(() {}); // Чтобы обновить подсветку
+        return;
       }
     }
 
     setState(() { _isLoading = true; });
+    debugPrint('[_saveTransaction] Validation passed, sending request...');
     try {
       if (_selectedType == TransactionType.movement) {
-        // For movement use simple request with single entry
+        debugPrint('[_saveTransaction] Posting movement transaction');
         await ApiService.postTransaction(
           type: _selectedType,
           amount: double.parse(_movementAmountController.text),
           date: _selectedDate,
           category: 'Transfer',
-          description: 'Transfer from ${_accountFromController.text.isEmpty ? 'Unknown' : _accountFromController.text} to ${_accountToController.text.isEmpty ? 'Unknown' : _accountToController.text}',
+          description: 'Transfer from \\${_accountFromController.text.isEmpty ? 'Unknown' : _accountFromController.text} to \\${_accountToController.text.isEmpty ? 'Unknown' : _accountToController.text}',
           merchant: 'Transfer',
         );
       } else {
-        // For income/expense form transactionEntries from _items
-        final transactionEntries = _items.map((item) {
+        final transactionEntries = _items.where((item) {
+          // Только если amount валиден
+          return item.amountController.text.isNotEmpty && double.tryParse(item.amountController.text) != null;
+        }).map((item) {
+          double parsedAmount = 0.0;
+          try {
+            parsedAmount = double.parse(item.amountController.text);
+          } catch (e) {
+            debugPrint('[_saveTransaction] ERROR: failed to parse amount for item: \\${item.amountController.text}, error: \\${e.toString()}');
+            parsedAmount = 0.0;
+          }
           return TransactionEntry(
             description: item.nameController.text,
-            amount: double.parse(item.amountController.text),
-            categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Mocked value
+            amount: parsedAmount,
+            categoryId: item.selectedCategoryId.isNotEmpty 
+                ? item.selectedCategoryId 
+                : 'c47ac10b-58cc-4372-a567-0e02b2c3d479',
           );
         }).toList();
-
-        // Determine merchant from description or first item name
+        if (transactionEntries.isEmpty) {
+          debugPrint('[_saveTransaction] No valid transaction entries after filtering');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No valid items to save')),);
+          setState(() { _isLoading = false; });
+          return;
+        }
         String merchant = _descriptionController.text.isNotEmpty 
             ? _descriptionController.text 
             : (_items.isNotEmpty ? _items.first.nameController.text : 'Unknown');
-
+        debugPrint('[_saveTransaction] Posting income/expense transaction, entries: \\${transactionEntries.length}');
         await ApiService.postTransaction(
           type: _selectedType,
-          amount: _totalAmount, // Total amount for backward compatibility
+          amount: _totalAmount,
           date: _selectedDate,
           category: _items.isNotEmpty && _items.first.categoryController.text.isNotEmpty 
               ? _items.first.categoryController.text 
-              : 'Uncategorized', // First item category for backward compatibility
+              : 'Uncategorized',
           description: _descriptionController.text,
           merchant: merchant,
           transactionEntriesParam: transactionEntries,
@@ -144,19 +186,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
 
       if (mounted) {
+        debugPrint('[_saveTransaction] Transaction saved successfully');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Transaction saved successfully!'), backgroundColor: Colors.green),
         );
         Navigator.pop(context);
       }
     } catch (e) {
+      debugPrint('[_saveTransaction] Error: \\${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(content: Text('Error: \\${e.toString()}'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
       if (mounted) setState(() { _isLoading = false; });
+      debugPrint('[_saveTransaction] Finished');
     }
   }
 
@@ -263,7 +308,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           child: TextField(
                             controller: item.amountController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                            decoration: InputDecoration(
+                              labelText: 'Amount',
+                              border: OutlineInputBorder(),
+                              errorText: item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null ? ' ' : null,
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
+                                      ? Colors.red
+                                      : Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
@@ -271,9 +327,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         // Category
                         Expanded(
                           flex: 2,
-                          child: TextField(
-                            controller: item.categoryController,
-                            decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                          child: InkWell(
+                            onTap: () => _selectCategory(context, item),
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'Category',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.arrow_drop_down),
+                              ),
+                              child: Text(
+                                item.categoryController.text.isEmpty 
+                                    ? 'Select category' 
+                                    : item.categoryController.text,
+                                style: TextStyle(
+                                  color: item.categoryController.text.isEmpty 
+                                      ? Colors.grey[600] 
+                                      : null,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -352,6 +424,7 @@ class _TransactionItem {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController categoryController = TextEditingController();
+  String selectedCategoryId = '';
 
   void dispose() {
     nameController.dispose();
