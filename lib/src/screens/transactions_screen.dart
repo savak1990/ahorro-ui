@@ -75,25 +75,50 @@ class TransactionsScreen extends StatelessWidget {
     // Пример использования TransactionTile:
     return Scaffold(
       appBar: AppBar(
-        title: Text('Transactions'),
+        title: const Text(
+          'Transactions',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: filtered.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, i) {
-          final tx = filtered[i];
-          return TransactionTile(
-            type: tx['type'],
-            amount: tx['amount'],
-            category: tx['category'],
-            categoryIcon: tx['categoryIcon'],
-            account: tx['account'],
-            date: tx['date'],
-            description: tx['description'],
-            currency: 'EUR',
-          );
+      body: Column(
+        children: [
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: filtered.length,
+              itemBuilder: (context, i) {
+                final tx = filtered[i];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TransactionTile(
+                    type: tx['type'],
+                    amount: tx['amount'],
+                    category: tx['category'],
+                    categoryIcon: tx['categoryIcon'],
+                    account: tx['account'],
+                    date: tx['date'],
+                    description: tx['description'],
+                    currency: 'EUR',
+                    onTap: () {}, // TODO: переход к деталям
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: переход на экран добавления транзакции
         },
+        child: const Icon(Icons.add, size: 32),
+        shape: const CircleBorder(),
+        // Можно добавить backgroundColor: AppColors.primary, если есть
+        // backgroundColor: Colors.black,
+        // увеличенный minSize через Theme
       ),
     );
   }
