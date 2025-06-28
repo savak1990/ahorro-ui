@@ -15,11 +15,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
-  // Счета
+  // Accounts
   final TextEditingController _accountFromController = TextEditingController();
   final TextEditingController _accountToController = TextEditingController();
 
-  // Динамические позиции
+  // Dynamic items
   List<_TransactionItem> _items = [
     _TransactionItem(),
   ];
@@ -106,7 +106,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     setState(() { _isLoading = true; });
     try {
       if (_selectedType == TransactionType.movement) {
-        // Для movement используем простой запрос с одной записью
+        // For movement use simple request with single entry
         await ApiService.postTransaction(
           type: _selectedType,
           amount: double.parse(_movementAmountController.text),
@@ -116,30 +116,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           merchant: 'Transfer',
         );
       } else {
-        // Для income/expense формируем transactionEntries из _items
+        // For income/expense form transactionEntries from _items
         final transactionEntries = _items.map((item) {
           return TransactionEntry(
             description: item.nameController.text,
             amount: double.parse(item.amountController.text),
-            categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Замоканное значение
+            categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Mocked value
           );
         }).toList();
 
-        // Определяем merchant из описания или названия первого item
+        // Determine merchant from description or first item name
         String merchant = _descriptionController.text.isNotEmpty 
             ? _descriptionController.text 
             : (_items.isNotEmpty ? _items.first.nameController.text : 'Unknown');
 
         await ApiService.postTransaction(
           type: _selectedType,
-          amount: _totalAmount, // Общая сумма для обратной совместимости
+          amount: _totalAmount, // Total amount for backward compatibility
           date: _selectedDate,
           category: _items.isNotEmpty && _items.first.categoryController.text.isNotEmpty 
               ? _items.first.categoryController.text 
-              : 'Uncategorized', // Категория первого item для обратной совместимости
+              : 'Uncategorized', // First item category for backward compatibility
           description: _descriptionController.text,
           merchant: merchant,
-          transactionEntries: transactionEntries,
+          transactionEntriesParam: transactionEntries,
         );
       }
 
@@ -174,7 +174,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Индикатор для свайпа
+            // Swipe indicator
             Container(
               width: 40,
               height: 4,
@@ -198,7 +198,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               },
             ),
             const SizedBox(height: 24),
-            // Поле счета
+            // Account field
             if (_selectedType == TransactionType.movement) ...[
               TextField(
                 controller: _accountFromController,
@@ -216,7 +216,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Поле суммы для перевода
+              // Amount field for transfer
               TextField(
                 controller: _movementAmountController,
                 keyboardType: TextInputType.number,
@@ -235,7 +235,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Секция позиций и итоговая сумма только для income/expense
+              // Items section and total amount only for income/expense
               Text('Items', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               ListView.builder(
@@ -248,7 +248,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       children: [
-                        // Название
+                        // Name
                         Expanded(
                           flex: 2,
                           child: TextField(
@@ -257,7 +257,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Стоимость
+                        // Cost
                         Expanded(
                           flex: 1,
                           child: TextField(
@@ -268,7 +268,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Категория
+                        // Category
                         Expanded(
                           flex: 2,
                           child: TextField(
@@ -277,7 +277,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Кнопка удаления
+                        // Delete button
                         if (_items.length > 1)
                           IconButton(
                             icon: const Icon(Icons.close),
@@ -297,7 +297,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Итоговая сумма
+              // Total amount
               TextField(
                 controller: TextEditingController(text: _totalAmount == 0 ? '' : _totalAmount.toStringAsFixed(2)),
                 enabled: false,
@@ -308,7 +308,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               const SizedBox(height: 24),
             ],
-            // Поле ввода описания
+            // Description input field
             TextField(
               controller: _descriptionController,
               decoration: const InputDecoration(
@@ -317,7 +317,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Выбор даты
+            // Date selection
             InkWell(
               onTap: () => _selectDate(context),
               child: InputDecorator(

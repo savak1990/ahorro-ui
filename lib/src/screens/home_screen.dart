@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Fetched ${response.transactionEntries.length} transactions');
       debugPrint('Current month: ${currentMonth.year}-${currentMonth.month}');
       
-      // Группируем транзакции по месяцу и типу
+      // Group transactions by month and type
       final Map<String, double> monthlyTotals = {
         'expense': 0.0,
         'income': 0.0,
@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final entryDate = entry.transactedAt;
         debugPrint('Transaction: type=${entry.type}, amount=${entry.amount}, date=${entryDate.year}-${entryDate.month}');
         
-        // Проверяем, что транзакция за текущий месяц
+        // Check that transaction is from current month
         if (entryDate.year == currentMonth.year && 
             entryDate.month == currentMonth.month) {
           
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       debugPrint('Error fetching transactions: $e');
       
-      // Возвращаем нулевые значения в случае ошибки
+      // Return zero values in case of error
       return {
         'expense': 0.0,
         'income': 0.0,
@@ -330,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             builder: (context) => const AddTransactionScreen(),
           ).then((_) {
-            // Обновляем транзакции после добавления новой
+            // Update transactions after adding new one
             _refreshTransactions();
           });
         },

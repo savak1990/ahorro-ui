@@ -17,7 +17,7 @@ class ApiService {
     required String category,
     String? description,
     String? merchant,
-    List<TransactionEntry>? transactionEntries,
+    List<TransactionEntry>? transactionEntriesParam,
   }) async {
     try {
       final session = await Amplify.Auth.fetchAuthSession();
@@ -37,19 +37,19 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      // Формируем transactionEntries из переданных данных или создаем один элемент
-      final entries = transactionEntries ?? [
+      // Form transactionEntries from passed data or create single element
+      final entries = transactionEntriesParam ?? [
         TransactionEntry(
           description: description ?? '',
-          amount: (amount * 100).round().toDouble(), // Умножаем на 100 для хранения в центах
-          categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Замоканное значение
+          amount: (amount * 100).round().toDouble(), // Multiply by 100 for storage in cents
+          categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Mocked value
         ),
       ];
 
       final body = json.encode({
         'userId': userId,
-        'groupId': '6a785a55-fced-4f13-af78-5c19a39c9abc', // Замоканное значение
-        'balanceId': '847ac10b-58cc-4372-a567-0e02b2c3d479', // Замоканное значение
+        'groupId': '6a785a55-fced-4f13-af78-5c19a39c9abc', // Mocked value
+        'balanceId': '847ac10b-58cc-4372-a567-0e02b2c3d479', // Mocked value
         'type': type.name,
         'merchant': merchant ?? 'Unknown',
         'operationId': _generateOperationId(),
@@ -72,13 +72,12 @@ class ApiService {
       debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        // Выбрасываем исключение, чтобы его можно было поймать в UI
-        throw Exception(
-            'Failed to post transaction. Status code: ${response.statusCode}');
+        throw Exception('Failed to post transaction. Status code: ${response.statusCode}');
       }
-    } on Exception catch (e) {
+
+      return json.decode(response.body);
+    } catch (e) {
       debugPrint('Error posting transaction: $e');
-      // Перебрасываем исключение, чтобы UI мог его обработать
       rethrow;
     }
   }
@@ -113,12 +112,45 @@ class ApiService {
       debugPrint('GET Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
-        throw Exception(
-            'Failed to get transactions. Status code: ${response.statusCode}');
+        throw Exception('Failed to get transactions. Status code: ${response.statusCode}');
       }
 
-      final jsonData = json.decode(response.body);
-      return TransactionsResponse.fromJson(jsonData);
+      final data = json.decode(response.body);
+      final items = data['items'] as List;
+
+      final transactionEntries = items.map((item) {
+        // Handle amount as string or number
+        double amount;
+        if (item['amount'] is String) {
+          amount = double.parse(item['amount']);
+        } else {
+          amount = (item['amount'] as num).toDouble();
+        }
+
+        return TransactionEntryData(
+          transactionId: item['transactionId'],
+          transactionEntryId: item['transactionEntryId'],
+          type: item['type'],
+          amount: amount / 100, // Divide by 100 for display in euros
+          groupId: item['groupId'] ?? '',
+          userId: item['userId'] ?? '',
+          balanceId: item['balanceId'] ?? '',
+          balanceTitle: item['balanceTitle'] ?? '',
+          balanceCurrency: item['balanceCurrency'] ?? '',
+          categoryName: item['categoryName'] ?? '',
+          categoryImageUrl: item['categoryImageUrl'],
+          merchantName: item['merchantName'] ?? '',
+          merchantImageUrl: item['merchantImageUrl'],
+          operationId: item['operationId'] ?? '',
+          approvedAt: DateTime.tryParse(item['approvedAt'] ?? '') ?? DateTime.now(),
+          transactedAt: DateTime.tryParse(item['transactedAt'] ?? '') ?? DateTime.now(),
+        );
+      }).toList();
+
+      return TransactionsResponse(
+        transactionEntries: transactionEntries,
+        nextToken: data['nextToken'],
+      );
     } on Exception catch (e) {
       debugPrint('Error getting transactions: $e');
       rethrow;
@@ -126,8 +158,8 @@ class ApiService {
   }
 
   static String _generateOperationId() {
-    // Генерируем UUID для operationId
-    return '3fa85f64-5717-4562-b3fc-2c963f66afa6'; // Замоканное значение
+    // Generate UUID for operationId
+    return '3fa85f64-5717-4562-b3fc-2c963f66afa6'; // Mocked value
   }
 }
 
@@ -145,7 +177,7 @@ class TransactionEntry {
   Map<String, dynamic> toJson() {
     return {
       'description': description,
-      'amount': (amount * 100).round().toDouble(), // Умножаем на 100 для хранения в центах
+      'amount': (amount * 100).round().toDouble(), // Multiply by 100 for storage in cents
       'categoryId': categoryId,
     };
   }
@@ -209,7 +241,7 @@ class TransactionEntryData {
   });
 
   factory TransactionEntryData.fromJson(Map<String, dynamic> json) {
-    // Обрабатываем amount как строку или число
+    // Handle amount as string or number
     final amountValue = json['amount'];
     double amount;
     if (amountValue is String) {
@@ -227,7 +259,7 @@ class TransactionEntryData {
       transactionId: json['transactionId'] ?? '',
       transactionEntryId: json['transactionEntryId'] ?? '',
       type: json['type'] ?? '',
-      amount: amount / 100, // Делим на 100 для отображения в евро
+      amount: amount / 100, // Divide by 100 for display in euros
       balanceTitle: json['balanceTitle'] ?? '',
       balanceCurrency: json['balanceCurrency'] ?? '',
       categoryName: json['categoryName'] ?? '',
