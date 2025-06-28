@@ -147,6 +147,36 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }).toList();
   }
 
+  // Группировка транзакций по дням
+  Map<String, List<TransactionDisplayData>> _groupTransactionsByDate(List<TransactionDisplayData> transactions) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekAgo = today.subtract(const Duration(days: 7));
+    
+    final Map<String, List<TransactionDisplayData>> grouped = {
+      'Today': [],
+      'Previous 7 Days': [],
+      'Earlier': [],
+    };
+    
+    for (final transaction in transactions) {
+      final transactionDate = DateTime(transaction.date.year, transaction.date.month, transaction.date.day);
+      
+      if (transactionDate == today) {
+        grouped['Today']!.add(transaction);
+      } else if (transactionDate.isAfter(weekAgo) && transactionDate.isBefore(today)) {
+        grouped['Previous 7 Days']!.add(transaction);
+      } else {
+        grouped['Earlier']!.add(transaction);
+      }
+    }
+    
+    // Удаляем пустые группы
+    grouped.removeWhere((key, value) => value.isEmpty);
+    
+    return grouped;
+  }
+
   void _showDateFilterDialog() {
     showDialog(
       context: context,
@@ -515,25 +545,69 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   );
                 }
 
+                // Группируем транзакции по дням
+                final groupedTransactions = _groupTransactionsByDate(filteredTransactions);
+
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredTransactions.length,
-                  itemBuilder: (context, i) {
-                    final tx = filteredTransactions[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: TransactionTile(
-                        type: tx.type,
-                        amount: tx.amount,
-                        category: tx.category,
-                        categoryIcon: tx.categoryIcon,
-                        account: tx.account,
-                        date: tx.date,
-                        description: tx.description,
-                        currency: tx.currency,
-                        onTap: () {}, // TODO: navigate to details
-                      ),
-                    );
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  itemCount: groupedTransactions.length * 2, // Заголовок + транзакции для каждой группы
+                  itemBuilder: (context, index) {
+                    final groupIndex = index ~/ 2;
+                    final isHeader = index % 2 == 0;
+                    final groupKey = groupedTransactions.keys.elementAt(groupIndex);
+                    final groupTransactions = groupedTransactions[groupKey]!;
+                    
+                    if (isHeader) {
+                      // Заголовок группы
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 8, left: 8, right: 8),
+                        child: Text(
+                          groupKey,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      );
+                    } else {
+                      // Транзакции группы
+                      return Column(
+                        children: groupTransactions.asMap().entries.map((entry) {
+                          final txIndex = entry.key;
+                          final tx = entry.value;
+                          final isLast = txIndex == groupTransactions.length - 1;
+                          
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: TransactionTile(
+                                  type: tx.type,
+                                  amount: tx.amount,
+                                  category: tx.category,
+                                  categoryIcon: tx.categoryIcon,
+                                  account: tx.account,
+                                  date: tx.date,
+                                  description: tx.description,
+                                  currency: tx.currency,
+                                  onTap: () {}, // TODO: navigate to details
+                                ),
+                              ),
+                              // Разделитель между транзакциями (кроме последней в группе)
+                              if (!isLast)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 72, right: 16),
+                                  child: Divider(
+                                    height: 1,
+                                    thickness: 0.5,
+                                    color: Theme.of(context).dividerTheme.color?.withOpacity(0.3),
+                                  ),
+                                ),
+                            ],
+                          );
+                        }).toList(),
+                      );
+                    }
                   },
                 );
               },
