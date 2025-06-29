@@ -6,6 +6,7 @@ import 'dart:async';
 
 import '../constants/app_colors.dart';
 import '../services/api_service.dart';
+import '../widgets/list_item_tile.dart';
 import 'add_transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -125,19 +126,35 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final currentDate = DateTime.now();
     final monthYear = DateFormat('MMMM, yyyy').format(currentDate);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: Text(
+          'Home',
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              Icons.refresh,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: _refreshTransactions,
           ),
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: Icon(
+              Icons.person,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: () {
               Navigator.pushNamed(context, '/account');
             },
@@ -148,21 +165,34 @@ class _HomeScreenState extends State<HomeScreen> {
         stream: Amplify.Auth.getCurrentUser().asStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(
+                color: colorScheme.primary,
+              ),
+            );
           }
 
           if (snapshot.hasError) {
             return Center(
               child: Text(
                 'Error: ${snapshot.error}',
-                style: TextStyle(color: theme.colorScheme.error),
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.error,
+                ),
               ),
             );
           }
 
           final user = snapshot.data;
           if (user == null) {
-            return const Center(child: Text('Not signed in'));
+            return Center(
+              child: Text(
+                'Not signed in',
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            );
           }
 
           return FutureBuilder<String>(
@@ -194,121 +224,116 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header section with improved typography
                         Text(
                           'Hello, $displayUserName!',
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          monthYear,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Card(
-                          margin: EdgeInsets.zero,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(8),
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/transactions',
-                                      arguments: {
-                                        'type': 'expense',
-                                        'month': DateTime.now(),
-                                      },
-                                    );
-                                  },
-                                  splashColor: theme.colorScheme.primary.withOpacity(0.1),
-                                  hoverColor: theme.colorScheme.primary.withOpacity(0.05),
-                                  mouseCursor: SystemMouseCursors.click,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Expense',
-                                        style: theme.textTheme.titleMedium,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            transactionsSnapshot.connectionState == ConnectionState.waiting
-                                                ? 'Loading...'
-                                                : '${expenseTotal.toStringAsFixed(2)} EUR',
-                                            style: theme.textTheme.titleLarge?.copyWith(
-                                              color: theme.colorScheme.error,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(8),
-                                  onTap: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/transactions',
-                                      arguments: {
-                                        'type': 'income',
-                                        'month': DateTime.now(),
-                                      },
-                                    );
-                                  },
-                                  splashColor: theme.colorScheme.primary.withOpacity(0.1),
-                                  hoverColor: theme.colorScheme.primary.withOpacity(0.05),
-                                  mouseCursor: SystemMouseCursors.click,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Income',
-                                        style: theme.textTheme.titleMedium,
-                                      ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            transactionsSnapshot.connectionState == ConnectionState.waiting
-                                                ? 'Loading...'
-                                                : '${incomeTotal.toStringAsFixed(2)} EUR',
-                                            style: theme.textTheme.titleLarge?.copyWith(
-                                              color: theme.colorScheme.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Notifications',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                          style: textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
+                            letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Cafe budget is 90%',
-                          style: theme.textTheme.bodyLarge,
+                          monthYear,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurfaceVariant,
+                            letterSpacing: 0.15,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Financial Overview Section
+                        Text(
+                          'Financial Overview',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                            letterSpacing: 0.15,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Income/Expense List
+                        Card(
+                          elevation: 0,
+                          color: colorScheme.surfaceContainerHighest,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            children: [
+                              ListItemTile(
+                                title: 'Expense',
+                                subtitle: transactionsSnapshot.connectionState == ConnectionState.waiting
+                                    ? 'Loading...'
+                                    : '${expenseTotal.toStringAsFixed(2)} EUR',
+                                icon: Icons.trending_down,
+                                iconColor: colorScheme.error,
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/transactions',
+                                    arguments: {
+                                      'type': 'expense',
+                                      'month': DateTime.now(),
+                                    },
+                                  );
+                                },
+                              ),
+                              ListItemTile(
+                                title: 'Income',
+                                subtitle: transactionsSnapshot.connectionState == ConnectionState.waiting
+                                    ? 'Loading...'
+                                    : '${incomeTotal.toStringAsFixed(2)} EUR',
+                                icon: Icons.trending_up,
+                                iconColor: colorScheme.primary,
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/transactions',
+                                    arguments: {
+                                      'type': 'income',
+                                      'month': DateTime.now(),
+                                    },
+                                  );
+                                },
+                                showDivider: false,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Notifications Section
+                        Text(
+                          'Notifications',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                            letterSpacing: 0.15,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Notifications List
+                        Card(
+                          elevation: 0,
+                          color: colorScheme.surfaceContainerHighest,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: ListItemTile(
+                            title: 'Cafe budget is 90%',
+                            subtitle: 'You\'re approaching your monthly limit',
+                            icon: Icons.notifications,
+                            iconColor: colorScheme.tertiary,
+                            onTap: () {
+                              // Navigate to budget screen or show budget details
+                            },
+                            showDivider: false,
+                          ),
                         ),
                       ],
                     ),
@@ -334,8 +359,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _refreshTransactions();
           });
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.surface,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         shape: const CircleBorder(),
         child: const Icon(Icons.add),
       ),

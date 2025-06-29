@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
 
 class TransactionTile extends StatelessWidget {
   final String type; // 'income', 'expense', 'movement'
@@ -28,6 +27,8 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final isExpense = type == 'expense';
     final isIncome = type == 'income';
     
@@ -37,13 +38,13 @@ class TransactionTile extends StatelessWidget {
     
     if (isIncome) {
       typeIcon = Icons.trending_up;
-      typeColor = AppColors.primary; // Используем primary цвет проекта
+      typeColor = colorScheme.primary;
     } else if (isExpense) {
       typeIcon = Icons.trending_down;
-      typeColor = AppColors.error; // Используем error цвет проекта
+      typeColor = colorScheme.error;
     } else {
       typeIcon = Icons.swap_horiz;
-      typeColor = AppColors.accent; // Используем accent цвет проекта
+      typeColor = colorScheme.secondary;
     }
 
     return Card(
@@ -61,16 +62,16 @@ class TransactionTile extends StatelessWidget {
             children: [
               // Иконка типа транзакции
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: typeColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   typeIcon,
                   color: typeColor,
-                  size: 20,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 16),
@@ -83,9 +84,9 @@ class TransactionTile extends StatelessWidget {
                     // Первая строка: мерчант (description или category)
                     Text(
                       description?.isNotEmpty == true ? description! : category,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -95,8 +96,8 @@ class TransactionTile extends StatelessWidget {
                     // Вторая строка: категория
                     Text(
                       category,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -106,8 +107,8 @@ class TransactionTile extends StatelessWidget {
                     // Третья строка: баланс и валюта
                     Text(
                       '$account • $currency',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
@@ -125,20 +126,20 @@ class TransactionTile extends StatelessWidget {
                 children: [
                   Text(
                     '${isExpense ? '-' : isIncome ? '+' : ''}${amount.toStringAsFixed(2)}',
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isExpense 
-                          ? AppColors.error 
+                          ? colorScheme.error 
                           : isIncome 
-                              ? AppColors.primary 
-                              : AppColors.textPrimary,
+                              ? colorScheme.primary 
+                              : colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     currency,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -149,9 +150,9 @@ class TransactionTile extends StatelessWidget {
               if (onTap != null) ...[
                 const SizedBox(width: 8),
                 Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textSecondary,
-                  size: 20,
+                  Icons.arrow_forward_ios,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 16,
                 ),
               ],
             ],
