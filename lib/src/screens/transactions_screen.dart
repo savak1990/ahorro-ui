@@ -438,28 +438,44 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     final DateTime month = args?['month'] ?? DateTime.now();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'All Transactions',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         centerTitle: true,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: Icon(
+              Icons.filter_list,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: _showDateFilterDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.tune),
+            icon: Icon(
+              Icons.tune,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: _showOtherFiltersDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              Icons.refresh,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: _refreshTransactions,
           ),
         ],
@@ -469,21 +485,32 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           // Show active filters
           if (_hasActiveFilters()) ...[
             Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.grey[100],
+              padding: const EdgeInsets.all(12),
+              color: colorScheme.surfaceContainerHighest,
               child: Row(
                 children: [
-                  const Icon(Icons.filter_alt, size: 16),
+                  Icon(
+                    Icons.filter_alt,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _getActiveFiltersText(),
-                      style: const TextStyle(fontSize: 12),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: _clearAllFilters,
-                    child: const Text('Clear', style: TextStyle(fontSize: 12)),
+                    child: Text(
+                      'Clear',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -495,7 +522,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               future: _transactionsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primary,
+                    ),
+                  );
                 }
 
                 if (snapshot.hasError) {
@@ -503,16 +534,27 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Error loading transactions',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: _refreshTransactions,
-                          child: const Text('Retry'),
+                          child: Text(
+                            'Retry',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.primary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -527,17 +569,23 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+                        Icon(
+                          Icons.receipt_long,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No transactions found',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _hasActiveFilters() ? 'with current filters' : 'for ${_getMonthName(month)}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -563,9 +611,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         padding: const EdgeInsets.only(top: 16, bottom: 8, left: 8, right: 8),
                         child: Text(
                           groupKey,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: colorScheme.primary,
+                            letterSpacing: 0.15,
                           ),
                         ),
                       );
@@ -575,35 +624,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         children: groupTransactions.asMap().entries.map((entry) {
                           final txIndex = entry.key;
                           final tx = entry.value;
-                          final isLast = txIndex == groupTransactions.length - 1;
                           
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: TransactionTile(
-                                  type: tx.type,
-                                  amount: tx.amount,
-                                  category: tx.category,
-                                  categoryIcon: tx.categoryIcon,
-                                  account: tx.account,
-                                  date: tx.date,
-                                  description: tx.description,
-                                  currency: tx.currency,
-                                  onTap: () {}, // TODO: navigate to details
-                                ),
-                              ),
-                              // Разделитель между транзакциями (кроме последней в группе)
-                              if (!isLast)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 72, right: 16),
-                                  child: Divider(
-                                    height: 1,
-                                    thickness: 0.5,
-                                    color: Theme.of(context).dividerTheme.color?.withOpacity(0.3),
-                                  ),
-                                ),
-                            ],
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: TransactionTile(
+                              type: tx.type,
+                              amount: tx.amount,
+                              category: tx.category,
+                              categoryIcon: tx.categoryIcon,
+                              account: tx.account,
+                              date: tx.date,
+                              description: tx.description,
+                              currency: tx.currency,
+                              onTap: () {}, // TODO: navigate to details
+                            ),
                           );
                         }).toList(),
                       );
@@ -626,13 +660,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             builder: (context) => const AddTransactionScreen(),
           ).then((_) {
-            // Update transactions after adding new one
             _refreshTransactions();
           });
         },
-        child: const Icon(Icons.add, size: 32),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         shape: const CircleBorder(),
+        child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
