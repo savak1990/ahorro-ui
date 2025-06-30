@@ -17,8 +17,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isLoading = false;
 
   // Accounts
-  final TextEditingController _accountFromController = TextEditingController();
-  final TextEditingController _accountToController = TextEditingController();
+  String? _fromAccount;
+  String? _toAccount;
+  final List<String> _accounts = ['Cash', 'Bank Account', 'Savings', 'Credit Card'];
 
   // Dynamic items
   List<_TransactionItem> _items = [
@@ -38,8 +39,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       item.dispose();
     }
     _descriptionController.dispose();
-    _accountFromController.dispose();
-    _accountToController.dispose();
     _movementAmountController.dispose();
     super.dispose();
   }
@@ -93,6 +92,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       const SnackBar(content: Text('Saving transaction...'), duration: Duration(seconds: 1)),
     );
     if (_selectedType == TransactionType.movement) {
+      if (_fromAccount == null || _toAccount == null) {
+        debugPrint('[_saveTransaction] Accounts for movement are not selected');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select both accounts for movement')),);
+        return;
+      }
       if (_movementAmountController.text.isEmpty) {
         debugPrint('[_saveTransaction] Movement amount is empty');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -100,13 +105,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
       final amount = double.tryParse(_movementAmountController.text) ?? 0.0;
-      if (amount == 0.0) {
+      if (amount <= 0.0) {
         debugPrint('[_saveTransaction] Movement amount is zero or invalid');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid amount')),);
         return;
       }
     } else {
+      if (_selectedType == TransactionType.expense && _fromAccount == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an account')));
+        return;
+      }
+      if (_selectedType == TransactionType.income && _toAccount == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an account')));
+        return;
+      }
       if (_items.isEmpty || _totalAmount == 0) {
         debugPrint('[_saveTransaction] No items or total amount is zero');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,15 +128,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
       bool hasAmountError = false;
       for (final item in _items) {
-        if (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null) {
+        final amount = double.tryParse(item.amountController.text);
+        if (amount == null || amount <= 0) {
           hasAmountError = true;
+          break;
         }
       }
       if (hasAmountError) {
         debugPrint('[_saveTransaction] Invalid or empty amount in one of the items');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Fill valid amount for each item')),);
-        setState(() {}); // Чтобы обновить подсветку
+        setState(() {});
         return;
       }
     }
@@ -138,19 +153,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           amount: double.parse(_movementAmountController.text),
           date: _selectedDate,
           category: 'Transfer',
-          description: 'Transfer from \\${_accountFromController.text.isEmpty ? 'Unknown' : _accountFromController.text} to \\${_accountToController.text.isEmpty ? 'Unknown' : _accountToController.text}',
+          description: 'Transfer from ${_fromAccount!} to ${_toAccount!}',
           merchant: 'Transfer',
         );
       } else {
         final transactionEntries = _items.where((item) {
-          // Только если amount валиден
           return item.amountController.text.isNotEmpty && double.tryParse(item.amountController.text) != null;
         }).map((item) {
           double parsedAmount = 0.0;
           try {
             parsedAmount = double.parse(item.amountController.text);
           } catch (e) {
-            debugPrint('[_saveTransaction] ERROR: failed to parse amount for item: \\${item.amountController.text}, error: \\${e.toString()}');
+            debugPrint('[_saveTransaction] ERROR: failed to parse amount for item: ${item.amountController.text}, error: ${e.toString()}');
             parsedAmount = 0.0;
           }
           return TransactionEntry(
@@ -171,7 +185,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         String merchant = _descriptionController.text.isNotEmpty 
             ? _descriptionController.text 
             : (_items.isNotEmpty ? _items.first.nameController.text : 'Unknown');
-        debugPrint('[_saveTransaction] Posting income/expense transaction, entries: \\${transactionEntries.length}');
+        debugPrint('[_saveTransaction] Posting income/expense transaction, entries: ${transactionEntries.length}');
         await ApiService.postTransaction(
           type: _selectedType,
           amount: _totalAmount,
@@ -193,10 +207,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
-      debugPrint('[_saveTransaction] Error: \\${e.toString()}');
+      debugPrint('[_saveTransaction] Error: ${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: \\${e.toString()}'), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
@@ -205,263 +219,269 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
+  Widget _buildAccountSelector({
+    required String title,
+    required String? selectedAccount,
+    required ValueChanged<String?> onAccountSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8.0,
+          children: _accounts.map((account) {
+            return ChoiceChip(
+              label: Text(account),
+              selected: selectedAccount == account,
+              onSelected: (selected) {
+                onAccountSelected(selected ? account : null);
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        top: 24,
-        left: 16,
-        right: 16,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Swipe indicator
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Text('New transaction', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
-            const SizedBox(height: 32),
-            SegmentedButton<TransactionType>(
-              segments: const [
-                ButtonSegment<TransactionType>(value: TransactionType.income, label: Text('Income'), icon: Icon(Icons.arrow_upward)),
-                ButtonSegment<TransactionType>(value: TransactionType.expense, label: Text('Expense'), icon: Icon(Icons.arrow_downward)),
-                ButtonSegment<TransactionType>(value: TransactionType.movement, label: Text('Movement'), icon: Icon(Icons.swap_horiz)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Swipe indicator
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text('New transaction', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+                const SizedBox(height: 32),
+                SegmentedButton<TransactionType>(
+                  segments: const [
+                    ButtonSegment<TransactionType>(value: TransactionType.income, label: Text('Income'), icon: Icon(Icons.arrow_upward)),
+                    ButtonSegment<TransactionType>(value: TransactionType.expense, label: Text('Expense'), icon: Icon(Icons.arrow_downward)),
+                    ButtonSegment<TransactionType>(value: TransactionType.movement, label: Text('Movement'), icon: Icon(Icons.swap_horiz)),
+                  ],
+                  selected: {_selectedType},
+                  onSelectionChanged: (Set<TransactionType> selected) {
+                    setState(() {
+                      _selectedType = selected.first;
+                      _fromAccount = null;
+                      _toAccount = null;
+                      _items = [_TransactionItem()];
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
               ],
-              selected: {_selectedType},
-              onSelectionChanged: (Set<TransactionType> selected) {
-                setState(() { _selectedType = selected.first; });
-              },
             ),
-            const SizedBox(height: 24),
-            // Account field
-            if (_selectedType == TransactionType.movement) ...[
-              TextField(
-                controller: _accountFromController,
-                decoration: const InputDecoration(
-                  labelText: 'From account',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _accountToController,
-                decoration: const InputDecoration(
-                  labelText: 'To account',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Amount field for transfer
-              TextField(
-                controller: _movementAmountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ] else ...[
-              TextField(
-                controller: _accountFromController,
-                decoration: InputDecoration(
-                  labelText: _selectedType == TransactionType.income ? 'To account' : 'From account',
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Items section and total amount only for income/expense
-              Text('Items', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _items.length,
-                itemBuilder: (context, i) {
-                  final item = _items[i];
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Первая строка: Name и Amount
-                            Row(
+          ),
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Account fields / Items
+                  if (_selectedType == TransactionType.movement) ...[
+                    _buildAccountSelector(
+                      title: 'From Account',
+                      selectedAccount: _fromAccount,
+                      onAccountSelected: (account) => setState(() => _fromAccount = account),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildAccountSelector(
+                      title: 'To Account',
+                      selectedAccount: _toAccount,
+                      onAccountSelected: (account) => setState(() => _toAccount = account),
+                    ),
+                    const SizedBox(height: 24),
+                    // Amount field for transfer
+                    TextField(
+                      controller: _movementAmountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Amount',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ] else ...[
+                    if (_selectedType == TransactionType.income)
+                      _buildAccountSelector(
+                        title: 'To Account',
+                        selectedAccount: _toAccount,
+                        onAccountSelected: (account) => setState(() => _toAccount = account),
+                      )
+                    else // Expense
+                      _buildAccountSelector(
+                        title: 'From Account',
+                        selectedAccount: _fromAccount,
+                        onAccountSelected: (account) => setState(() => _fromAccount = account),
+                      ),
+                    const SizedBox(height: 24),
+                    // Items section and total amount only for income/expense
+                    Text('Items', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _items.length,
+                      itemBuilder: (context, i) {
+                        final item = _items[i];
+                        final amountValue = double.tryParse(item.amountController.text);
+                        final hasError = item.amountController.text.isNotEmpty && (amountValue == null || amountValue <= 0);
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey[200]!),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // Name (60% ширины)
+                                // Категория
+                                InkWell(
+                                  onTap: () => _selectCategory(context, item),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: item.selectedCategoryId.isEmpty
+                                        ? Colors.grey[200]
+                                        : Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                    child: Icon(
+                                      getCategoryIcon(item.categoryController.text),
+                                      color: item.selectedCategoryId.isEmpty
+                                          ? Colors.grey
+                                          : Theme.of(context).colorScheme.primary,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Название
                                 Expanded(
                                   flex: 3,
                                   child: TextField(
                                     controller: item.nameController,
                                     decoration: const InputDecoration(
-                                      labelText: 'Name',
-                                      border: OutlineInputBorder(),
+                                      hintText: 'Описание',
                                       isDense: true,
-                                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                      border: OutlineInputBorder(),
+                                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // Amount (40% ширины)
-                                Expanded(
-                                  flex: 2,
+                                // Сумма
+                                SizedBox(
+                                  width: 90,
                                   child: TextField(
                                     controller: item.amountController,
-                                    keyboardType: TextInputType.number,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    onChanged: (_) => setState(() {}),
                                     decoration: InputDecoration(
-                                      labelText: 'Amount',
-                                      border: const OutlineInputBorder(),
+                                      hintText: '0.00',
                                       isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                                      labelStyle: TextStyle(
-                                        color: (item.amountController.text.isEmpty || double.tryParse(item.amountController.text) == null)
-                                            ? Colors.red
-                                            : null,
-                                      ),
+                                      border: const OutlineInputBorder(),
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                      labelStyle: TextStyle(color: hasError ? Theme.of(context).colorScheme.error : null),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // Вторая строка: Category и кнопка удаления
-                            Row(
-                              children: [
-                                // Category как иконка + название
-                                Expanded(
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(6),
-                                    onTap: () => _selectCategory(context, item),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 20,
-                                            height: 20,
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[100],
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: item.selectedCategoryId.isNotEmpty
-                                                ? Icon(
-                                                    getCategoryIcon(item.categoryController.text),
-                                                    size: 14,
-                                                    color: Theme.of(context).colorScheme.primary,
-                                                  )
-                                                : const Icon(Icons.category, size: 14, color: Colors.grey),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              item.categoryController.text.isEmpty
-                                                  ? 'Select category'
-                                                  : item.categoryController.text,
-                                              style: TextStyle(
-                                                color: item.categoryController.text.isEmpty
-                                                    ? Colors.grey[600]
-                                                    : null,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ),
-                                          const Icon(Icons.arrow_drop_down, color: Colors.grey, size: 20),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
                                 // Кнопка удаления
                                 if (_items.length > 1)
                                   IconButton(
-                                    icon: Icon(Icons.delete_outline, color: Colors.grey[500], size: 20),
+                                    icon: Icon(Icons.remove_circle_outline, color: Colors.red.shade300),
                                     onPressed: () => _removeItem(i),
-                                    tooltip: 'Delete',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                    tooltip: 'Удалить',
                                   ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                        );
+                      },
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _addItem,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add item'),
                       ),
-                      // Тонкая линия между items
-                      if (i < _items.length - 1)
-                        Divider(
-                          height: 1,
-                          thickness: 0.5,
-                          color: Colors.grey[300],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total:',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                    ],
-                  );
-                },
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _addItem,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add item'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Total:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        Text(
+                          _totalAmount.toStringAsFixed(2),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedType == TransactionType.income ? Colors.green.shade700 : Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  // Common fields
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: _selectedType == TransactionType.movement ? 'Description (optional)' : 'Merchant / Store (optional)',
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
-                  Text(
-                    _totalAmount == 0 ? '0' : _totalAmount.toStringAsFixed(2),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 24),
+                  // Date selection
+                  InkWell(
+                    onTap: () => _selectDate(context),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Date',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text('${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}'),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-            ],
-            // Description input field
-            if (_selectedType == TransactionType.movement)
-              ...[
-                TextField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-            // Date selection
-            InkWell(
-              onTap: () => _selectDate(context),
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                child: Text('${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}'),
-              ),
             ),
-            const SizedBox(height: 32),
-            FilledButton(
+          ),
+          // Footer
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton(
               onPressed: _isLoading ? null : _saveTransaction,
               child: _isLoading
                   ? const SizedBox(
@@ -471,9 +491,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     )
                   : const Text('Save'),
             ),
-            const SizedBox(height: 16),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
