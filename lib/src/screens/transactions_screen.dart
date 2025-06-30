@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../widgets/transaction_tile.dart';
-import '../widgets/compact_filters.dart';
 import '../models/filter_option.dart';
 import '../services/api_service.dart';
 import 'add_transaction_screen.dart';

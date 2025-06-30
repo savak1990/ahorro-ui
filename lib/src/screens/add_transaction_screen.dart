@@ -389,7 +389,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   child: TextField(
                                     controller: item.nameController,
                                     decoration: const InputDecoration(
-                                      hintText: 'Описание',
+                                      hintText: 'Description',
                                       isDense: true,
                                       border: OutlineInputBorder(),
                                       contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
