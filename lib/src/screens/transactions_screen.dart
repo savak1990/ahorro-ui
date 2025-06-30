@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/transaction_tile.dart';
+import '../widgets/compact_filters.dart';
+import '../models/filter_option.dart';
 import '../services/api_service.dart';
 import 'add_transaction_screen.dart';
 
@@ -12,6 +14,7 @@ class TransactionsScreen extends StatefulWidget {
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
   late Future<List<TransactionDisplayData>> _transactionsFuture;
+  List<TransactionDisplayData> _allTransactions = [];
   
   // Date filters
   int? _selectedYear;
@@ -20,10 +23,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   DateTime? _endDate;
   String _dateFilterType = 'month'; // 'month' or 'period'
   
-  // Other parameter filters
-  String? _selectedAccount;
-  String? _selectedType;
-  String? _selectedCategory;
+  // New chip-based filters
+  Set<String> _selectedTypes = {};
+  Set<String> _selectedAccounts = {};
+  Set<String> _selectedCategories = {};
   
   // Available values for filters
   Set<int> _availableYears = {};
@@ -69,13 +72,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         
         final firstEntry = group.first;
         
-        // Check filter only by month (remove type filter)
-        final entryDate = firstEntry.transactedAt;
-        if (entryDate.year != filterMonth.year || entryDate.month != filterMonth.month) {
-          debugPrint('Skipping transaction from different month: ${entryDate.year}-${entryDate.month}');
-          continue;
-        }
-
         // Process categories
         final categories = group.map((e) => e.categoryName).toSet();
         final categoryName = categories.length > 1 ? 'Multiple Categories' : categories.first;
@@ -85,8 +81,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
         // Determine category icon
         IconData categoryIcon = _getCategoryIcon(categoryName);
-
-        debugPrint('Adding transaction: type=${firstEntry.type}, amount=$totalAmount, category=$categoryName, date=${entryDate.day}');
 
         displayTransactions.add(TransactionDisplayData(
           id: firstEntry.transactionId,
@@ -101,14 +95,32 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         ));
       }
 
-      // Sort by date (newest first)
-      displayTransactions.sort((a, b) => b.date.compareTo(a.date));
+      // Сохраняем все транзакции для фильтров
+      _allTransactions = displayTransactions;
+      // Формируем фильтры по годам и месяцам на основе всех транзакций
+      _updateAvailableFilterValues(_allTransactions);
 
-      // Update available values for filters
-      _updateAvailableFilterValues(displayTransactions);
+      // Применяем фильтры по дате только если они активны
+      final filtered = displayTransactions.where((tx) {
+        // Если есть активные фильтры по дате, применяем их
+        if (_hasActiveDateFilters()) {
+          debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
+          if (_dateFilterType == 'month') {
+            if (_selectedYear != null && tx.date.year != _selectedYear) return false;
+            if (_selectedMonth != null && tx.date.month != _selectedMonth) return false;
+          } else if (_dateFilterType == 'period') {
+            if (_startDate != null && tx.date.isBefore(_startDate!)) return false;
+            if (_endDate != null && tx.date.isAfter(_endDate!)) return false;
+          }
+        } else {
+          debugPrint('No active date filters, showing all transactions');
+        }
+        // Если нет активных фильтров по дате, показываем все транзакции
+        return true;
+      }).toList();
 
-      debugPrint('Final display transactions: ${displayTransactions.length}');
-      return displayTransactions;
+      debugPrint('Final display transactions: ${filtered.length}');
+      return filtered;
     } catch (e) {
       debugPrint('Error fetching transactions: $e');
       return [];
@@ -125,23 +137,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   List<TransactionDisplayData> _applyFilters(List<TransactionDisplayData> transactions) {
     return transactions.where((transaction) {
-      // Date filter
-      if (_dateFilterType == 'month') {
-        if (_selectedYear != null && transaction.date.year != _selectedYear) return false;
-        if (_selectedMonth != null && transaction.date.month != _selectedMonth) return false;
-      } else if (_dateFilterType == 'period') {
-        if (_startDate != null && transaction.date.isBefore(_startDate!)) return false;
-        if (_endDate != null && transaction.date.isAfter(_endDate!)) return false;
-      }
+      // Type filter
+      if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(transaction.type)) return false;
       
       // Account filter
-      if (_selectedAccount != null && transaction.account != _selectedAccount) return false;
-      
-      // Type filter
-      if (_selectedType != null && transaction.type != _selectedType) return false;
+      if (_selectedAccounts.isNotEmpty && !_selectedAccounts.contains(transaction.account)) return false;
       
       // Category filter
-      if (_selectedCategory != null && transaction.category != _selectedCategory) return false;
+      if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(transaction.category)) return false;
       
       return true;
     }).toList();
@@ -306,92 +309,46 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  void _showOtherFiltersDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Other Filters'),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Account filter
-                DropdownButtonFormField<String>(
-                  value: _selectedAccount,
-                  decoration: const InputDecoration(labelText: 'Account'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('All Accounts')),
-                    ..._availableAccounts.map((account) => DropdownMenuItem(
-                      value: account,
-                      child: Text(account),
-                    )),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedAccount = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 8),
-                
-                // Type filter
-                DropdownButtonFormField<String>(
-                  value: _selectedType,
-                  decoration: const InputDecoration(labelText: 'Type'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('All Types')),
-                    ..._availableTypes.map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    )),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedType = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 8),
-                
-                // Category filter
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('All Categories')),
-                    ..._availableCategories.map((category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    )),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _refreshTransactions();
-            },
-            child: const Text('Apply'),
-          ),
-        ],
-      ),
-    );
+  void _onTypeFilterChanged(String value, bool selected) {
+    setState(() {
+      if (value == 'all') {
+        _selectedTypes.clear();
+      } else {
+        if (selected) {
+          _selectedTypes.add(value);
+        } else {
+          _selectedTypes.remove(value);
+        }
+      }
+    });
+  }
+
+  void _onAccountFilterChanged(String value, bool selected) {
+    setState(() {
+      if (value == 'all') {
+        _selectedAccounts.clear();
+      } else {
+        if (selected) {
+          _selectedAccounts.add(value);
+        } else {
+          _selectedAccounts.remove(value);
+        }
+      }
+    });
+  }
+
+  void _onCategoryFilterChanged(String value, bool selected) {
+    setState(() {
+      if (value == 'all') {
+        _selectedCategories.clear();
+      } else {
+        if (selected) {
+          _selectedCategories.add(value);
+        } else {
+          _selectedCategories.remove(value);
+        }
+      }
+    });
   }
 
   void _clearAllFilters() {
@@ -400,9 +357,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       _selectedMonth = null;
       _startDate = null;
       _endDate = null;
-      _selectedAccount = null;
-      _selectedType = null;
-      _selectedCategory = null;
+      _selectedTypes.clear();
+      _selectedAccounts.clear();
+      _selectedCategories.clear();
     });
     _refreshTransactions();
   }
@@ -436,6 +393,95 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     });
   }
 
+  List<FilterOption> _getTypeFilterOptions() {
+    final options = <FilterOption>[
+      const FilterOption(
+        value: 'all',
+        label: 'All Types',
+        isAllOption: true,
+      ),
+    ];
+
+    for (final type in _availableTypes) {
+      final icon = type == 'income' ? Icons.trending_up : 
+                   type == 'expense' ? Icons.trending_down : 
+                   Icons.swap_horiz;
+      final color = type == 'income' ? Colors.green : 
+                    type == 'expense' ? Colors.red : 
+                    Colors.blue;
+      
+      options.add(FilterOption(
+        value: type,
+        label: type.capitalize(),
+        icon: icon,
+        color: color,
+        count: _getTransactionCountByType(type),
+      ));
+    }
+
+    return options;
+  }
+
+  List<FilterOption> _getAccountFilterOptions() {
+    final options = <FilterOption>[
+      const FilterOption(
+        value: 'all',
+        label: 'All Accounts',
+        isAllOption: true,
+      ),
+    ];
+
+    for (final account in _availableAccounts) {
+      options.add(FilterOption(
+        value: account,
+        label: account,
+        icon: Icons.account_balance,
+        count: _getTransactionCountByAccount(account),
+      ));
+    }
+
+    return options;
+  }
+
+  List<FilterOption> _getCategoryFilterOptions() {
+    final options = <FilterOption>[
+      const FilterOption(
+        value: 'all',
+        label: 'All Categories',
+        isAllOption: true,
+      ),
+    ];
+
+    for (final category in _availableCategories) {
+      options.add(FilterOption(
+        value: category,
+        label: category,
+        icon: _getCategoryIcon(category),
+        count: _getTransactionCountByCategory(category),
+      ));
+    }
+
+    return options;
+  }
+
+  int _getTransactionCountByType(String type) {
+    // Пока возвращаем 0, так как подсчет требует доступа к текущим данным
+    // В будущем можно добавить кэширование результатов
+    return 0;
+  }
+
+  int _getTransactionCountByAccount(String account) {
+    // Пока возвращаем 0, так как подсчет требует доступа к текущим данным
+    // В будущем можно добавить кэширование результатов
+    return 0;
+  }
+
+  int _getTransactionCountByCategory(String category) {
+    // Пока возвращаем 0, так как подсчет требует доступа к текущим данным
+    // В будущем можно добавить кэширование результатов
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -459,17 +505,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              Icons.filter_list,
+              Icons.calendar_today,
               color: colorScheme.onSurfaceVariant,
             ),
             onPressed: _showDateFilterDialog,
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.tune,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            onPressed: _showOtherFiltersDialog,
           ),
           IconButton(
             icon: Icon(
@@ -482,29 +521,43 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ),
       body: Column(
         children: [
-          // Show active filters
-          if (_hasActiveFilters()) ...[
+          // Compact filters section
+          CompactFilters(
+            typeOptions: _getTypeFilterOptions(),
+            accountOptions: _getAccountFilterOptions(),
+            categoryOptions: _getCategoryFilterOptions(),
+            selectedTypes: _selectedTypes,
+            selectedAccounts: _selectedAccounts,
+            selectedCategories: _selectedCategories,
+            onTypeFilterChanged: _onTypeFilterChanged,
+            onAccountFilterChanged: _onAccountFilterChanged,
+            onCategoryFilterChanged: _onCategoryFilterChanged,
+            onClearAll: _clearAllFilters,
+          ),
+          
+          // Show active filters summary (only for date filters)
+          if (_hasActiveDateFilters()) ...[
             Container(
               padding: const EdgeInsets.all(12),
               color: colorScheme.surfaceContainerHighest,
               child: Row(
                 children: [
                   Icon(
-                    Icons.filter_alt,
+                    Icons.calendar_today,
                     size: 16,
                     color: colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _getActiveFiltersText(),
+                      _getActiveDateFiltersText(),
                       style: textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
                   TextButton(
-                    onPressed: _clearAllFilters,
+                    onPressed: _clearDateFilters,
                     child: Text(
                       'Clear',
                       style: textTheme.bodySmall?.copyWith(
@@ -516,7 +569,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ),
             ),
           ],
+          
           const SizedBox(height: 8),
+          
+          // Transactions list
           Expanded(
             child: FutureBuilder<List<TransactionDisplayData>>(
               future: _transactionsFuture,
@@ -673,16 +729,29 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   bool _hasActiveFilters() {
-    return _selectedYear != null ||
-           _selectedMonth != null ||
-           _startDate != null ||
-           _endDate != null ||
-           _selectedAccount != null ||
-           _selectedType != null ||
-           _selectedCategory != null;
+    return _selectedTypes.isNotEmpty ||
+           _selectedAccounts.isNotEmpty ||
+           _selectedCategories.isNotEmpty;
   }
 
-  String _getActiveFiltersText() {
+  String _getMonthName(DateTime date) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[date.month - 1];
+  }
+
+  bool _hasActiveDateFilters() {
+    final hasActive = _selectedYear != null ||
+           _selectedMonth != null ||
+           _startDate != null ||
+           _endDate != null;
+    debugPrint('_hasActiveDateFilters: year=$_selectedYear, month=$_selectedMonth, start=$_startDate, end=$_endDate, result=$hasActive');
+    return hasActive;
+  }
+
+  String _getActiveDateFiltersText() {
     final filters = <String>[];
     
     if (_dateFilterType == 'month') {
@@ -693,19 +762,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       if (_endDate != null) filters.add('To: ${_endDate.toString().split(' ')[0]}');
     }
     
-    if (_selectedAccount != null) filters.add('Account: $_selectedAccount');
-    if (_selectedType != null) filters.add('Type: $_selectedType');
-    if (_selectedCategory != null) filters.add('Category: $_selectedCategory');
-    
     return filters.join(', ');
   }
 
-  String _getMonthName(DateTime date) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return months[date.month - 1];
+  void _clearDateFilters() {
+    setState(() {
+      _selectedYear = null;
+      _selectedMonth = null;
+      _startDate = null;
+      _endDate = null;
+    });
+    _refreshTransactions();
+  }
+}
+
+// Extension for string capitalization
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
 
