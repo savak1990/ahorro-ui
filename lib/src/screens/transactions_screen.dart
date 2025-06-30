@@ -4,6 +4,8 @@ import '../widgets/compact_filters.dart';
 import '../models/filter_option.dart';
 import '../services/api_service.dart';
 import 'add_transaction_screen.dart';
+import '../widgets/date_filter_bottom_sheet.dart';
+import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -180,133 +182,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return grouped;
   }
 
-  void _showDateFilterDialog() {
-    showDialog(
+  void _showDateFilterBottomSheet() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Date Filter'),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Filter type
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'month', label: Text('Month')),
-                    ButtonSegment(value: 'period', label: Text('Period')),
-                  ],
-                  selected: {_dateFilterType},
-                  onSelectionChanged: (Set<String> selected) {
-                    setState(() {
-                      _dateFilterType = selected.first;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                if (_dateFilterType == 'month') ...[
-                  // Year selection
-                  DropdownButtonFormField<int>(
-                    value: _selectedYear,
-                    decoration: const InputDecoration(labelText: 'Year'),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('All Years')),
-                      ..._availableYears.map((year) => DropdownMenuItem(
-                        value: year,
-                        child: Text(year.toString()),
-                      )),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedYear = value;
-                        if (value != null) {
-                          // Update available months for selected year
-                          _availableMonths = _availableMonths.where((month) {
-                            // Here you can add year filtering logic if needed
-                            return true;
-                          }).toSet();
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Month selection
-                  DropdownButtonFormField<int>(
-                    value: _selectedMonth,
-                    decoration: const InputDecoration(labelText: 'Month'),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('All Months')),
-                      ..._availableMonths.map((month) => DropdownMenuItem(
-                        value: month,
-                        child: Text(_getMonthName(DateTime(2024, month))),
-                      )),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedMonth = value;
-                      });
-                    },
-                  ),
-                ] else ...[
-                  // Period selection
-                  ListTile(
-                    title: const Text('Start Date'),
-                    subtitle: Text(_startDate?.toString().split(' ')[0] ?? 'Not selected'),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _startDate ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now(),
-                      );
-                      if (date != null) {
-                        setState(() {
-                          _startDate = date;
-                        });
-                      }
-                    },
-                  ),
-                  ListTile(
-                    title: const Text('End Date'),
-                    subtitle: Text(_endDate?.toString().split(' ')[0] ?? 'Not selected'),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _endDate ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now(),
-                      );
-                      if (date != null) {
-                        setState(() {
-                          _endDate = date;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _refreshTransactions();
-            },
-            child: const Text('Apply'),
-          ),
-        ],
+      isScrollControlled: true,
+      builder: (context) => DateFilterBottomSheet(
+        initialFilterType: _dateFilterType,
+        initialYear: _selectedYear,
+        initialMonth: _selectedMonth,
+        initialStartDate: _startDate,
+        initialEndDate: _endDate,
+        availableYears: _availableYears,
       ),
     );
+
+    if (result != null) {
+      setState(() {
+        _dateFilterType = result['filterType'];
+        _selectedYear = result['year'];
+        _selectedMonth = result['month'];
+        _startDate = result['startDate'];
+        _endDate = result['endDate'];
+      });
+      _refreshTransactions();
+    }
   }
 
   void _onTypeFilterChanged(String value, bool selected) {
@@ -482,6 +381,29 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return 0;
   }
 
+  void _showFiltersBottomSheet() async {
+    final result = await showModalBottomSheet<Map<String, Set<String>>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => FiltersBottomSheet(
+        typeOptions: _getTypeFilterOptions(),
+        accountOptions: _getAccountFilterOptions(),
+        categoryOptions: _getCategoryFilterOptions(),
+        initialSelectedTypes: _selectedTypes,
+        initialSelectedAccounts: _selectedAccounts,
+        initialSelectedCategories: _selectedCategories,
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedTypes = result['types'] ?? {};
+        _selectedAccounts = result['accounts'] ?? {};
+        _selectedCategories = result['categories'] ?? {};
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -505,10 +427,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         actions: [
           IconButton(
             icon: Icon(
+              Icons.tune,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            onPressed: _showFiltersBottomSheet,
+          ),
+          IconButton(
+            icon: Icon(
               Icons.calendar_today,
               color: colorScheme.onSurfaceVariant,
             ),
-            onPressed: _showDateFilterDialog,
+            onPressed: _showDateFilterBottomSheet,
           ),
           IconButton(
             icon: Icon(
@@ -521,54 +450,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ),
       body: Column(
         children: [
-          // Compact filters section
-          CompactFilters(
-            typeOptions: _getTypeFilterOptions(),
-            accountOptions: _getAccountFilterOptions(),
-            categoryOptions: _getCategoryFilterOptions(),
-            selectedTypes: _selectedTypes,
-            selectedAccounts: _selectedAccounts,
-            selectedCategories: _selectedCategories,
-            onTypeFilterChanged: _onTypeFilterChanged,
-            onAccountFilterChanged: _onAccountFilterChanged,
-            onCategoryFilterChanged: _onCategoryFilterChanged,
-            onClearAll: _clearAllFilters,
-          ),
-          
-          // Show active filters summary (only for date filters)
-          if (_hasActiveDateFilters()) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: colorScheme.surfaceContainerHighest,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 16,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _getActiveDateFiltersText(),
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _clearDateFilters,
-                    child: Text(
-                      'Clear',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          // Отображаем активные фильтры
+          if (_hasActiveNonDateFilters()) _buildActiveFiltersSummary(),
+          if (_hasActiveDateFilters()) _buildActiveDateFiltersSummary(),
           
           const SizedBox(height: 8),
           
@@ -758,8 +642,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       if (_selectedYear != null) filters.add('Year: $_selectedYear');
       if (_selectedMonth != null) filters.add('Month: ${_getMonthName(DateTime(2024, _selectedMonth!))}');
     } else if (_dateFilterType == 'period') {
-      if (_startDate != null) filters.add('From: ${_startDate.toString().split(' ')[0]}');
-      if (_endDate != null) filters.add('To: ${_endDate.toString().split(' ')[0]}');
+      if (_startDate != null) filters.add('Start: ${_startDate.toString().split(' ')[0]}');
+      if (_endDate != null) filters.add('End: ${_endDate.toString().split(' ')[0]}');
     }
     
     return filters.join(', ');
@@ -773,6 +657,54 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       _endDate = null;
     });
     _refreshTransactions();
+  }
+
+  bool _hasActiveNonDateFilters() {
+    return _selectedTypes.isNotEmpty ||
+           _selectedAccounts.isNotEmpty ||
+           _selectedCategories.isNotEmpty;
+  }
+
+  Widget _buildActiveFiltersSummary() {
+    // Этот метод будет создавать виджет для отображения активных фильтров
+    final filters = <String>[];
+    if (_selectedTypes.isNotEmpty) filters.add('Type: ${_selectedTypes.map((t) => t.capitalize()).join(', ')}');
+    if (_selectedAccounts.isNotEmpty) filters.add('Balance: ${_selectedAccounts.join(', ')}');
+    if (_selectedCategories.isNotEmpty) filters.add('Category: ${_selectedCategories.join(', ')}');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+      child: Row(
+        children: [
+          Icon(Icons.filter_list, size: 16),
+          const SizedBox(width: 8),
+          Expanded(child: Text(filters.join(' • '), overflow: TextOverflow.ellipsis)),
+          TextButton(
+            onPressed: _clearAllFilters,
+            child: Text('Clear'),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveDateFiltersSummary() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today, size: 16),
+          const SizedBox(width: 8),
+          Expanded(child: Text(_getActiveDateFiltersText())),
+          TextButton(
+            onPressed: _clearDateFilters,
+            child: Text('Clear'),
+          )
+        ],
+      ),
+    );
   }
 }
 
