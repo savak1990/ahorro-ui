@@ -6,6 +6,7 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 import '../config/app_config.dart';
 import '../models/transaction_type.dart';
+import '../models/balance.dart';
 
 class ApiService {
   static Future<void> postTransaction({
@@ -210,6 +211,43 @@ class ApiService {
       );
     } on Exception catch (e) {
       debugPrint('Error getting categories: $e');
+      rethrow;
+    }
+  }
+
+  static Future<List<Balance>> getBalances() async {
+    try {
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+      final currentUser = await Amplify.Auth.getCurrentUser();
+      final userId = currentUser.userId;
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse('${AppConfig.baseUrl}/balances?userId=$userId');
+      final headers = {
+        'Authorization': 'Bearer $token',
+      };
+
+      debugPrint('GET Balances Request URL: $url');
+      debugPrint('GET Balances Request Headers: $headers');
+
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('GET Balances Response Status Code: ${response.statusCode}');
+      debugPrint('GET Balances Response Body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get balances. Status code: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      final balances = data['balances'] as List? ?? [];
+      return balances.map((e) => Balance.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint('Error getting balances: $e');
       rethrow;
     }
   }

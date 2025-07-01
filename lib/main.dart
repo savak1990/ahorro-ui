@@ -7,6 +7,8 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'src/providers/balances_provider.dart';
 
 import 'amplifyconfiguration.dart' as stable_config;
 import 'amplifyconfiguration_prod.dart' as prod_config;
@@ -15,7 +17,14 @@ import 'src/constants/app_colors.dart';
 import 'src/constants/app_strings.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BalancesProvider()..loadBalances()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {

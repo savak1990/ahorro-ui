@@ -2,6 +2,9 @@ import 'package:ahorro_ui/src/models/transaction_type.dart';
 import 'package:ahorro_ui/src/services/api_service.dart';
 import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/balance.dart';
+import '../providers/balances_provider.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -17,9 +20,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isLoading = false;
 
   // Accounts
-  String? _fromAccount;
-  String? _toAccount;
-  final List<String> _accounts = ['Cash', 'Bank Account', 'Savings', 'Credit Card'];
+  String? _fromAccountId;
+  String? _toAccountId;
 
   // Dynamic items
   List<_TransactionItem> _items = [
@@ -92,7 +94,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       const SnackBar(content: Text('Saving transaction...'), duration: Duration(seconds: 1)),
     );
     if (_selectedType == TransactionType.movement) {
-      if (_fromAccount == null || _toAccount == null) {
+      if (_fromAccountId == null || _toAccountId == null) {
         debugPrint('[_saveTransaction] Accounts for movement are not selected');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select both accounts for movement')),);
@@ -112,11 +114,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
     } else {
-      if (_selectedType == TransactionType.expense && _fromAccount == null) {
+      if (_selectedType == TransactionType.expense && _fromAccountId == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an account')));
         return;
       }
-      if (_selectedType == TransactionType.income && _toAccount == null) {
+      if (_selectedType == TransactionType.income && _toAccountId == null) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an account')));
         return;
       }
@@ -153,7 +155,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           amount: double.parse(_movementAmountController.text),
           date: _selectedDate,
           category: 'Transfer',
-          description: 'Transfer from ${_fromAccount!} to ${_toAccount!}',
+          description: 'Transfer from ${_fromAccountId!} to ${_toAccountId!}',
           merchant: 'Transfer',
         );
       } else {
@@ -221,26 +223,51 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildAccountSelector({
     required String title,
-    required String? selectedAccount,
+    required String? selectedAccountId,
     required ValueChanged<String?> onAccountSelected,
+    String? excludeAccountId,
   }) {
+    final balancesProvider = Provider.of<BalancesProvider>(context);
+    final balances = balancesProvider.balances;
+    final isLoading = balancesProvider.isLoading;
+    final error = balancesProvider.error;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8.0,
-          children: _accounts.map((account) {
-            return ChoiceChip(
-              label: Text(account),
-              selected: selectedAccount == account,
-              onSelected: (selected) {
-                onAccountSelected(selected ? account : null);
-              },
-            );
-          }).toList(),
-        ),
+        if (isLoading)
+          const CircularProgressIndicator()
+        else if (error != null)
+          Row(
+            children: [
+              const Icon(Icons.error, color: Colors.red),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Ошибка загрузки балансов')),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: balancesProvider.loadBalances,
+              ),
+            ],
+          )
+        else if (balances.isEmpty)
+          const Text('Нет доступных счетов')
+        else
+          Wrap(
+            spacing: 8.0,
+            children: balances
+                .where((b) => excludeAccountId == null || b.id != excludeAccountId)
+                .map((balance) {
+              return ChoiceChip(
+                label: Text(balance.title),
+                selected: selectedAccountId == balance.id,
+                onSelected: (selected) {
+                  onAccountSelected(selected ? balance.id : null);
+                },
+              );
+            }).toList(),
+          ),
       ],
     );
   }
@@ -286,8 +313,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   onSelectionChanged: (Set<TransactionType> selected) {
                     setState(() {
                       _selectedType = selected.first;
-                      _fromAccount = null;
-                      _toAccount = null;
+                      _fromAccountId = null;
+                      _toAccountId = null;
                       _items = [_TransactionItem()];
                     });
                   },
@@ -307,14 +334,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   if (_selectedType == TransactionType.movement) ...[
                     _buildAccountSelector(
                       title: 'From Account',
-                      selectedAccount: _fromAccount,
-                      onAccountSelected: (account) => setState(() => _fromAccount = account),
+                      selectedAccountId: _fromAccountId,
+                      onAccountSelected: (id) => setState(() => _fromAccountId = id),
+                      excludeAccountId: _selectedType == TransactionType.movement ? _toAccountId : null,
                     ),
                     const SizedBox(height: 16),
                     _buildAccountSelector(
                       title: 'To Account',
-                      selectedAccount: _toAccount,
-                      onAccountSelected: (account) => setState(() => _toAccount = account),
+                      selectedAccountId: _toAccountId,
+                      onAccountSelected: (id) => setState(() => _toAccountId = id),
                     ),
                     const SizedBox(height: 24),
                     // Amount field for transfer
@@ -330,14 +358,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     if (_selectedType == TransactionType.income)
                       _buildAccountSelector(
                         title: 'To Account',
-                        selectedAccount: _toAccount,
-                        onAccountSelected: (account) => setState(() => _toAccount = account),
+                        selectedAccountId: _toAccountId,
+                        onAccountSelected: (id) => setState(() => _toAccountId = id),
                       )
                     else // Expense
                       _buildAccountSelector(
                         title: 'From Account',
-                        selectedAccount: _fromAccount,
-                        onAccountSelected: (account) => setState(() => _fromAccount = account),
+                        selectedAccountId: _fromAccountId,
+                        onAccountSelected: (id) => setState(() => _fromAccountId = id),
                       ),
                     const SizedBox(height: 24),
                     // Items section and total amount only for income/expense
