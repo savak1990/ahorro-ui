@@ -23,4 +23,30 @@ class BalancesProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  Future<void> createBalance({
+    required String userId,
+    required String groupId,
+    required String currency,
+    required String title,
+    String? description,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await ApiService.postBalance(
+        userId: userId,
+        groupId: groupId,
+        currency: currency,
+        title: title,
+        description: description,
+      );
+      await loadBalances(); // Ждём подтверждения от сервера
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 } 

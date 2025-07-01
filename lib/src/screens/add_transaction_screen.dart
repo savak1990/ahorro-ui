@@ -157,6 +157,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           category: 'Transfer',
           description: 'Transfer from ${_fromAccountId!} to ${_toAccountId!}',
           merchant: 'Transfer',
+          balanceId: _fromAccountId!,
         );
       } else {
         final transactionEntries = _items.where((item) {
@@ -198,6 +199,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           description: _descriptionController.text,
           merchant: merchant,
           transactionEntriesParam: transactionEntries,
+          balanceId: _selectedType == TransactionType.expense ? _fromAccountId! : _toAccountId!,
         );
       }
 

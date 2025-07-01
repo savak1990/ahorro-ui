@@ -14,6 +14,7 @@ class ApiService {
     required double amount,
     required DateTime date,
     required String category,
+    required String balanceId,
     String? description,
     String? merchant,
     List<TransactionEntry>? transactionEntriesParam,
@@ -48,7 +49,7 @@ class ApiService {
       final body = json.encode({
         'userId': userId,
         'groupId': '6a785a55-fced-4f13-af78-5c19a39c9abc', // Mocked value
-        'balanceId': '847ac10b-58cc-4372-a567-0e02b2c3d479', // Mocked value
+        'balanceId': balanceId,
         'type': type.name,
         'merchant': merchant ?? 'Unknown',
         'operationId': _generateOperationId(),
@@ -248,6 +249,53 @@ class ApiService {
       return balances.map((e) => Balance.fromJson(e)).toList();
     } catch (e) {
       debugPrint('Error getting balances: $e');
+      rethrow;
+    }
+  }
+
+  static Future<dynamic> postBalance({
+    required String userId,
+    required String groupId,
+    required String currency,
+    required String title,
+    String? description,
+  }) async {
+    try {
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse('${AppConfig.baseUrl}/balances');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+      final body = json.encode({
+        'userId': userId,
+        'groupId': groupId,
+        'currency': currency,
+        'title': title,
+        if (description != null && description.isNotEmpty) 'description': description,
+      });
+
+      debugPrint('POST Balance Request URL: $url');
+      debugPrint('POST Balance Request Headers: $headers');
+      debugPrint('POST Balance Request Body: $body');
+
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('POST Balance Response Status Code: ${response.statusCode}');
+      debugPrint('POST Balance Response Body: ${response.body}');
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Failed to create balance. Status code: ${response.statusCode}');
+      }
+      return json.decode(response.body);
+    } catch (e) {
+      debugPrint('Error creating balance: $e');
       rethrow;
     }
   }
