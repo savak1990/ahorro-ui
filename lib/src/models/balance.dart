@@ -7,9 +7,9 @@ class Balance {
 
   factory Balance.fromJson(Map<String, dynamic> json) {
     return Balance(
-      id: json['id'],
-      title: json['title'],
-      currency: json['currency'],
+      id: json['balanceId'] ?? json['id'] ?? '',
+      title: json['title'] ?? '',
+      currency: json['currency'] ?? '',
     );
   }
 } 
