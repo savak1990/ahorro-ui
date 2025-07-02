@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import 'add_transaction_screen.dart';
 import '../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
+import '../models/transaction_entry_data.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});

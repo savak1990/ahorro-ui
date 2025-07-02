@@ -3,10 +3,16 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import 'operation_id_service.dart';
 
 import '../config/app_config.dart';
 import '../models/transaction_type.dart';
 import '../models/balance.dart';
+import '../models/transaction_entry.dart';
+import '../models/transactions_response.dart';
+import '../models/transaction_entry_data.dart';
+import '../models/categories_response.dart';
+import '../models/category_data.dart';
 
 class ApiService {
   static Future<void> postTransaction({
@@ -52,7 +58,7 @@ class ApiService {
         'balanceId': balanceId,
         'type': type.name,
         'merchant': merchant ?? 'Unknown',
-        'operationId': _generateOperationId(),
+        'operationId': generateOperationId(),
         'approvedAt': date.toUtc().toIso8601String(),
         'transactedAt': date.toUtc().toIso8601String(),
         'transactionEntries': entries.map((e) => e.toJson()).toList(),
@@ -155,11 +161,6 @@ class ApiService {
       debugPrint('Error getting transactions: $e');
       rethrow;
     }
-  }
-
-  static String _generateOperationId() {
-    // Generate UUID for operationId
-    return '3fa85f64-5717-4562-b3fc-2c963f66afa6'; // Mocked value
   }
 
   static Future<CategoriesResponse> getCategories() async {
@@ -298,162 +299,5 @@ class ApiService {
       debugPrint('Error creating balance: $e');
       rethrow;
     }
-  }
-}
-
-class TransactionEntry {
-  final String description;
-  final double amount;
-  final String categoryId;
-
-  TransactionEntry({
-    required this.description,
-    required this.amount,
-    required this.categoryId,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'description': description,
-      'amount': (amount * 100).round().toDouble(), // Multiply by 100 for storage in cents
-      'categoryId': categoryId,
-    };
-  }
-}
-
-class TransactionsResponse {
-  final List<TransactionEntryData> transactionEntries;
-  final String? nextToken;
-
-  TransactionsResponse({
-    required this.transactionEntries,
-    this.nextToken,
-  });
-
-  factory TransactionsResponse.fromJson(Map<String, dynamic> json) {
-    final items = json['items'] as List? ?? [];
-    return TransactionsResponse(
-      transactionEntries: items
-          .map((entry) => TransactionEntryData.fromJson(entry))
-          .toList(),
-      nextToken: json['nextToken'],
-    );
-  }
-}
-
-class TransactionEntryData {
-  final String groupId;
-  final String userId;
-  final String balanceId;
-  final String transactionId;
-  final String transactionEntryId;
-  final String type;
-  final double amount;
-  final String balanceTitle;
-  final String balanceCurrency;
-  final String categoryName;
-  final String? categoryImageUrl;
-  final String merchantName;
-  final String? merchantImageUrl;
-  final String operationId;
-  final DateTime approvedAt;
-  final DateTime transactedAt;
-
-  TransactionEntryData({
-    required this.groupId,
-    required this.userId,
-    required this.balanceId,
-    required this.transactionId,
-    required this.transactionEntryId,
-    required this.type,
-    required this.amount,
-    required this.balanceTitle,
-    required this.balanceCurrency,
-    required this.categoryName,
-    this.categoryImageUrl,
-    required this.merchantName,
-    this.merchantImageUrl,
-    required this.operationId,
-    required this.approvedAt,
-    required this.transactedAt,
-  });
-
-  factory TransactionEntryData.fromJson(Map<String, dynamic> json) {
-    // Handle amount as string or number
-    final amountValue = json['amount'];
-    double amount;
-    if (amountValue is String) {
-      amount = double.tryParse(amountValue) ?? 0.0;
-    } else if (amountValue is num) {
-      amount = amountValue.toDouble();
-    } else {
-      amount = 0.0;
-    }
-    
-    return TransactionEntryData(
-      groupId: json['groupId'] ?? '',
-      userId: json['userId'] ?? '',
-      balanceId: json['balanceId'] ?? '',
-      transactionId: json['transactionId'] ?? '',
-      transactionEntryId: json['transactionEntryId'] ?? '',
-      type: json['type'] ?? '',
-      amount: amount / 100, // Divide by 100 for display in euros
-      balanceTitle: json['balanceTitle'] ?? '',
-      balanceCurrency: json['balanceCurrency'] ?? '',
-      categoryName: json['categoryName'] ?? '',
-      categoryImageUrl: json['categoryImageUrl'],
-      merchantName: json['merchantName'] ?? '',
-      merchantImageUrl: json['merchantImageUrl'],
-      operationId: json['operationId'] ?? '',
-      approvedAt: DateTime.tryParse(json['approvedAt'] ?? '') ?? DateTime.now(),
-      transactedAt: DateTime.tryParse(json['transactedAt'] ?? '') ?? DateTime.now(),
-    );
-  }
-}
-
-class CategoriesResponse {
-  final List<CategoryData> categories;
-  final String? nextToken;
-
-  CategoriesResponse({
-    required this.categories,
-    this.nextToken,
-  });
-
-  factory CategoriesResponse.fromJson(Map<String, dynamic> json) {
-    final items = json['items'] as List? ?? [];
-    return CategoriesResponse(
-      categories: items.map((item) => CategoryData.fromJson(item)).toList(),
-      nextToken: json['nextToken'],
-    );
-  }
-}
-
-class CategoryData {
-  final String id;
-  final String name;
-  final String groupId;
-  final String groupName;
-  final int groupIndex;
-  final String? imageUrl;
-
-  CategoryData({
-    required this.id,
-    required this.name,
-    required this.groupId,
-    required this.groupName,
-    required this.groupIndex,
-    this.imageUrl,
-  });
-
-  factory CategoryData.fromJson(Map<String, dynamic> json) {
-    return CategoryData(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      groupId: json['groupId'] ?? '',
-      groupName: json['groupName'] ?? '',
-      groupIndex: json['groupIndex'] ?? 0,
-      imageUrl: json['imageUrl'],
-    );
   }
 } 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../models/categories_response.dart';
+import '../models/category_data.dart';
 
 class CategoryPickerDialog extends StatefulWidget {
   final String? selectedCategoryId;
