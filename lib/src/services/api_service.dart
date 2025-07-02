@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'operation_id_service.dart';
+import '../services/auth_service.dart';
 
 import '../config/app_config.dart';
 import '../models/transaction_type.dart';
@@ -31,8 +32,7 @@ class ApiService {
         throw Exception('User is not signed in');
       }
 
-      final currentUser = await Amplify.Auth.getCurrentUser();
-      final userId = currentUser.userId;
+      final userId = await AuthService.getUserId();
 
       final cognitoSession = session as CognitoAuthSession;
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
@@ -95,8 +95,7 @@ class ApiService {
         throw Exception('User is not signed in');
       }
 
-      final currentUser = await Amplify.Auth.getCurrentUser();
-      final userId = currentUser.userId;
+      final userId = await AuthService.getUserId();
 
       final cognitoSession = session as CognitoAuthSession;
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
@@ -223,8 +222,7 @@ class ApiService {
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
       }
-      final currentUser = await Amplify.Auth.getCurrentUser();
-      final userId = currentUser.userId;
+      final userId = await AuthService.getUserId();
       final cognitoSession = session as CognitoAuthSession;
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
 
