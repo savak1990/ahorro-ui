@@ -18,7 +18,7 @@ import '../models/category_data.dart';
 class ApiService {
   static Future<void> postTransaction({
     required TransactionType type,
-    required double amount,
+    double? amount,
     required DateTime date,
     required String categoryId,
     required String balanceId,
@@ -47,7 +47,7 @@ class ApiService {
       final entries = transactionEntriesParam ?? [
         TransactionEntry(
           description: description ?? '',
-          amount: (amount * 100).round().toDouble(), // Multiply by 100 for storage in cents
+          amount: amount ?? 0.0,
           categoryId: categoryId,
         ),
       ];
