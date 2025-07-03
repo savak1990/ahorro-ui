@@ -91,7 +91,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           category: categoryName,
           categoryIcon: categoryIcon,
           account: firstEntry.balanceTitle,
-          description: firstEntry.merchantName,
+          merchantName: firstEntry.merchantName,
           date: firstEntry.transactedAt,
           currency: firstEntry.balanceCurrency,
         ));
@@ -575,6 +575,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               account: tx.account,
                               date: tx.date,
                               description: tx.description,
+                              merchantName: tx.merchantName,
                               currency: tx.currency,
                               onTap: () {}, // TODO: navigate to details
                             ),
@@ -723,6 +724,7 @@ class TransactionDisplayData {
   final IconData categoryIcon;
   final String account;
   final String? description;
+  final String? merchantName;
   final DateTime date;
   final String currency;
 
@@ -734,6 +736,7 @@ class TransactionDisplayData {
     required this.categoryIcon,
     required this.account,
     this.description,
+    this.merchantName,
     required this.date,
     required this.currency,
   });

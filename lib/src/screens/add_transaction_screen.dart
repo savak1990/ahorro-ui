@@ -156,7 +156,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           type: _selectedType,
           amount: double.parse(_movementAmountController.text),
           date: _selectedDate,
-          category: 'Transfer',
+          categoryId: '',
           description: 'Transfer from ${_fromAccountId!} to ${_toAccountId!}',
           merchant: 'Transfer',
           balanceId: _fromAccountId!,
@@ -195,9 +195,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           type: _selectedType,
           amount: _totalAmount,
           date: _selectedDate,
-          category: _items.isNotEmpty && _items.first.categoryController.text.isNotEmpty 
-              ? _items.first.categoryController.text 
-              : 'Uncategorized',
+          categoryId: _items.isNotEmpty && _items.first.selectedCategoryId.isNotEmpty 
+              ? _items.first.selectedCategoryId 
+              : '',
           description: _descriptionController.text,
           merchant: merchant,
           transactionEntriesParam: transactionEntries,
