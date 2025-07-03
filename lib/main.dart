@@ -3,12 +3,15 @@ import 'package:ahorro_ui/src/screens/transactions_screen.dart';
 import 'package:ahorro_ui/src/screens/budget_screen.dart';
 import 'package:ahorro_ui/src/screens/settings_screen.dart';
 import 'package:ahorro_ui/src/screens/account_screen.dart';
+import 'package:ahorro_ui/src/screens/txn_ai_screen.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'src/providers/balances_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io';
 
 import 'amplifyconfiguration.dart' as stable_config;
 import 'amplifyconfiguration_prod.dart' as prod_config;
@@ -16,7 +19,11 @@ import 'amplifyconfiguration_prod.dart' as prod_config;
 import 'src/constants/app_colors.dart';
 import 'src/constants/app_strings.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  print('PWD: ${Directory.current.path}');
+  print('ENV EXISTS: ${File('.env').existsSync()}');
+  await dotenv.load(fileName: ".env");
   runApp(
     MultiProvider(
       providers: [
@@ -243,7 +250,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const TransactionsScreen(),
     const BudgetScreen(),
-    const SettingsScreen(),
+    const TxnAiScreen(),
   ];
 
   @override
@@ -274,9 +281,9 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Budget',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.smart_toy_outlined),
+            selectedIcon: Icon(Icons.smart_toy_outlined),
+            label: 'TxnAi',
           ),
         ],
       ),
