@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TransactionTile extends StatelessWidget {
   final String type; // 'income', 'expense', 'movement'
@@ -9,6 +10,7 @@ class TransactionTile extends StatelessWidget {
   final DateTime date;
   final String? description;
   final String currency;
+  final String? merchantName;
   final VoidCallback? onTap;
 
   const TransactionTile({
@@ -21,6 +23,7 @@ class TransactionTile extends StatelessWidget {
     required this.date,
     this.description,
     this.currency = 'EUR',
+    this.merchantName,
     this.onTap,
   });
 
@@ -81,9 +84,9 @@ class TransactionTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Первая строка: мерчант (description или category)
+                    // Первая строка: категория
                     Text(
-                      description?.isNotEmpty == true ? description! : category,
+                      category,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: colorScheme.onSurface,
@@ -92,10 +95,9 @@ class TransactionTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    
-                    // Вторая строка: категория
+                    // Вторая строка: мерчант
                     Text(
-                      category,
+                      (merchantName?.isNotEmpty == true) ? merchantName! : '-',
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -137,7 +139,7 @@ class TransactionTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    currency,
+                    DateFormat('dd-MM-yyyy').format(date),
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,

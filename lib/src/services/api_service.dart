@@ -20,7 +20,7 @@ class ApiService {
     required TransactionType type,
     required double amount,
     required DateTime date,
-    required String category,
+    required String categoryId,
     required String balanceId,
     String? description,
     String? merchant,
@@ -48,13 +48,13 @@ class ApiService {
         TransactionEntry(
           description: description ?? '',
           amount: (amount * 100).round().toDouble(), // Multiply by 100 for storage in cents
-          categoryId: 'c47ac10b-58cc-4372-a567-0e02b2c3d479', // Mocked value
+          categoryId: categoryId,
         ),
       ];
 
       final body = json.encode({
         'userId': userId,
-        'groupId': '6a785a55-fced-4f13-af78-5c19a39c9abc', // Mocked value
+        'groupId': '',
         'balanceId': balanceId,
         'type': type.name,
         'merchant': merchant ?? 'Unknown',
