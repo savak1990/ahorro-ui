@@ -298,4 +298,32 @@ class ApiService {
       rethrow;
     }
   }
+
+  static Future<Map<String, dynamic>> getTransactionById(String transactionId) async {
+    try {
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+      final url = Uri.parse('${AppConfig.transactionsUrl}/$transactionId');
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'accept': 'application/json',
+      };
+      debugPrint('GET Transaction by ID URL: $url');
+      debugPrint('GET Transaction by ID Headers: $headers');
+      final response = await http.get(url, headers: headers);
+      debugPrint('GET Transaction by ID Status Code: ${response.statusCode}');
+      debugPrint('GET Transaction by ID Body: ${response.body}');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to get transaction. Status code: ${response.statusCode}');
+      }
+      return json.decode(response.body);
+    } catch (e) {
+      debugPrint('Error getting transaction by id: $e');
+      rethrow;
+    }
+  }
 } 

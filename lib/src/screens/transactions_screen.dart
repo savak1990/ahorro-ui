@@ -6,6 +6,7 @@ import 'add_transaction_screen.dart';
 import '../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
 import '../models/transaction_entry_data.dart';
+import 'transaction_details_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -577,7 +578,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               description: tx.description,
                               merchantName: tx.merchantName,
                               currency: tx.currency,
-                              onTap: () {}, // TODO: navigate to details
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
+                                  ),
+                                );
+                              },
                             ),
                           );
                         }).toList(),
