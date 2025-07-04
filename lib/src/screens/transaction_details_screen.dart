@@ -43,16 +43,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   }
 
   Color _typeColor(String type, ThemeData theme) {
-    switch (type.toLowerCase()) {
-      case 'income':
-        return Colors.green;
-      case 'expense':
-        return theme.colorScheme.error;
-      case 'movement':
-        return Colors.blue;
-      default:
-        return theme.colorScheme.primary;
-    }
+    return theme.colorScheme.primary;
   }
 
   IconData _typeIcon(String type) {
@@ -95,9 +86,11 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final type = transactionData?['Type'] ?? '-';
+    final displayType = type[0].toUpperCase() + type.substring(1);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction Details'),
+        title: const Text(''),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -125,7 +118,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       }
     }
     final mainEntry = entries.isNotEmpty ? entries[0] as Map<String, dynamic> : null;
-    final category = mainEntry != null && mainEntry['Category'] != null ? mainEntry['Category']['CategoryName'] : '-';
     final description = mainEntry != null ? mainEntry['Description'] : null;
     final date = tx['TransactedAt'] ?? tx['ApprovedAt'] ?? tx['CreatedAt'];
     final balance = tx['Balance']?['Title'] ?? '-';
@@ -133,6 +125,36 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final currency = tx['Balance']?['Currency'] ?? 'EUR';
     final parsedDate = date != null ? DateTime.tryParse(date) : null;
     final formattedDate = parsedDate != null ? DateFormat('dd.MM.yyyy HH:mm').format(parsedDate) : '-';
+    final approvedAt = tx['ApprovedAt'] ?? '-';
+    final formattedApprovedAt = approvedAt != '-' && approvedAt != null
+        ? DateFormat('dd.MM.yyyy').format(DateTime.tryParse(approvedAt) ?? DateTime.now())
+        : '-';
+
+    Color valueColor = theme.colorScheme.onSurfaceVariant;
+
+    Widget infoRow(IconData icon, String label, String? value) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6.0),
+        child: Row(
+          children: [
+            Icon(icon, color: theme.colorScheme.primary, size: 22),
+            const SizedBox(width: 12),
+            Text(label, style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurface)),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  (value == null || value.toString().isEmpty || value == '-') ? 'unknown' : value.toString(),
+                  style: AppTypography.bodyMuted.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  textAlign: TextAlign.right,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       child: Padding(
@@ -140,82 +162,82 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Тип и сумма
+            // GENERAL (тип и сумма)
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: _typeColor(type, theme).withOpacity(0.1),
-                  child: Icon(_typeIcon(type), color: _typeColor(type, theme)),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  type[0].toUpperCase() + type.substring(1),
-                  style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
-                ),
-                const Spacer(),
-                Text(
-                  (type == 'expense' ? '-' : type == 'income' ? '+' : '') + totalAmount.toStringAsFixed(2) + ' $currency',
-                  style: AppTypography.headlineSmall.copyWith(
-                    color: _typeColor(type, theme),
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        type[0].toUpperCase() + type.substring(1),
+                        style: AppTypography.headlineLarge.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '${totalAmount.toStringAsFixed(2)} ',
+                            style: AppTypography.displayLarge.copyWith(
+                              color: _typeColor(type, theme),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            currency,
+                            style: AppTypography.titleLarge.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 32),
+            // INFORMATION
+            Text('Information', style: AppTypography.titleLarge.copyWith(color: theme.colorScheme.onSurface)),
+            const SizedBox(height: 8),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  children: [
+                    infoRow(Icons.account_balance_wallet, 'Wallet', balance),
+                    if (description != null && description.toString().isNotEmpty) ...[
+                      const Divider(height: 1, thickness: 1),
+                      infoRow(Icons.description, 'Description', description?.toString()),
+                    ],
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
-            // Категория
-            Row(
-              children: [
-                Icon(Icons.category, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(category, style: AppTypography.titleMedium.copyWith(color: theme.colorScheme.onSurface)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Дата
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 20, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(formattedDate, style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Описание
-            if (description != null && description.toString().isNotEmpty) ...[
-              Row(
-                children: [
-                  Icon(Icons.description, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(description.toString(), style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurfaceVariant))),
-                ],
+            // PERIOD
+            Text('Period', style: AppTypography.titleLarge.copyWith(color: theme.colorScheme.onSurface)),
+            const SizedBox(height: 8),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  children: [
+                    infoRow(Icons.calendar_today, 'Approved at', formattedApprovedAt),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-            ],
-            // Счет
-            Row(
-              children: [
-                Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(balance, style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurface)),
-              ],
             ),
-            const SizedBox(height: 16),
-            // Мерчант
-            if (merchant != null && merchant.toString().isNotEmpty && merchant != '-') ...[
-              Row(
-                children: [
-                  Icon(Icons.store, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(merchant.toString(), style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurface))),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
-            // Entries (если их несколько)
-            if (entries.length > 1) ...[
-              const Divider(),
-              Text('Entries', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            const SizedBox(height: 24),
+            // ENTRIES
+            if (entries.isNotEmpty) ...[
+              Text('Entries', style: AppTypography.titleLarge.copyWith(color: theme.colorScheme.onSurface)),
               const SizedBox(height: 8),
               Card(
                 shape: RoundedRectangleBorder(
@@ -243,6 +265,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
                                 width: 44,
@@ -260,7 +283,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                   children: [
                                     Text(
                                       cat,
-                                      style: AppTypography.titleMedium.copyWith(
+                                      style: AppTypography.bodyLarge.copyWith(
                                         fontWeight: FontWeight.w500,
                                         color: theme.colorScheme.onSurface,
                                       ),
@@ -271,8 +294,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                       const SizedBox(height: 4),
                                       Text(
                                         desc,
-                                        style: AppTypography.bodyMedium.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
+                                        style: AppTypography.bodyLarge.copyWith(
+                                          color: valueColor,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -282,12 +305,24 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              Text(
-                                amt.toStringAsFixed(2),
-                                style: AppTypography.titleMedium.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurface,
-                                ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    '${amt.toStringAsFixed(2)} ',
+                                    style: AppTypography.bodyLarge.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: valueColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    currency,
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: valueColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
