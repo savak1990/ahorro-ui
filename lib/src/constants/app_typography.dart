@@ -103,5 +103,14 @@ class AppTypography {
     height: 1.45,
   );
 
+  // Мутный стиль для значений (серый)
+  static const TextStyle bodyMuted = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    height: 1.43,
+    color: Color(0xFF9E9E9E), // Можно заменить на theme.colorScheme.onSurfaceVariant в виджете
+  );
+
   // Добавь другие стили по необходимости
 } 
