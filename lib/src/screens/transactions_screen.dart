@@ -415,14 +415,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'All Transactions',
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        centerTitle: true,
+        title: const Text(''),
         backgroundColor: colorScheme.surface,
         elevation: 0,
         actions: [
@@ -537,60 +530,94 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 // Группируем транзакции по дням
                 final groupedTransactions = _groupTransactionsByDate(filteredTransactions);
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  itemCount: groupedTransactions.length * 2, // Заголовок + транзакции для каждой группы
-                  itemBuilder: (context, index) {
-                    final groupIndex = index ~/ 2;
-                    final isHeader = index % 2 == 0;
-                    final groupKey = groupedTransactions.keys.elementAt(groupIndex);
-                    final groupTransactions = groupedTransactions[groupKey]!;
-                    
-                    if (isHeader) {
-                      // Заголовок группы
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 16, bottom: 8, left: 8, right: 8),
-                        child: Text(
-                          groupKey,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary,
-                            letterSpacing: 0.15,
+                return CustomScrollView(
+                  slivers: [
+                    // Floating заголовок Transactions
+                    SliverPersistentHeader(
+                      pinned: false,
+                      floating: false,
+                      delegate: _SliverAppBarDelegate(
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Transactions',
+                            style: textTheme.headlineLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
                         ),
-                      );
-                    } else {
-                      // Транзакции группы
-                      return Column(
-                        children: groupTransactions.asMap().entries.map((entry) {
-                          final txIndex = entry.key;
-                          final tx = entry.value;
-                          
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: TransactionTile(
-                              type: tx.type,
-                              amount: tx.amount,
-                              category: tx.category,
-                              categoryIcon: tx.categoryIcon,
-                              account: tx.account,
-                              date: tx.date,
-                              description: tx.description,
-                              merchantName: tx.merchantName,
-                              currency: tx.currency,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
+                      ),
+                    ),
+                    // Список транзакций
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final groupIndex = index ~/ 2;
+                            final isHeader = index % 2 == 0;
+                            final groupKey = groupedTransactions.keys.elementAt(groupIndex);
+                            final groupTransactions = groupedTransactions[groupKey]!;
+                            
+                            if (isHeader) {
+                              // Заголовок группы
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 16, bottom: 8, left: 0, right: 0),
+                                child: Text(
+                                  groupKey,
+                                  style: textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.primary,
+                                    letterSpacing: 0.15,
                                   ),
-                                );
-                              },
-                            ),
-                          );
-                        }).toList(),
-                      );
-                    }
-                  },
+                                ),
+                              );
+                            } else {
+                              // Транзакции группы
+                              return Column(
+                                children: groupTransactions.asMap().entries.map((entry) {
+                                  final txIndex = entry.key;
+                                  final tx = entry.value;
+                                  
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      left: 0,
+                                      right: 0,
+                                      top: txIndex == 0 ? 0 : 0,
+                                      bottom: txIndex == groupTransactions.length - 1 ? 0 : 0,
+                                    ),
+                                    child: TransactionTile(
+                                      type: tx.type,
+                                      amount: tx.amount,
+                                      category: tx.category,
+                                      categoryIcon: tx.categoryIcon,
+                                      account: tx.account,
+                                      date: tx.date,
+                                      description: tx.description,
+                                      merchantName: tx.merchantName,
+                                      currency: tx.currency,
+                                      isFirst: txIndex == 0,
+                                      isLast: txIndex == groupTransactions.length - 1,
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            }
+                          },
+                          childCount: groupedTransactions.length * 2,
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -747,4 +774,28 @@ class TransactionDisplayData {
     required this.date,
     required this.currency,
   });
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  const _SliverAppBarDelegate({
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  double get maxExtent => 56.0;
+
+  @override
+  double get minExtent => 56.0;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
+  }
 } 
