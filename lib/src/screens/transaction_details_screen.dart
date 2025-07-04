@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 import '../widgets/transaction_tile.dart';
+import '../constants/app_typography.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final String transactionId;
@@ -149,12 +150,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 const SizedBox(width: 16),
                 Text(
                   type[0].toUpperCase() + type.substring(1),
-                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
                 ),
                 const Spacer(),
                 Text(
                   (type == 'expense' ? '-' : type == 'income' ? '+' : '') + totalAmount.toStringAsFixed(2) + ' $currency',
-                  style: textTheme.headlineSmall?.copyWith(
+                  style: AppTypography.headlineSmall.copyWith(
                     color: _typeColor(type, theme),
                     fontWeight: FontWeight.bold,
                   ),
@@ -167,7 +168,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               children: [
                 Icon(Icons.category, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text(category, style: textTheme.titleMedium),
+                Text(category, style: AppTypography.titleMedium.copyWith(color: theme.colorScheme.onSurface)),
               ],
             ),
             const SizedBox(height: 16),
@@ -176,7 +177,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               children: [
                 Icon(Icons.calendar_today, size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text(formattedDate, style: textTheme.bodyLarge),
+                Text(formattedDate, style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ],
             ),
             const SizedBox(height: 16),
@@ -186,7 +187,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 children: [
                   Icon(Icons.description, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(description.toString(), style: textTheme.bodyLarge)),
+                  Expanded(child: Text(description.toString(), style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurfaceVariant))),
                 ],
               ),
               const SizedBox(height: 16),
@@ -196,7 +197,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               children: [
                 Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text(balance, style: textTheme.bodyLarge),
+                Text(balance, style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurface)),
               ],
             ),
             const SizedBox(height: 16),
@@ -206,7 +207,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 children: [
                   Icon(Icons.store, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(merchant.toString(), style: textTheme.bodyLarge)),
+                  Expanded(child: Text(merchant.toString(), style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurface))),
                 ],
               ),
               const SizedBox(height: 16),
@@ -214,7 +215,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             // Entries (если их несколько)
             if (entries.length > 1) ...[
               const Divider(),
-              Text('Entries', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Entries', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
               const SizedBox(height: 8),
               Card(
                 shape: RoundedRectangleBorder(
@@ -259,7 +260,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                   children: [
                                     Text(
                                       cat,
-                                      style: textTheme.titleMedium?.copyWith(
+                                      style: AppTypography.titleMedium.copyWith(
                                         fontWeight: FontWeight.w500,
                                         color: theme.colorScheme.onSurface,
                                       ),
@@ -270,7 +271,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                       const SizedBox(height: 4),
                                       Text(
                                         desc,
-                                        style: textTheme.bodyMedium?.copyWith(
+                                        style: AppTypography.bodyMedium.copyWith(
                                           color: theme.colorScheme.onSurfaceVariant,
                                         ),
                                         maxLines: 1,
@@ -283,7 +284,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                               const SizedBox(width: 16),
                               Text(
                                 amt.toStringAsFixed(2),
-                                style: textTheme.titleMedium?.copyWith(
+                                style: AppTypography.titleMedium.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.onSurface,
                                 ),
