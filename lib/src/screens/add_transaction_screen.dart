@@ -3,7 +3,6 @@ import 'package:ahorro_ui/src/services/api_service.dart';
 import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/balance.dart';
 import '../providers/balances_provider.dart';
 import '../models/transaction_entry.dart';
 import '../models/category_data.dart';
@@ -261,13 +260,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           Wrap(
             spacing: 8.0,
             children: balances
-                .where((b) => excludeAccountId == null || b.id != excludeAccountId)
+                .where((b) => excludeAccountId == null || b.balanceId != excludeAccountId)
                 .map((balance) {
               return ChoiceChip(
                 label: Text(balance.title),
-                selected: selectedAccountId == balance.id,
+                selected: selectedAccountId == balance.balanceId,
                 onSelected: (selected) {
-                  onAccountSelected(selected ? balance.id : null);
+                  onAccountSelected(selected ? balance.balanceId : null);
                 },
               );
             }).toList(),

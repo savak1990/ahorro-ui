@@ -244,8 +244,11 @@ class ApiService {
       }
 
       final data = json.decode(response.body);
-      final balances = data['balances'] as List? ?? [];
-      return balances.map((e) => Balance.fromJson(e)).toList();
+      final balances = data['items'] as List? ?? [];
+      debugPrint('ApiService: Found ${balances.length} balances in response');
+      final result = balances.map((e) => Balance.fromJson(e)).toList();
+      debugPrint('ApiService: Parsed ${result.length} Balance objects');
+      return result;
     } catch (e) {
       debugPrint('Error getting balances: $e');
       rethrow;
