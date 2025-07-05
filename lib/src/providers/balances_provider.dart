@@ -17,8 +17,13 @@ class BalancesProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _balances = await ApiService.getBalances();
+      debugPrint('BalancesProvider: Loaded ${_balances.length} balances');
+      for (final balance in _balances) {
+        debugPrint('BalancesProvider: Balance - ${balance.title} (${balance.balanceId})');
+      }
     } catch (e) {
       _error = e.toString();
+      debugPrint('BalancesProvider: Error loading balances - $e');
     }
     _isLoading = false;
     notifyListeners();

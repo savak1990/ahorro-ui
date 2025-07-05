@@ -77,6 +77,7 @@ class BalancesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<BalancesProvider>(
       builder: (context, provider, _) {
+        debugPrint('BalancesScreen: isLoading=${provider.isLoading}, error=${provider.error}, balancesCount=${provider.balances.length}');
         return Scaffold(
           appBar: _buildAppBar(context),
           backgroundColor: AppColors.background,

@@ -224,10 +224,10 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
             (b) => b.title.toLowerCase() == balanceName.toLowerCase(),
             orElse: () => balances.firstWhere(
               (b) => b.title.toLowerCase().contains(balanceName.toLowerCase()),
-              orElse: () => Balance(id: '', title: '', currency: ''),
+              orElse: () => Balance(balanceId: '', groupId: '', userId: '', title: '', currency: '', description: '', rank: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
             ),
           );
-          if (balance.id.isEmpty) {
+          if (balance.balanceId.isEmpty) {
             setState(() {
               _messages.add({'role': 'assistant', 'content': 'Could not unambiguously determine the account. Please clarify.'});
             });
@@ -260,7 +260,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
             });
             return;
           }
-          await _createExpenseFunction(entries, balance.id);
+          await _createExpenseFunction(entries, balance.balanceId);
         } else {
           // Старый формат (одна трата)
           final amount = parsed['amount'] is String ? double.tryParse(parsed['amount']) : parsed['amount']?.toDouble();
@@ -281,13 +281,13 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
             (b) => b.title.toLowerCase() == balanceName.toLowerCase(),
             orElse: () => balances.firstWhere(
               (b) => b.title.toLowerCase().contains(balanceName.toLowerCase()),
-              orElse: () => Balance(id: '', title: '', currency: ''),
+              orElse: () => Balance(balanceId: '', groupId: '', userId: '', title: '', currency: '', description: '', rank: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
             ),
           );
-          if (amount != null && category.id.isNotEmpty && balance.id.isNotEmpty) {
+          if (amount != null && category.id.isNotEmpty && balance.balanceId.isNotEmpty) {
             await _createExpenseFunction([
               TransactionEntry(description: description ?? category.name, amount: amount, categoryId: category.id)
-            ], balance.id);
+            ], balance.balanceId);
           } else {
             setState(() {
               _messages.add({'role': 'assistant', 'content': 'Could not unambiguously determine the amount, category, or account. Please clarify.'});
@@ -365,7 +365,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
     // Парсим счет
     for (final b in balances) {
       if (text.toLowerCase().contains(b.title.toLowerCase()) && draft.balanceId == null) {
-        draft.balanceId = b.id;
+        draft.balanceId = b.balanceId;
         break;
       }
     }
@@ -387,7 +387,7 @@ class _DraftExpense {
 
   String summary(List<Balance> balances, List<CategoryData> categories) {
     final category = categories.firstWhere((c) => c.id == categoryId, orElse: () => CategoryData(id: '', name: '—', groupId: '', groupName: '', groupIndex: 0));
-    final balance = balances.firstWhere((b) => b.id == balanceId, orElse: () => Balance(id: '', title: '—', currency: ''));
+    final balance = balances.firstWhere((b) => b.balanceId == balanceId, orElse: () => Balance(balanceId: '', groupId: '', userId: '', title: '—', currency: '', description: '', rank: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()));
     return 'Сумма: ${amount?.toStringAsFixed(2) ?? '—'}\nКатегория: ${category.name}\nСчет: ${balance.title}\nОписание: ${description ?? '—'}';
   }
 
