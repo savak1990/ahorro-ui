@@ -3,11 +3,13 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
 
 import '../constants/app_colors.dart';
 import '../services/api_service.dart';
 import '../widgets/list_item_tile.dart';
 import 'add_transaction_screen.dart';
+import '../providers/categories_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -86,6 +88,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Загружаем категории при старте HomeScreen
+    Future.microtask(() {
+      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      categoriesProvider.loadCategories();
+    });
     _userNameFuture = _fetchUserName();
     _transactionsFuture = _fetchTransactions();
   }
