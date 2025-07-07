@@ -1,7 +1,7 @@
-import 'category_data.dart';
+import 'category.dart';
 
 class CategoriesResponse {
-  final List<CategoryData> categories;
+  final List<Category> categories;
   final String? nextToken;
 
   CategoriesResponse({
@@ -11,8 +11,10 @@ class CategoriesResponse {
 
   factory CategoriesResponse.fromJson(Map<String, dynamic> json) {
     final items = json['items'] as List? ?? [];
+    final categories = items.map((item) => Category.fromJson(item)).toList();
+    
     return CategoriesResponse(
-      categories: items.map((item) => CategoryData.fromJson(item)).toList(),
+      categories: categories,
       nextToken: json['nextToken'],
     );
   }

@@ -13,7 +13,7 @@ import '../models/transaction_entry.dart';
 import '../models/transactions_response.dart';
 import '../models/transaction_entry_data.dart';
 import '../models/categories_response.dart';
-import '../models/category_data.dart';
+
 
 class ApiService {
   static Future<void> postTransaction({
@@ -189,27 +189,13 @@ class ApiService {
       debugPrint('GET Categories Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to get categories. Status code: ${response.statusCode}');
+        debugPrint('Categories API: Failed with status code: ${response.statusCode}');
+        debugPrint('Categories API: Response body: ${response.body}');
+        throw Exception('Failed to get categories. Status code: ${response.statusCode}. Response: ${response.body}');
       }
 
       final data = json.decode(response.body);
-      final categoriesList = data['categories'] as List;
-
-      final categories = categoriesList.map((item) {
-        return CategoryData(
-          id: item['categoryId'] ?? '', // API returns categoryId, not id
-          name: item['name'] ?? '',
-          groupId: item['groupId'] ?? 'default', // Default group if not provided
-          groupName: item['groupName'] ?? 'General', // Default group name
-          groupIndex: item['groupIndex'] ?? 0, // Default index
-          imageUrl: item['imageUrl'],
-        );
-      }).toList();
-
-      return CategoriesResponse(
-        categories: categories,
-        nextToken: data['nextToken'],
-      );
+      return CategoriesResponse.fromJson(data);
     } on Exception catch (e) {
       debugPrint('Error getting categories: $e');
       rethrow;

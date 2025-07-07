@@ -3,7 +3,7 @@ import '../services/openai_agent_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/balances_provider.dart';
 import '../models/balance.dart';
-import '../models/category_data.dart';
+import '../models/category.dart';
 import '../services/api_service.dart';
 import '../models/transaction_type.dart';
 import 'dart:convert';
@@ -22,7 +22,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
   final OpenAIAgentService _agentService = OpenAIAgentService();
-  List<CategoryData>? _categories;
+  List<Category>? _categories;
   bool _categoriesLoading = false;
   String? _categoriesError;
   _DraftExpense? _draftExpense;
@@ -243,7 +243,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
               (c) => c.name.toLowerCase() == categoryName.toLowerCase(),
               orElse: () => categories.firstWhere(
                 (c) => c.name.toLowerCase().contains(categoryName.toLowerCase()),
-                orElse: () => CategoryData(id: '', name: '', groupId: '', groupName: '', groupIndex: 0),
+                orElse: () => Category(categoryId: '', name: '', description: '', rank: 0, categoryGroupId: '', categoryGroupName: '', categoryGroupRank: 0),
               ),
             );
             if (amount != null && category.id.isNotEmpty) {
@@ -274,7 +274,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
             (c) => c.name.toLowerCase() == categoryName.toLowerCase(),
             orElse: () => categories.firstWhere(
               (c) => c.name.toLowerCase().contains(categoryName.toLowerCase()),
-              orElse: () => CategoryData(id: '', name: '', groupId: '', groupName: '', groupIndex: 0),
+              orElse: () => Category(categoryId: '', name: '', description: '', rank: 0, categoryGroupId: '', categoryGroupName: '', categoryGroupRank: 0),
             ),
           );
           final balance = balances.firstWhere(
@@ -333,7 +333,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
     }
   }
 
-  String _buildSystemMessage(List<Balance> balances, List<CategoryData> categories) {
+  String _buildSystemMessage(List<Balance> balances, List<Category> categories) {
     final balancesStr = balances.isEmpty
         ? 'No balances.'
         : balances.map((b) => '- "${b.title}" (${b.currency})').join('\n');
@@ -348,7 +348,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
     return lower.contains('расход') || lower.contains('потратил') || lower.contains('потратила') || lower.contains('купил') || lower.contains('запиши трату') || lower.contains('expense');
   }
 
-  _DraftExpense? _updateDraftExpense(_DraftExpense? draft, String text, List<Balance> balances, List<CategoryData> categories) {
+  _DraftExpense? _updateDraftExpense(_DraftExpense? draft, String text, List<Balance> balances, List<Category> categories) {
     draft ??= _DraftExpense();
     // Парсим сумму
     final amountMatch = RegExp(r'(\d+[\.,]?\d*)').firstMatch(text.replaceAll(',', '.'));
@@ -385,13 +385,13 @@ class _DraftExpense {
 
   bool get isComplete => amount != null && categoryId != null && balanceId != null;
 
-  String summary(List<Balance> balances, List<CategoryData> categories) {
-    final category = categories.firstWhere((c) => c.id == categoryId, orElse: () => CategoryData(id: '', name: '—', groupId: '', groupName: '', groupIndex: 0));
+  String summary(List<Balance> balances, List<Category> categories) {
+    final category = categories.firstWhere((c) => c.id == categoryId, orElse: () => Category(categoryId: '', name: '—', description: '', rank: 0, categoryGroupId: '', categoryGroupName: '', categoryGroupRank: 0));
     final balance = balances.firstWhere((b) => b.balanceId == balanceId, orElse: () => Balance(balanceId: '', groupId: '', userId: '', title: '—', currency: '', description: '', rank: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()));
     return 'Сумма: ${amount?.toStringAsFixed(2) ?? '—'}\nКатегория: ${category.name}\nСчет: ${balance.title}\nОписание: ${description ?? '—'}';
   }
 
-  String nextPrompt(List<Balance> balances, List<CategoryData> categories) {
+  String nextPrompt(List<Balance> balances, List<Category> categories) {
     if (amount == null) return 'Укажите сумму расхода.';
     if (categoryId == null) return 'Укажите категорию расхода. Доступные: ${categories.map((c) => c.name).join(', ')}';
     if (balanceId == null) return 'Укажите счет, с которого списать расход. Доступные: ${balances.map((b) => b.title).join(', ')}';
