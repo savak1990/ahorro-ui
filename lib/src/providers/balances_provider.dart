@@ -19,7 +19,7 @@ class BalancesProvider extends ChangeNotifier {
       _balances = await ApiService.getBalances();
       debugPrint('BalancesProvider: Loaded ${_balances.length} balances');
       for (final balance in _balances) {
-        debugPrint('BalancesProvider: Balance - ${balance.title} (${balance.balanceId})');
+        //debugPrint('BalancesProvider: Balance - ${balance.title} (${balance.balanceId})');
       }
     } catch (e) {
       _error = e.toString();
