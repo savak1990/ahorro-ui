@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/balances_provider.dart';
 import '../models/transaction_entry.dart';
-import '../models/category_data.dart';
+import '../models/category.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -74,14 +74,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _selectCategory(BuildContext context, _TransactionItem item) async {
-    final result = await showDialog<CategoryData>(
-      context: context,
-      builder: (context) => CategoryPickerDialog(
-        selectedCategoryId: item.selectedCategoryId,
+    final result = await Navigator.push<Category>(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => CategoryPickerDialog(
+          selectedCategoryId: item.selectedCategoryId,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return child;
+        },
+        opaque: false,
+        barrierColor: Colors.transparent,
       ),
     );
 
     if (result != null) {
+      debugPrint('AddTransactionScreen: Selected category: ${result.name} (id: ${result.id})');
       setState(() {
         item.selectedCategoryId = result.id;
         item.categoryController.text = result.name;
