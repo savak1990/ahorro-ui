@@ -4,6 +4,7 @@ import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/balances_provider.dart';
+import '../providers/categories_provider.dart';
 import '../models/transaction_entry.dart';
 import '../models/category.dart';
 import '../widgets/add_balance_form.dart';
@@ -27,11 +28,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _toAccountId;
 
   // Dynamic items
-  List<_TransactionItem> _items = [
-    _TransactionItem(),
-  ];
+  List<_TransactionItem> _items = [];
 
   final TextEditingController _movementAmountController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Получаем дефолтную категорию из провайдера, если уже загружена
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      final defaultCategory = categoriesProvider.defaultCategory;
+      debugPrint('[AddTransactionScreen] Default category: id=${defaultCategory?.id}, name=${defaultCategory?.name}');
+      if (defaultCategory != null) {
+        final icon = getCategoryIcon(defaultCategory.name);
+        debugPrint('[AddTransactionScreen] Icon for default category: name=${defaultCategory.name}, icon=$icon');
+      }
+      setState(() {
+        _items = [
+          _TransactionItem(
+            defaultCategoryId: defaultCategory?.id ?? '',
+            defaultCategoryName: defaultCategory?.name ?? '',
+          ),
+        ];
+      });
+    });
+  }
 
   double get _totalAmount => _items.fold(0.0, (sum, item) {
     final value = double.tryParse(item.amountController.text);
@@ -62,7 +84,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   void _addItem() {
     setState(() {
-      _items.add(_TransactionItem());
+      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      final defaultCategory = categoriesProvider.defaultCategory;
+      _items.add(_TransactionItem(
+        defaultCategoryId: defaultCategory?.id ?? '',
+        defaultCategoryName: defaultCategory?.name ?? '',
+      ));
     });
   }
 
@@ -248,6 +275,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriesProvider = Provider.of<CategoriesProvider>(context);
+
+    // Если категории ещё не загружены — показываем лоадер
+    if (categoriesProvider.isLoading || categoriesProvider.categories.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Если _items ещё не инициализированы — инициализируем с дефолтной категорией
+    if (_items.isEmpty) {
+      final defaultCategory = categoriesProvider.defaultCategory;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _items = [
+            _TransactionItem(
+              defaultCategoryId: defaultCategory?.id ?? '',
+              defaultCategoryName: defaultCategory?.name ?? '',
+            ),
+          ];
+        });
+      });
+      // Пока не инициализировали — тоже показываем лоадер
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -331,22 +382,31 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              InkWell(
-                                onTap: () => _selectCategory(context, item),
-                                borderRadius: BorderRadius.circular(20),
-                                child: CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: item.selectedCategoryId.isEmpty
-                                      ? Colors.grey[200]
-                                      : Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  child: Icon(
-                                    getCategoryIcon(item.categoryController.text),
-                                    color: item.selectedCategoryId.isEmpty
-                                        ? Colors.grey
-                                        : Theme.of(context).colorScheme.primary,
-                                    size: 20,
-                                  ),
-                                ),
+                              Builder(
+                                builder: (context) {
+                                  final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+                                  final categoryList = categoriesProvider.categories.where((cat) => cat.id == item.selectedCategoryId).toList();
+                                  final Category? category = categoryList.isNotEmpty ? categoryList.first : null;
+                                  final icon = getCategoryIcon(category?.name ?? '');
+                                  debugPrint('[AddTransactionScreen] Render item: selectedCategoryId=${item.selectedCategoryId}, categoryName=${category?.name}, icon=$icon');
+                                  return InkWell(
+                                    onTap: () => _selectCategory(context, item),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: item.selectedCategoryId.isEmpty
+                                          ? Colors.grey[200]
+                                          : Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                      child: Icon(
+                                        icon,
+                                        color: item.selectedCategoryId.isEmpty
+                                            ? Colors.grey
+                                            : Theme.of(context).colorScheme.primary,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -538,6 +598,16 @@ class _TransactionItem {
   final TextEditingController amountController = TextEditingController();
   final TextEditingController categoryController = TextEditingController();
   String selectedCategoryId = '';
+  String defaultCategoryId = '';
+  String defaultCategoryName = '';
+
+  _TransactionItem({
+    this.defaultCategoryId = '',
+    this.defaultCategoryName = '',
+  }) {
+    categoryController.text = defaultCategoryName;
+    selectedCategoryId = defaultCategoryId;
+  }
 
   void dispose() {
     nameController.dispose();

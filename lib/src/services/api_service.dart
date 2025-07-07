@@ -65,8 +65,8 @@ class ApiService {
       });
 
       debugPrint('Request URL: $url');
-      debugPrint('Request Headers: $headers');
-      debugPrint('Request Body: $body');
+      //debugPrint('Request Headers: $headers');
+      //debugPrint('Request Body: $body');
 
       final response = await http.post(
         url,
@@ -105,8 +105,8 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      debugPrint('GET Request URL: $url');
-      debugPrint('GET Request Headers: $headers');
+      //debugPrint('GET Request URL: $url');
+      //debugPrint('GET Request Headers: $headers');
 
       final response = await http.get(
         url,
@@ -177,16 +177,16 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      debugPrint('GET Categories Request URL: $url');
-      debugPrint('GET Categories Request Headers: $headers');
+      //debugPrint('GET Categories Request URL: $url');
+      //debugPrint('GET Categories Request Headers: $headers');
 
       final response = await http.get(
         url,
         headers: headers,
       );
 
-      debugPrint('GET Categories Response Status Code: ${response.statusCode}');
-      debugPrint('GET Categories Response Body: ${response.body}');
+      //debugPrint('GET Categories Response Status Code: ${response.statusCode}');
+      //debugPrint('GET Categories Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
         debugPrint('Categories API: Failed with status code: ${response.statusCode}');
@@ -217,13 +217,13 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      debugPrint('GET Balances Request URL: $url');
-      debugPrint('GET Balances Request Headers: $headers');
+      //debugPrint('GET Balances Request URL: $url');
+      //debugPrint('GET Balances Request Headers: $headers');
 
       final response = await http.get(url, headers: headers);
 
-      debugPrint('GET Balances Response Status Code: ${response.statusCode}');
-      debugPrint('GET Balances Response Body: ${response.body}');
+     // debugPrint('GET Balances Response Status Code: ${response.statusCode}');
+      //debugPrint('GET Balances Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to get balances. Status code: ${response.statusCode}');
