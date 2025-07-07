@@ -7,6 +7,8 @@ import '../providers/balances_provider.dart';
 import '../providers/categories_provider.dart';
 import '../models/transaction_entry.dart';
 import '../models/category.dart';
+import '../widgets/add_balance_form.dart';
+import '../constants/app_typography.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -52,6 +54,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final value = double.tryParse(item.amountController.text);
     return sum + (value ?? 0.0);
   });
+
+  // Save активна только если у каждого айтема сумма не пустая и > 0
+  bool get _canSave {
+    if (_items.isEmpty) return false;
+    for (final item in _items) {
+      final text = item.amountController.text;
+      if (text.isEmpty) return false;
+      final value = double.tryParse(text);
+      if (value == null || value <= 0) return false;
+    }
+    return true;
+  }
 
   @override
   void dispose() {
@@ -254,57 +268,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  Widget _buildAccountSelector({
-    required String title,
-    required String? selectedAccountId,
-    required ValueChanged<String?> onAccountSelected,
-    String? excludeAccountId,
-  }) {
-    final balancesProvider = Provider.of<BalancesProvider>(context);
-    final balances = balancesProvider.balances;
-    final isLoading = balancesProvider.isLoading;
-    final error = balancesProvider.error;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        if (isLoading)
-          const CircularProgressIndicator()
-        else if (error != null)
-          Row(
-            children: [
-              const Icon(Icons.error, color: Colors.red),
-              const SizedBox(width: 8),
-              Expanded(child: Text('Ошибка загрузки балансов')),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: balancesProvider.loadBalances,
-              ),
-            ],
-          )
-        else if (balances.isEmpty)
-          const Text('Нет доступных счетов')
-        else
-          Wrap(
-            spacing: 8.0,
-            children: balances
-                .where((b) => excludeAccountId == null || b.balanceId != excludeAccountId)
-                .map((balance) {
-              return ChoiceChip(
-                label: Text(balance.title),
-                selected: selectedAccountId == balance.balanceId,
-                onSelected: (selected) {
-                  onAccountSelected(selected ? balance.balanceId : null);
-                },
-              );
-            }).toList(),
-          ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -334,7 +297,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                   ),
                 ),
-                Text('New transaction', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+                Text(
+                  'New transaction',
+                  style: AppTypography.displaySmall,
+                  textAlign: TextAlign.left,
+                ),
                 const SizedBox(height: 32),
                 SegmentedButton<TransactionType>(
                   segments: const [
@@ -363,167 +330,196 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Account fields / Items
-                  if (_selectedType == TransactionType.movement) ...[
-                    _buildAccountSelector(
-                      title: 'From Account',
-                      selectedAccountId: _fromAccountId,
-                      onAccountSelected: (id) => setState(() => _fromAccountId = id),
-                      excludeAccountId: _selectedType == TransactionType.movement ? _toAccountId : null,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildAccountSelector(
-                      title: 'To Account',
-                      selectedAccountId: _toAccountId,
-                      onAccountSelected: (id) => setState(() => _toAccountId = id),
-                    ),
-                    const SizedBox(height: 24),
-                    // Amount field for transfer
-                    TextField(
-                      controller: _movementAmountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Amount',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ] else ...[
-                    if (_selectedType == TransactionType.income)
-                      _buildAccountSelector(
-                        title: 'To Account',
-                        selectedAccountId: _toAccountId,
-                        onAccountSelected: (id) => setState(() => _toAccountId = id),
-                      )
-                    else // Expense
-                      _buildAccountSelector(
-                        title: 'From Account',
-                        selectedAccountId: _fromAccountId,
-                        onAccountSelected: (id) => setState(() => _fromAccountId = id),
-                      ),
-                    const SizedBox(height: 24),
-                    // Items section and total amount only for income/expense
-                    Text('Items', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _items.length,
-                      itemBuilder: (context, i) {
-                        final item = _items[i];
-                        final amountValue = double.tryParse(item.amountController.text);
-                        final hasError = item.amountController.text.isNotEmpty && (amountValue == null || amountValue <= 0);
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey[200]!),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // Категория
-                                InkWell(
-                                  onTap: () => _selectCategory(context, item),
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: CircleAvatar(
-                                    radius: 18,
-                                    backgroundColor: item.selectedCategoryId.isEmpty
-                                        ? Colors.grey[200]
-                                        : Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                    child: Icon(
-                                      getCategoryIcon(item.categoryController.text),
-                                      color: item.selectedCategoryId.isEmpty
-                                          ? Colors.grey
-                                          : Theme.of(context).colorScheme.primary,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Название
-                                Expanded(
-                                  flex: 3,
-                                  child: TextField(
-                                    controller: item.nameController,
-                                    decoration: const InputDecoration(
-                                      hintText: 'Description',
-                                      isDense: true,
-                                      border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Сумма
-                                SizedBox(
-                                  width: 90,
-                                  child: TextField(
-                                    controller: item.amountController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    onChanged: (_) => setState(() {}),
-                                    decoration: InputDecoration(
-                                      hintText: '0.00',
-                                      isDense: true,
-                                      border: const OutlineInputBorder(),
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                      labelStyle: TextStyle(color: hasError ? Theme.of(context).colorScheme.error : null),
-                                    ),
-                                  ),
-                                ),
-                                // Кнопка удаления
-                                if (_items.length > 1)
-                                  IconButton(
-                                    icon: Icon(Icons.remove_circle_outline, color: Colors.red.shade300),
-                                    onPressed: () => _removeItem(i),
-                                    tooltip: 'Удалить',
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _addItem,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add item'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total:',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  // --- ITEMS FIRST ---
+                  Text('Items', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _items.length,
+                    itemBuilder: (context, i) {
+                      final item = _items[i];
+                      final amountValue = double.tryParse(item.amountController.text);
+                      final hasError = item.amountController.text.isNotEmpty && (amountValue == null || amountValue <= 0);
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.grey[200]!),
                         ),
-                        Text(
-                          _totalAmount.toStringAsFixed(2),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _selectedType == TransactionType.income ? Colors.green.shade700 : Theme.of(context).colorScheme.error,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              InkWell(
+                                onTap: () => _selectCategory(context, item),
+                                borderRadius: BorderRadius.circular(20),
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: item.selectedCategoryId.isEmpty
+                                      ? Colors.grey[200]
+                                      : Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                  child: Icon(
+                                    getCategoryIcon(item.categoryController.text),
+                                    color: item.selectedCategoryId.isEmpty
+                                        ? Colors.grey
+                                        : Theme.of(context).colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 3,
+                                child: TextField(
+                                  controller: item.nameController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Description',
+                                    isDense: true,
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: item.amountController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  onChanged: (_) => setState(() {}),
+                                  decoration: InputDecoration(
+                                    hintText: '0.00',
+                                    isDense: true,
+                                    border: const OutlineInputBorder(),
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                    labelStyle: TextStyle(color: hasError ? Theme.of(context).colorScheme.error : null),
+                                  ),
+                                ),
+                              ),
+                              if (_items.length > 1)
+                                IconButton(
+                                  icon: Icon(Icons.remove_circle_outline, color: Colors.red.shade300),
+                                  onPressed: () => _removeItem(i),
+                                  tooltip: 'Remove',
+                                ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                  // Common fields
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      labelText: _selectedType == TransactionType.movement ? 'Description (optional)' : 'Merchant / Store (optional)',
-                      border: const OutlineInputBorder(),
+                      );
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _addItem,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add item'),
                     ),
                   ),
+                  if (_items.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total:',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            _totalAmount.toStringAsFixed(2),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 24),
-                  // Date selection
+                  // --- BALANCE CHIPS ---
+                  Text('Balance', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Builder(
+                    builder: (context) {
+                      final balancesProvider = Provider.of<BalancesProvider>(context);
+                      final balances = balancesProvider.balances;
+                      final isLoading = balancesProvider.isLoading;
+                      final error = balancesProvider.error;
+                      if (isLoading) {
+                        return const CircularProgressIndicator();
+                      } else if (error != null) {
+                        return Row(
+                          children: [
+                            const Icon(Icons.error, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text('Failed to load balances')),
+                            IconButton(
+                              icon: const Icon(Icons.refresh),
+                              onPressed: balancesProvider.loadBalances,
+                            ),
+                          ],
+                        );
+                      } else {
+                        return Wrap(
+                          spacing: 8.0,
+                          children: [
+                            ...balances.map((balance) => ChoiceChip(
+                              label: Text(balance.title),
+                              selected: _fromAccountId == balance.balanceId,
+                              onSelected: (selected) {
+                                setState(() => _fromAccountId = selected ? balance.balanceId : null);
+                              },
+                            )),
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Theme.of(context).colorScheme.primary,
+                                textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add new balance'),
+                              onPressed: () async {
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                  ),
+                                  builder: (context) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                                    ),
+                                    child: SizedBox(
+                                      height: 400,
+                                      child: AddBalanceForm(),
+                                    ),
+                                  ),
+                                );
+                                Provider.of<BalancesProvider>(context, listen: false).loadBalances();
+                              },
+                            ),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  // --- MERCHANT CHIPS ---
+                  Text('Merchant', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  _MerchantChips(
+                    selectedMerchant: _descriptionController.text,
+                    onMerchantSelected: (merchant) {
+                      setState(() {
+                        _descriptionController.text = merchant;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  // --- DATE ---
                   InkWell(
                     onTap: () => _selectDate(context),
                     child: InputDecorator(
@@ -543,7 +539,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: FilledButton(
-              onPressed: _isLoading ? null : _saveTransaction,
+              onPressed: _isLoading || !_canSave ? null : _saveTransaction,
               child: _isLoading
                   ? const SizedBox(
                       width: 24,
@@ -578,5 +574,85 @@ class _TransactionItem {
     nameController.dispose();
     amountController.dispose();
     categoryController.dispose();
+  }
+}
+
+// Новый виджет для выбора мерчанта чипами
+class _MerchantChips extends StatefulWidget {
+  final String selectedMerchant;
+  final ValueChanged<String> onMerchantSelected;
+  const _MerchantChips({required this.selectedMerchant, required this.onMerchantSelected});
+
+  @override
+  State<_MerchantChips> createState() => _MerchantChipsState();
+}
+
+class _MerchantChipsState extends State<_MerchantChips> {
+  List<String> _merchants = [];
+  @override
+  void initState() {
+    super.initState();
+    _loadMerchants();
+  }
+  void _loadMerchants() async {
+    // TODO: Заменить на реальный источник (например, из транзакций)
+    // Здесь просто пример
+    setState(() {
+      _merchants = ['Mercadona', 'Amazon', 'Lidl', 'Carrefour'];
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8.0,
+      children: [
+        ..._merchants.map((merchant) => ChoiceChip(
+          label: Text(merchant),
+          selected: widget.selectedMerchant == merchant,
+          onSelected: (selected) {
+            if (selected) widget.onMerchantSelected(merchant);
+          },
+        )),
+        TextButton.icon(
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          icon: const Icon(Icons.search),
+          label: const Text('Find merchant'),
+          onPressed: () async {
+            final newMerchant = await showDialog<String>(
+              context: context,
+              builder: (context) {
+                final controller = TextEditingController();
+                return AlertDialog(
+                  title: const Text('Find merchant'),
+                  content: TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(hintText: 'Merchant name'),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, controller.text.trim()),
+                      child: const Text('Add'),
+                    ),
+                  ],
+                );
+              },
+            );
+            if (newMerchant != null && newMerchant.isNotEmpty) {
+              setState(() {
+                _merchants.add(newMerchant);
+              });
+              widget.onMerchantSelected(newMerchant);
+            }
+          },
+        ),
+      ],
+    );
   }
 } 
