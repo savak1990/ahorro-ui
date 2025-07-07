@@ -4,6 +4,7 @@ import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/balances_provider.dart';
+import '../providers/categories_provider.dart';
 import '../models/transaction_entry.dart';
 import '../models/category.dart';
 
@@ -25,11 +26,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _toAccountId;
 
   // Dynamic items
-  List<_TransactionItem> _items = [
-    _TransactionItem(),
-  ];
+  List<_TransactionItem> _items = [];
 
   final TextEditingController _movementAmountController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Получаем дефолтную категорию из провайдера, если уже загружена
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      final defaultCategory = categoriesProvider.defaultCategory;
+      setState(() {
+        _items = [
+          _TransactionItem(
+            defaultCategoryId: defaultCategory?.id ?? '',
+            defaultCategoryName: defaultCategory?.name ?? '',
+          ),
+        ];
+      });
+    });
+  }
 
   double get _totalAmount => _items.fold(0.0, (sum, item) {
     final value = double.tryParse(item.amountController.text);
@@ -48,7 +65,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   void _addItem() {
     setState(() {
-      _items.add(_TransactionItem());
+      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      final defaultCategory = categoriesProvider.defaultCategory;
+      _items.add(_TransactionItem(
+        defaultCategoryId: defaultCategory?.id ?? '',
+        defaultCategoryName: defaultCategory?.name ?? '',
+      ));
     });
   }
 
@@ -542,6 +564,15 @@ class _TransactionItem {
   final TextEditingController amountController = TextEditingController();
   final TextEditingController categoryController = TextEditingController();
   String selectedCategoryId = '';
+  String defaultCategoryId = '';
+  String defaultCategoryName = '';
+
+  _TransactionItem({
+    this.defaultCategoryId = '',
+    this.defaultCategoryName = '',
+  }) {
+    categoryController.text = defaultCategoryName;
+  }
 
   void dispose() {
     nameController.dispose();

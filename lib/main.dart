@@ -10,6 +10,7 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'src/providers/balances_provider.dart';
+import 'src/providers/categories_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io';
 
@@ -28,6 +29,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BalancesProvider()..loadBalances()),
+        ChangeNotifierProvider(create: (_) => CategoriesProvider()..loadCategories()),
       ],
       child: MyApp(),
     ),
