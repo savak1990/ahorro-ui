@@ -4,6 +4,8 @@ import '../services/api_service.dart';
 import '../models/categories_response.dart';
 import '../models/category.dart';
 import '../constants/app_typography.dart';
+import '../providers/categories_provider.dart';
+import 'package:provider/provider.dart';
 
 class CategoryPickerDialog extends StatefulWidget {
   final String? selectedCategoryId;
@@ -19,7 +21,6 @@ class CategoryPickerDialog extends StatefulWidget {
 
 class _CategoryPickerDialogState extends State<CategoryPickerDialog>
     with TickerProviderStateMixin {
-  late Future<CategoriesResponse> _categoriesFuture;
   String _search = '';
   String? _selectedId;
   late AnimationController _animationController;
@@ -28,14 +29,11 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
   @override
   void initState() {
     super.initState();
-    _categoriesFuture = ApiService.getCategories();
     _selectedId = widget.selectedCategoryId;
-    
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
     _slideAnimation = Tween<double>(
       begin: 1.0,
       end: 0.0,
@@ -43,7 +41,6 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
       parent: _animationController,
       curve: Curves.easeOutCubic,
     ));
-    
     _animationController.forward();
   }
 
@@ -55,6 +52,7 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
 
   @override
   Widget build(BuildContext context) {
+    final categoriesProvider = Provider.of<CategoriesProvider>(context);
     return AnimatedBuilder(
       animation: _slideAnimation,
       builder: (context, child) {
@@ -111,13 +109,12 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
                   ),
                 ),
                 Expanded(
-                  child: FutureBuilder<CategoriesResponse>(
-                    future: _categoriesFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
+                  child: Builder(
+                    builder: (context) {
+                      if (categoriesProvider.isLoading) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      if (snapshot.hasError) {
+                      if (categoriesProvider.error != null) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -137,9 +134,7 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
                               const SizedBox(height: 8),
                               TextButton(
                                 onPressed: () {
-                                  setState(() {
-                                    _categoriesFuture = ApiService.getCategories();
-                                  });
+                                  categoriesProvider.loadCategories();
                                 },
                                 child: const Text('Retry'),
                               ),
@@ -147,7 +142,7 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
                           ),
                         );
                       }
-                      final categories = snapshot.data?.categories ?? [];
+                      final categories = categoriesProvider.categories;
                       if (categories.isEmpty) {
                         return Center(
                           child: Text(
@@ -175,12 +170,10 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
                       for (final c in filtered) {
                         grouped.putIfAbsent(c.categoryGroupName, () => []).add(c);
                       }
-                      
                       // Сортируем категории внутри каждой группы по rank (по возрастанию)
                       for (final group in grouped.values) {
                         group.sort((a, b) => a.rank.compareTo(b.rank));
                       }
-                      
                       final sortedGroups = grouped.entries.toList()
                         ..sort((a, b) => b.value.first.categoryGroupRank.compareTo(a.value.first.categoryGroupRank));
                       return ListView.builder(
@@ -223,7 +216,7 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
                                         children: [
                                           cat.id == _selectedId
                                               ? Icon(Icons.check, size: 18, color: Theme.of(context).colorScheme.onPrimary)
-                                              : Icon(getCategoryIcon(cat.name), size: 18, color: Theme.of(context).colorScheme.primary),
+                                              : Icon(cat.iconData, size: 18, color: Theme.of(context).colorScheme.primary),
                                           const SizedBox(width: 6),
                                           Text(
                                             cat.name,
