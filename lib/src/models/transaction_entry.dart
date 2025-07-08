@@ -1,6 +1,6 @@
 class TransactionEntry {
   final String description;
-  final double amount;
+  final int amount; // amount теперь int (копейки/центы)
   final String categoryId;
 
   TransactionEntry({
@@ -12,7 +12,7 @@ class TransactionEntry {
   Map<String, dynamic> toJson() {
     return {
       'description': description,
-      'amount': (amount * 100).round().toDouble(), // Multiply by 100 for storage in cents
+      'amount': amount, // уже int
       'categoryId': categoryId,
     };
   }

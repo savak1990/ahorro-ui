@@ -47,22 +47,46 @@ class ApiService {
       final entries = transactionEntriesParam ?? [
         TransactionEntry(
           description: description ?? '',
-          amount: amount ?? 0.0,
+          amount: ((amount ?? 0.0) * 100).round(),
           categoryId: categoryId,
         ),
       ];
 
-      final body = json.encode({
+      debugPrint('[ApiService.postTransaction] --- REQUEST DATA ---');
+      debugPrint('userId: $userId');
+      debugPrint('groupId: ""');
+      debugPrint('balanceId: $balanceId');
+      debugPrint('type: ${type.name}');
+      debugPrint('merchant: ${merchant ?? 'Unknown'}');
+      debugPrint('operationId: ${generateOperationId()}');
+      debugPrint('approvedAt: ${date.toUtc().toIso8601String()}');
+      debugPrint('transactedAt: ${date.toUtc().toIso8601String()}');
+      debugPrint('transactionEntries: ${entries.map((e) => e.toJson()).toList()}');
+      debugPrint('Headers: $headers');
+
+      final bodyMap = <String, dynamic>{
         'userId': userId,
         'groupId': '',
-        'balanceId': balanceId,
         'type': type.name,
-        'merchant': merchant ?? 'Unknown',
         'operationId': generateOperationId(),
         'approvedAt': date.toUtc().toIso8601String(),
         'transactedAt': date.toUtc().toIso8601String(),
-        'transactionEntries': entries.map((e) => e.toJson()).toList(),
-      });
+      };
+      if (balanceId.isNotEmpty) {
+        bodyMap['balanceId'] = balanceId;
+      }
+      if (merchant != null && merchant.isNotEmpty) {
+        bodyMap['merchant'] = merchant;
+      }
+      if (entries.isNotEmpty) {
+        bodyMap['transactionEntries'] = entries.map((e) => e.toJson()).toList();
+      }
+      // description и categoryId не передаем, если пустые
+      // amount на верхнем уровне не передаем
+
+      final body = json.encode(bodyMap);
+
+      debugPrint('[ApiService.postTransaction] BODY: $body');
 
       debugPrint('Request URL: $url');
       //debugPrint('Request Headers: $headers');
@@ -74,15 +98,19 @@ class ApiService {
         body: body,
       );
 
+      debugPrint('[ApiService.postTransaction] --- RESPONSE ---');
       debugPrint('Response Status Code: ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode != 200 && response.statusCode != 201) {
+        debugPrint('[ApiService.postTransaction] ERROR: Failed to post transaction. Status code: ${response.statusCode}');
         throw Exception('Failed to post transaction. Status code: ${response.statusCode}');
       }
 
+      debugPrint('[ApiService.postTransaction] Transaction posted successfully!');
       return json.decode(response.body);
     } catch (e) {
+      debugPrint('[ApiService.postTransaction] Exception: $e');
       debugPrint('Error posting transaction: $e');
       rethrow;
     }
