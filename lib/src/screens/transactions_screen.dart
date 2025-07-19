@@ -629,11 +629,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: Colors.white,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            backgroundColor: Colors.transparent,
+            builder: (context) => ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              child: Container(
+                color: Colors.white,
+                child: const AddTransactionScreen(),
+              ),
             ),
-            builder: (context) => const AddTransactionScreen(),
           ).then((_) {
             _refreshTransactions();
           });

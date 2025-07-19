@@ -46,14 +46,35 @@ class BalanceIdInput extends FormzInput<String, String> {
   }
 }
 
-class ExpenseTransactionForm extends StatefulWidget {
-  const ExpenseTransactionForm({super.key});
-
-  @override
-  State<ExpenseTransactionForm> createState() => _ExpenseTransactionFormState();
+class ExpenseTransactionFormData {
+  final List<TransactionEntry> entries;
+  final String merchant;
+  final String balanceId;
+  final DateTime date;
+  ExpenseTransactionFormData({
+    required this.entries,
+    required this.merchant,
+    required this.balanceId,
+    required this.date,
+  });
 }
 
-class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
+class ExpenseTransactionForm extends StatefulWidget {
+  final ValueNotifier<FormzSubmissionStatus> formStatus;
+  final ValueChanged<ExpenseTransactionFormData> onSubmit;
+  final bool isLoading;
+  const ExpenseTransactionForm({
+    super.key,
+    required this.formStatus,
+    required this.onSubmit,
+    required this.isLoading,
+  });
+
+  @override
+  ExpenseTransactionFormState createState() => ExpenseTransactionFormState();
+}
+
+class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   final TextEditingController _descriptionController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
@@ -62,7 +83,6 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   String _selectedMerchant = '';
 
   // formz state
-  late ValueNotifier<FormzSubmissionStatus> _formStatus;
   late List<AmountInput> _amountInputs;
   late List<DescriptionInput> _descInputs;
   late BalanceIdInput _balanceInput;
@@ -70,7 +90,6 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   @override
   void initState() {
     super.initState();
-    _formStatus = ValueNotifier(FormzSubmissionStatus.initial);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
       final defaultCategory = categoriesProvider.defaultCategory;
@@ -82,6 +101,7 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
         _descInputs = [const DescriptionInput.pure()];
         _balanceInput = const BalanceIdInput.pure();
       });
+      _updateFormzState();
     });
   }
 
@@ -91,7 +111,7 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
       ..._descInputs,
       _balanceInput,
     ]);
-    _formStatus.value = isValid ? FormzSubmissionStatus.success : FormzSubmissionStatus.initial;
+    widget.formStatus.value = isValid ? FormzSubmissionStatus.success : FormzSubmissionStatus.initial;
   }
 
   @override
@@ -100,7 +120,6 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
       item.dispose();
     }
     _descriptionController.dispose();
-    _formStatus.dispose();
     super.dispose();
   }
 
@@ -146,42 +165,26 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
 
   Future<void> _saveTransaction() async {
     _updateFormzState();
-    if (_formStatus.value != FormzSubmissionStatus.success) return;
-    setState(() { _isLoading = true; });
-    try {
-      final transactionEntries = List.generate(_items.length, (i) {
-        final parsedAmount = double.tryParse(_amountInputs[i].value.replaceAll(',', '.')) ?? 0.0;
-        return TransactionEntry(
-          description: _descInputs[i].value,
-          amount: (parsedAmount * 100).round(),
-          categoryId: _items[i].selectedCategoryId,
-        );
-      });
-      await ApiService.postTransaction(
-        type: TransactionType.expense,
-        amount: null,
-        date: _selectedDate,
-        categoryId: '',
-        description: '',
-        merchant: _selectedMerchant,
-        transactionEntriesParam: transactionEntries,
-        balanceId: _balanceInput.value,
+    if (widget.formStatus.value != FormzSubmissionStatus.success) return;
+    final transactionEntries = List.generate(_items.length, (i) {
+      final parsedAmount = double.tryParse(_amountInputs[i].value.replaceAll(',', '.')) ?? 0.0;
+      return TransactionEntry(
+        description: _descInputs[i].value,
+        amount: (parsedAmount * 100).round(),
+        categoryId: _items[i].selectedCategoryId,
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction saved!'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-        );
-      }
-    } finally {
-      if (mounted) setState(() { _isLoading = false; });
-    }
+    });
+    final data = ExpenseTransactionFormData(
+      entries: transactionEntries,
+      merchant: _selectedMerchant,
+      balanceId: _balanceInput.value,
+      date: _selectedDate,
+    );
+    widget.onSubmit(data);
+  }
+
+  void submit() {
+    _saveTransaction();
   }
 
   @override
@@ -329,6 +332,8 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
             ),
           ),
           const SizedBox(height: 24),
+          Text('Balance', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -391,21 +396,6 @@ class _ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
             ),
           ),
           const SizedBox(height: 24),
-          ValueListenableBuilder<FormzSubmissionStatus>(
-            valueListenable: _formStatus,
-            builder: (context, status, _) {
-              return FilledButton(
-                onPressed: _isLoading || status != FormzSubmissionStatus.success ? null : _saveTransaction,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text('Save'),
-              );
-            },
-          ),
         ],
       ),
     );
