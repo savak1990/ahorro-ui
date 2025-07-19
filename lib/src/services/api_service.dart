@@ -316,6 +316,23 @@ class ApiService {
     }
   }
 
+  static Future<void> deleteBalance(String balanceId) async {
+    final session = await Amplify.Auth.fetchAuthSession();
+    if (!session.isSignedIn) throw Exception('User is not signed in');
+    final cognitoSession = session as CognitoAuthSession;
+    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+    final url = Uri.parse('${AppConfig.baseUrl}/balances/$balanceId');
+    final headers = {
+      'Authorization': 'Bearer $token',
+    };
+
+    final response = await http.delete(url, headers: headers);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete balance. Status code:  [31m${response.statusCode} [0m');
+    }
+  }
+
   static Future<Map<String, dynamic>> getTransactionById(String transactionId) async {
     try {
       final session = await Amplify.Auth.fetchAuthSession();

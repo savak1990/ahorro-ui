@@ -4,6 +4,7 @@ import 'package:ahorro_ui/src/screens/budget_screen.dart';
 import 'package:ahorro_ui/src/screens/settings_screen.dart';
 import 'package:ahorro_ui/src/screens/account_screen.dart';
 import 'package:ahorro_ui/src/screens/txn_ai_screen.dart';
+import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
@@ -232,6 +233,7 @@ class _MyAppState extends State<MyApp> {
           '/': (context) => const MainScreen(),
           '/account': (context) => const AccountScreen(),
           '/transactions': (context) => const TransactionsScreen(),
+          '/default-balance-currency': (context) => const DefaultBalanceCurrencyScreen(),
         },
       ),
     );

@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../widgets/list_item_tile.dart';
 import 'add_transaction_screen.dart';
 import '../providers/categories_provider.dart';
+import '../providers/balances_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -92,6 +93,14 @@ class _HomeScreenState extends State<HomeScreen> {
     Future.microtask(() {
       final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
       categoriesProvider.loadCategories();
+      final balancesProvider = Provider.of<BalancesProvider>(context, listen: false);
+      balancesProvider.loadBalances().then((_) {
+        final balances = balancesProvider.balances;
+        final hasActive = balances.any((b) => b.deletedAt == null);
+        if (!hasActive) {
+          Navigator.of(context).pushReplacementNamed('/default-balance-currency');
+        }
+      });
     });
     _userNameFuture = _fetchUserName();
     _transactionsFuture = _fetchTransactions();
