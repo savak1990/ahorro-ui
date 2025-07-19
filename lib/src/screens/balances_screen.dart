@@ -49,13 +49,38 @@ class BalancesScreen extends StatelessWidget {
 
   // Extracted list builder
   Widget _buildList(BuildContext context, List<Balance> balances) {
+    final provider = Provider.of<BalancesProvider>(context, listen: false);
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: balances.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final Balance balance = balances[index];
-        return BalanceTile(balance: balance);
+        return BalanceTile(
+          balance: balance,
+          onDelete: balance.deletedAt != null ? null : () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Delete balance?'),
+                content: Text('Are you sure you want to delete the balance "${balance.title}"?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                  ),
+                ],
+              ),
+            );
+            if (confirm == true) {
+              await provider.deleteBalance(balance.balanceId);
+            }
+          },
+        );
       },
     );
   }

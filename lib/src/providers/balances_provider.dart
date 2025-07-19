@@ -54,4 +54,18 @@ class BalancesProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> deleteBalance(String balanceId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await ApiService.deleteBalance(balanceId);
+      await loadBalances();
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 } 
