@@ -10,6 +10,7 @@ import '../models/category.dart';
 import '../widgets/add_balance_form.dart';
 import '../constants/app_typography.dart';
 import '../widgets/expense_transaction_form.dart';
+import 'package:formz/formz.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -20,69 +21,136 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TransactionType _selectedType = TransactionType.expense;
+  final ValueNotifier<FormzSubmissionStatus> _formStatus = ValueNotifier(FormzSubmissionStatus.initial);
+  bool _isLoading = false;
+  final GlobalKey<ExpenseTransactionFormState> _formKey = GlobalKey<ExpenseTransactionFormState>();
+
+  // callback для сабмита с данными
+  void _onSubmit(ExpenseTransactionFormData data) async {
+    setState(() { _isLoading = true; });
+    try {
+      await ApiService.postTransaction(
+        type: TransactionType.expense,
+        amount: null,
+        date: data.date,
+        categoryId: '',
+        description: '',
+        merchant: data.merchant,
+        transactionEntriesParam: data.entries,
+        balanceId: data.balanceId,
+      );
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction saved!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.95;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: maxHeight,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Закрыть',
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
-                ),
-                Text(
-                  'New transaction',
-                  style: AppTypography.displaySmall,
-                  textAlign: TextAlign.left,
-                ),
-                const SizedBox(height: 32),
-                SegmentedButton<TransactionType>(
-                  segments: const [
-                    ButtonSegment<TransactionType>(value: TransactionType.income, label: Text('Income'), icon: Icon(Icons.arrow_upward)),
-                    ButtonSegment<TransactionType>(value: TransactionType.expense, label: Text('Expense'), icon: Icon(Icons.arrow_downward)),
-                    ButtonSegment<TransactionType>(value: TransactionType.movement, label: Text('Movement'), icon: Icon(Icons.swap_horiz)),
+                  ValueListenableBuilder<FormzSubmissionStatus>(
+                    valueListenable: _formStatus,
+                    builder: (context, status, _) {
+                      return FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(40, 40),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        onPressed: _isLoading || status != FormzSubmissionStatus.success ? null : () {
+                          _formKey.currentState?.submit();
+                        },
+                        child: _isLoading
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Save'),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Text(
+                        'New transaction',
+                        style: AppTypography.headlineLarge,
+                        textAlign: TextAlign.left,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SegmentedButton<TransactionType>(
+                        segments: const [
+                          ButtonSegment<TransactionType>(value: TransactionType.income, label: Text('Income'), icon: Icon(Icons.arrow_upward)),
+                          ButtonSegment<TransactionType>(value: TransactionType.expense, label: Text('Expense'), icon: Icon(Icons.arrow_downward)),
+                          ButtonSegment<TransactionType>(value: TransactionType.movement, label: Text('Movement'), icon: Icon(Icons.swap_horiz)),
+                        ],
+                        selected: {_selectedType},
+                        onSelectionChanged: (Set<TransactionType> selected) {
+                          setState(() {
+                            _selectedType = selected.first;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    if (_selectedType == TransactionType.expense)
+                      ExpenseTransactionForm(
+                        key: _formKey,
+                        formStatus: _formStatus,
+                        onSubmit: _onSubmit,
+                        isLoading: _isLoading,
+                      )
+                    else
+                      const Center(child: Text('Пока реализован только расход')),
                   ],
-                  selected: {_selectedType},
-                  onSelectionChanged: (Set<TransactionType> selected) {
-                    setState(() {
-                      _selectedType = selected.first;
-                    });
-                  },
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
-          ),
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                if (_selectedType == TransactionType.expense) {
-                  return const ExpenseTransactionForm();
-                } else {
-                  return const Center(child: Text('Пока реализован только расход'));
-                }
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
