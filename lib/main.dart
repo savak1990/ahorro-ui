@@ -5,6 +5,7 @@ import 'package:ahorro_ui/src/screens/settings_screen.dart';
 import 'package:ahorro_ui/src/screens/account_screen.dart';
 import 'package:ahorro_ui/src/screens/txn_ai_screen.dart';
 import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';
+import 'package:ahorro_ui/src/screens/merchant_search_screen.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'src/providers/balances_provider.dart';
 import 'src/providers/categories_provider.dart';
+import 'src/providers/merchants_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io';
 
@@ -21,16 +23,20 @@ import 'amplifyconfiguration_prod.dart' as prod_config;
 import 'src/constants/app_colors.dart';
 import 'src/constants/app_strings.dart';
 
+import 'src/services/auth_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print('PWD: ${Directory.current.path}');
-  print('ENV EXISTS: ${File('.env').existsSync()}');
+  //print('PWD: ${Directory.current.path}');
+  //print('ENV EXISTS: ${File('.env').existsSync()}');
   await dotenv.load(fileName: ".env");
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BalancesProvider()..loadBalances()),
         ChangeNotifierProvider(create: (_) => CategoriesProvider()..loadCategories()),
+        ChangeNotifierProvider(create: (_) => MerchantsProvider()..loadMerchants()),
       ],
       child: MyApp(),
     ),
@@ -234,6 +240,7 @@ class _MyAppState extends State<MyApp> {
           '/account': (context) => const AccountScreen(),
           '/transactions': (context) => const TransactionsScreen(),
           '/default-balance-currency': (context) => const DefaultBalanceCurrencyScreen(),
+          '/merchant_search': (context) => const MerchantSearchScreen(),
         },
       ),
     );

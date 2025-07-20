@@ -11,6 +11,7 @@ import '../widgets/list_item_tile.dart';
 import 'add_transaction_screen.dart';
 import '../providers/categories_provider.dart';
 import '../providers/balances_provider.dart';
+import '../providers/merchants_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -101,6 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.of(context).pushReplacementNamed('/default-balance-currency');
         }
       });
+      final merchantsProvider = Provider.of<MerchantsProvider>(context, listen: false);
+      merchantsProvider.loadMerchants();
     });
     _userNameFuture = _fetchUserName();
     _transactionsFuture = _fetchTransactions();

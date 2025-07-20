@@ -4,8 +4,10 @@ import 'package:formz/formz.dart';
 import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import '../providers/balances_provider.dart';
 import '../providers/categories_provider.dart';
+import '../providers/merchants_provider.dart';
 import '../models/transaction_entry.dart';
 import '../models/category.dart';
+import '../models/merchant.dart';
 import '../services/api_service.dart';
 import '../constants/app_typography.dart';
 import '../models/transaction_type.dart';
@@ -80,7 +82,7 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   bool _isLoading = false;
   List<_TransactionItem> _items = [];
   String? _fromAccountId;
-  String _selectedMerchant = '';
+  Merchant? _selectedMerchant;
 
   // formz state
   late List<AmountInput> _amountInputs;
@@ -176,7 +178,7 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
     });
     final data = ExpenseTransactionFormData(
       entries: transactionEntries,
-      merchant: _selectedMerchant,
+      merchant: _selectedMerchant?.name ?? '',
       balanceId: _balanceInput.value,
       date: _selectedDate,
     );
@@ -421,77 +423,64 @@ class _TransactionItem {
   }
 }
 
-class _MerchantChips extends StatefulWidget {
-  final String selectedMerchant;
-  final ValueChanged<String> onMerchantSelected;
+class _MerchantChips extends StatelessWidget {
+  final Merchant? selectedMerchant;
+  final ValueChanged<Merchant?> onMerchantSelected;
   const _MerchantChips({required this.selectedMerchant, required this.onMerchantSelected});
 
   @override
-  State<_MerchantChips> createState() => _MerchantChipsState();
-}
-
-class _MerchantChipsState extends State<_MerchantChips> {
-  List<String> _merchants = [];
-  @override
-  void initState() {
-    super.initState();
-    _loadMerchants();
-  }
-  void _loadMerchants() async {
-    setState(() {
-      _merchants = ['Mercadona', 'Amazon', 'Lidl', 'Carrefour'];
-    });
-  }
-  @override
   Widget build(BuildContext context) {
+    final merchantsProvider = Provider.of<MerchantsProvider>(context);
+    final merchants = List<Merchant>.from(merchantsProvider.merchants);
+    merchants.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final topMerchants = merchants.take(3).toList();
+
+    if (merchantsProvider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (topMerchants.isEmpty) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () {
+            Navigator.of(context).pushNamed('/merchant_search').then((result) {
+              if (result is Merchant) {
+                onMerchantSelected(result);
+              }
+            });
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Add merchant'),
+        ),
+      );
+    }
+
     return Wrap(
       spacing: 8.0,
       children: [
-        ..._merchants.map((merchant) => ChoiceChip(
-          label: Text(merchant),
-          selected: widget.selectedMerchant == merchant,
+        ...topMerchants.map((merchant) => ChoiceChip(
+          label: Text(merchant.name),
+          avatar: merchant.imageUrl.isNotEmpty ? CircleAvatar(backgroundImage: NetworkImage(merchant.imageUrl)) : null,
+          selected: selectedMerchant?.merchantId == merchant.merchantId,
           onSelected: (selected) {
-            if (selected) widget.onMerchantSelected(merchant);
+            if (selected) {
+              onMerchantSelected(merchant);
+            } else if (selectedMerchant?.merchantId == merchant.merchantId) {
+              onMerchantSelected(null);
+            }
           },
         )),
         TextButton.icon(
-          style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.primary,
-            textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
+          onPressed: () {
+            Navigator.of(context).pushNamed('/merchant_search').then((result) {
+              if (result is Merchant) {
+                onMerchantSelected(result);
+              }
+            });
+          },
           icon: const Icon(Icons.search),
           label: const Text('Find merchant'),
-          onPressed: () async {
-            final newMerchant = await showDialog<String>(
-              context: context,
-              builder: (context) {
-                final controller = TextEditingController();
-                return AlertDialog(
-                  title: const Text('Find merchant'),
-                  content: TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(hintText: 'Merchant name'),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, controller.text.trim()),
-                      child: const Text('Add'),
-                    ),
-                  ],
-                );
-              },
-            );
-            if (newMerchant != null && newMerchant.isNotEmpty) {
-              setState(() {
-                _merchants.add(newMerchant);
-              });
-              widget.onMerchantSelected(newMerchant);
-            }
-          },
         ),
       ],
     );
