@@ -24,6 +24,7 @@ import 'src/constants/app_colors.dart';
 import 'src/constants/app_strings.dart';
 
 import 'src/services/auth_service.dart';
+import 'src/providers/transaction_entries_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BalancesProvider()..loadBalances()),
         ChangeNotifierProvider(create: (_) => CategoriesProvider()..loadCategories()),
         ChangeNotifierProvider(create: (_) => MerchantsProvider()..loadMerchants()),
+        ChangeNotifierProvider(create: (_) => TransactionEntriesProvider()..loadEntries()),
       ],
       child: MyApp(),
     ),
@@ -256,16 +258,27 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  String? _pendingTransactionType;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const TransactionsScreen(),
-    const BudgetScreen(),
-    const TxnAiScreen(),
-  ];
+  void _showTransactionsTab([String? type]) {
+    setState(() {
+      _selectedIndex = 1; // Transactions tab
+      _pendingTransactionType = type;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      HomeScreen(
+        onShowTransactions: (type) => _showTransactionsTab(type),
+      ),
+      TransactionsScreen(
+        initialType: _pendingTransactionType,
+      ),
+      const BudgetScreen(),
+      const TxnAiScreen(),
+    ];
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
@@ -273,6 +286,7 @@ class _MainScreenState extends State<MainScreen> {
         onDestinationSelected: (index) {
           setState(() {
             _selectedIndex = index;
+            if (index != 1) _pendingTransactionType = null;
           });
         },
         destinations: const [

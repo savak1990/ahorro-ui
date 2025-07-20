@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../models/transaction_type.dart';
 import 'dart:convert';
 import '../models/transaction_entry.dart';
+import '../providers/transaction_entries_provider.dart';
 
 class TxnAiScreen extends StatefulWidget {
   const TxnAiScreen({super.key});
@@ -313,7 +314,8 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
   Future<void> _createExpenseFunction(List<TransactionEntry> entries, String balanceId) async {
     setState(() { _creatingExpense = true; });
     try {
-      await ApiService.postTransaction(
+      final provider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+      await provider.createTransaction(
         type: TransactionType.expense,
         date: DateTime.now(),
         categoryId: entries.first.categoryId,

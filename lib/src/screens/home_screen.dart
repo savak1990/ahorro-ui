@@ -12,9 +12,12 @@ import 'add_transaction_screen.dart';
 import '../providers/categories_provider.dart';
 import '../providers/balances_provider.dart';
 import '../providers/merchants_provider.dart';
+import '../providers/transaction_entries_provider.dart';
+import '../widgets/monthly_overview_card.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function(String type)? onShowTransactions;
+  const HomeScreen({super.key, this.onShowTransactions});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -24,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _tooltipTimer;
   bool _showTooltip = false;
   late Future<String> _userNameFuture;
-  late Future<Map<String, double>> _transactionsFuture;
 
   Future<String> _fetchUserName() async {
     try {
@@ -42,55 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<Map<String, double>> _fetchTransactions() async {
-    try {
-      final response = await ApiService.getTransactions();
-      final currentMonth = DateTime.now();
-      
-      debugPrint('Fetched ${response.transactionEntries.length} transactions');
-      debugPrint('Current month: ${currentMonth.year}-${currentMonth.month}');
-      
-      // Group transactions by month and type
-      final Map<String, double> monthlyTotals = {
-        'expense': 0.0,
-        'income': 0.0,
-      };
-
-      for (final entry in response.transactionEntries) {
-        final entryDate = entry.transactedAt;
-        debugPrint('Transaction: type=${entry.type}, amount=${entry.amount}, date=${entryDate.year}-${entryDate.month}');
-        
-        // Check that transaction is from current month
-        if (entryDate.year == currentMonth.year && 
-            entryDate.month == currentMonth.month) {
-          
-          final type = entry.type.toLowerCase();
-          debugPrint('Adding to monthly totals: $type += ${entry.amount}');
-          if (monthlyTotals.containsKey(type)) {
-            monthlyTotals[type] = monthlyTotals[type]! + entry.amount;
-          }
-        } else {
-          debugPrint('Skipping transaction from different month');
-        }
-      }
-
-      debugPrint('Final monthly totals: $monthlyTotals');
-      return monthlyTotals;
-    } catch (e) {
-      debugPrint('Error fetching transactions: $e');
-      
-      // Return zero values in case of error
-      return {
-        'expense': 0.0,
-        'income': 0.0,
-      };
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    // Загружаем категории при старте HomeScreen
     Future.microtask(() {
       final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
       categoriesProvider.loadCategories();
@@ -104,9 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       final merchantsProvider = Provider.of<MerchantsProvider>(context, listen: false);
       merchantsProvider.loadMerchants();
+      Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
     });
     _userNameFuture = _fetchUserName();
-    _transactionsFuture = _fetchTransactions();
   }
 
   @override
@@ -137,9 +93,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _refreshTransactions() {
-    setState(() {
-      _transactionsFuture = _fetchTransactions();
-    });
+    Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
+  }
+
+  Map<String, double> _calculateMonthlyTotals(List entries) {
+    final currentMonth = DateTime.now();
+    final Map<String, double> monthlyTotals = {
+      'expense': 0.0,
+      'income': 0.0,
+    };
+    for (final entry in entries) {
+      final entryDate = entry.transactedAt;
+      if (entryDate.year == currentMonth.year && entryDate.month == currentMonth.month) {
+        final type = entry.type.toLowerCase();
+        if (monthlyTotals.containsKey(type)) {
+          monthlyTotals[type] = monthlyTotals[type]! + entry.amount;
+        }
+      }
+    }
+    return monthlyTotals;
   }
 
   @override
@@ -180,184 +152,96 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<AuthUser?>(
-        stream: Amplify.Auth.getCurrentUser().asStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: colorScheme.primary,
-              ),
-            );
+      body: FutureBuilder<String>(
+        future: _userNameFuture,
+        builder: (context, nameSnapshot) {
+          String displayUserName = 'User';
+          if (nameSnapshot.connectionState == ConnectionState.done && nameSnapshot.hasData && nameSnapshot.data!.isNotEmpty) {
+            displayUserName = nameSnapshot.data!;
           }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.error,
-                ),
-              ),
-            );
-          }
-
-          final user = snapshot.data;
-          if (user == null) {
-            return Center(
-              child: Text(
-                'Not signed in',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            );
-          }
-
-          return FutureBuilder<String>(
-            future: _userNameFuture,
-            builder: (context, nameSnapshot) {
-              String displayUserName;
-              if (nameSnapshot.connectionState == ConnectionState.waiting) {
-                displayUserName = 'User';
-              } else if (nameSnapshot.hasData && nameSnapshot.data!.isNotEmpty) {
-                displayUserName = nameSnapshot.data!;
-              } else {
-                displayUserName = user.username;
+          return Consumer<TransactionEntriesProvider>(
+            builder: (context, provider, _) {
+              if (provider.isLoading) {
+                return Center(child: CircularProgressIndicator(color: colorScheme.primary));
               }
-
-              return FutureBuilder<Map<String, double>>(
-                future: _transactionsFuture,
-                builder: (context, transactionsSnapshot) {
-                  double expenseTotal = 0.0;
-                  double incomeTotal = 0.0;
-
-                  if (transactionsSnapshot.hasData) {
-                    final totals = transactionsSnapshot.data!;
-                    expenseTotal = totals['expense'] ?? 0.0;
-                    incomeTotal = totals['income'] ?? 0.0;
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header section with improved typography
-                        Text(
-                          'Hello, $displayUserName!',
-                          style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.onSurface,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          monthYear,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
-                            letterSpacing: 0.15,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
-                        // Financial Overview Section
-                        Text(
-                          'Financial Overview',
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                            letterSpacing: 0.15,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Income/Expense List
-                        Card(
-                          elevation: 0,
-                          color: colorScheme.surfaceContainerHighest,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              ListItemTile(
-                                title: 'Expense',
-                                subtitle: transactionsSnapshot.connectionState == ConnectionState.waiting
-                                    ? 'Loading...'
-                                    : '${expenseTotal.toStringAsFixed(2)} EUR',
-                                icon: Icons.trending_down,
-                                iconColor: colorScheme.error,
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/transactions',
-                                    arguments: {
-                                      'type': 'expense',
-                                      'month': DateTime.now(),
-                                    },
-                                  );
-                                },
-                              ),
-                              ListItemTile(
-                                title: 'Income',
-                                subtitle: transactionsSnapshot.connectionState == ConnectionState.waiting
-                                    ? 'Loading...'
-                                    : '${incomeTotal.toStringAsFixed(2)} EUR',
-                                icon: Icons.trending_up,
-                                iconColor: colorScheme.primary,
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/transactions',
-                                    arguments: {
-                                      'type': 'income',
-                                      'month': DateTime.now(),
-                                    },
-                                  );
-                                },
-                                showDivider: false,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
-                        // Notifications Section
-                        Text(
-                          'Notifications',
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                            letterSpacing: 0.15,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Notifications List
-                        Card(
-                          elevation: 0,
-                          color: colorScheme.surfaceContainerHighest,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListItemTile(
-                            title: 'Cafe budget is 90%',
-                            subtitle: 'You\'re approaching your monthly limit',
-                            icon: Icons.notifications,
-                            iconColor: colorScheme.tertiary,
-                            onTap: () {
-                              // Navigate to budget screen or show budget details
-                            },
-                            showDivider: false,
-                          ),
-                        ),
-                      ],
+              if (provider.error != null) {
+                return Center(child: Text('Error loading transactions:  {provider.error}', style: textTheme.bodyLarge?.copyWith(color: colorScheme.error)));
+              }
+              final entries = provider.entries;
+              final monthlyTotals = _calculateMonthlyTotals(entries);
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header section with improved typography
+                    Text(
+                      'Hello, $displayUserName!',
+                      style: textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 8),
+                    Text(
+                      monthYear,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurfaceVariant,
+                        letterSpacing: 0.15,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Financial Overview Section
+                    Text(
+                      'Financial Overview',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                        letterSpacing: 0.15,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    MonthlyOverviewCard(
+                      entries: entries,
+                      onTap: (type) {
+                        if (widget.onShowTransactions != null) {
+                          widget.onShowTransactions!(type);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    // Notifications Section
+                    Text(
+                      'Notifications',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                        letterSpacing: 0.15,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Notifications List
+                    Card(
+                      elevation: 0,
+                      color: colorScheme.surfaceContainerHighest,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListItemTile(
+                        title: 'Cafe budget is 90%',
+                        subtitle: 'You\'re approaching your monthly limit',
+                        icon: Icons.notifications,
+                        iconColor: colorScheme.tertiary,
+                        onTap: () {
+                          // Navigate to budget screen or show budget details
+                        },
+                        showDivider: false,
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           );
