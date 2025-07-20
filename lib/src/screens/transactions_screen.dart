@@ -7,16 +7,18 @@ import '../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
 import '../models/transaction_entry_data.dart';
 import 'transaction_details_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/transaction_entries_provider.dart';
 
 class TransactionsScreen extends StatefulWidget {
-  const TransactionsScreen({super.key});
+  final String? initialType;
+  const TransactionsScreen({super.key, this.initialType});
 
   @override
   State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  late Future<List<TransactionDisplayData>> _transactionsFuture;
   List<TransactionDisplayData> _allTransactions = [];
   
   // Date filters
@@ -41,93 +43,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    _transactionsFuture = _fetchTransactions();
+    // Загружаем транзакции через провайдер
+    Future.microtask(() {
+      Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
+    });
+    // Если initialType задан, выставляем фильтр по типу
+    if (widget.initialType != null && widget.initialType!.isNotEmpty) {
+      _selectedTypes = {widget.initialType!};
+    }
   }
 
-  Future<List<TransactionDisplayData>> _fetchTransactions() async {
-    try {
-      final response = await ApiService.getTransactions();
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      final DateTime filterMonth = args?['month'] ?? DateTime.now();
-
-      debugPrint('Fetched ${response.transactionEntries.length} transaction entries');
-      debugPrint('Filtering by month: ${filterMonth.year}-${filterMonth.month}');
-
-      // Group transactions by unique attributes
-      final Map<String, List<TransactionEntryData>> groupedTransactions = {};
-      
-      for (final entry in response.transactionEntries) {
-        final key = '${entry.transactionId}_${entry.type}_${entry.balanceTitle}_${entry.balanceCurrency}_${entry.approvedAt.toIso8601String()}_${entry.merchantName}';
-        
-        if (!groupedTransactions.containsKey(key)) {
-          groupedTransactions[key] = [];
-        }
-        groupedTransactions[key]!.add(entry);
-      }
-
-      debugPrint('Grouped into ${groupedTransactions.length} unique transactions');
-
-      // Convert grouped data to display transactions
-      final List<TransactionDisplayData> displayTransactions = [];
-      
-      for (final group in groupedTransactions.values) {
-        if (group.isEmpty) continue;
-        
-        final firstEntry = group.first;
-        
-        // Process categories
-        final categories = group.map((e) => e.categoryName).toSet();
-        final categoryName = categories.length > 1 ? 'Multiple Categories' : categories.first;
-
-        // Sum amounts
-        final totalAmount = group.fold(0.0, (sum, entry) => sum + entry.amount);
-
-        // Determine category icon
-        IconData categoryIcon = _getCategoryIcon(categoryName);
-
-        displayTransactions.add(TransactionDisplayData(
-          id: firstEntry.transactionId,
-          type: firstEntry.type,
-          amount: totalAmount,
-          category: categoryName,
-          categoryIcon: categoryIcon,
-          account: firstEntry.balanceTitle,
-          merchantName: firstEntry.merchantName,
-          date: firstEntry.transactedAt,
-          currency: firstEntry.balanceCurrency,
-        ));
-      }
-
-      // Сохраняем все транзакции для фильтров
-      _allTransactions = displayTransactions;
-      // Формируем фильтры по годам и месяцам на основе всех транзакций
-      _updateAvailableFilterValues(_allTransactions);
-
-      // Применяем фильтры по дате только если они активны
-      final filtered = displayTransactions.where((tx) {
-        // Если есть активные фильтры по дате, применяем их
-        if (_hasActiveDateFilters()) {
-          debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
-          if (_dateFilterType == 'month') {
-            if (_selectedYear != null && tx.date.year != _selectedYear) return false;
-            if (_selectedMonth != null && tx.date.month != _selectedMonth) return false;
-          } else if (_dateFilterType == 'period') {
-            if (_startDate != null && tx.date.isBefore(_startDate!)) return false;
-            if (_endDate != null && tx.date.isAfter(_endDate!)) return false;
-          }
-        } else {
-          debugPrint('No active date filters, showing all transactions');
-        }
-        // Если нет активных фильтров по дате, показываем все транзакции
-        return true;
-      }).toList();
-
-      debugPrint('Final display transactions: ${filtered.length}');
-      return filtered;
-    } catch (e) {
-      debugPrint('Error fetching transactions: $e');
-      return [];
-    }
+  void _refreshTransactions() {
+    Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
   }
 
   void _updateAvailableFilterValues(List<TransactionDisplayData> transactions) {
@@ -287,12 +214,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
-  void _refreshTransactions() {
-    setState(() {
-      _transactionsFuture = _fetchTransactions();
-    });
-  }
-
   List<FilterOption> _getTypeFilterOptions() {
     final options = <FilterOption>[
       const FilterOption(
@@ -442,187 +363,192 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Отображаем активные фильтры
-          if (_hasActiveNonDateFilters()) _buildActiveFiltersSummary(),
-          if (_hasActiveDateFilters()) _buildActiveDateFiltersSummary(),
-          
-          const SizedBox(height: 8),
-          
-          // Transactions list
-          Expanded(
-            child: FutureBuilder<List<TransactionDisplayData>>(
-              future: _transactionsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.primary,
+      body: Consumer<TransactionEntriesProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (provider.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: colorScheme.onSurfaceVariant),
+                  const SizedBox(height: 16),
+                  Text('Error loading transactions', style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface)),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _refreshTransactions,
+                    child: Text('Retry', style: textTheme.bodyMedium?.copyWith(color: colorScheme.primary)),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Преобразуем entries в display-структуру (группировка и т.д.)
+          final entries = provider.entries;
+          final displayTransactions = entries.map((entry) {
+            final key = '${entry.transactionId}_${entry.type}_${entry.balanceTitle}_${entry.balanceCurrency}_${entry.approvedAt.toIso8601String()}_${entry.merchantName}';
+            return TransactionDisplayData(
+              id: entry.transactionId,
+              type: entry.type,
+              amount: entry.amount,
+              category: entry.categoryName,
+              categoryIcon: _getCategoryIcon(entry.categoryName),
+              account: entry.balanceTitle,
+              merchantName: entry.merchantName,
+              date: entry.transactedAt,
+              currency: entry.balanceCurrency,
+            );
+          }).toList();
+
+          // Сохраняем все транзакции для фильтров
+          _allTransactions = displayTransactions;
+          // Формируем фильтры по годам и месяцам на основе всех транзакций
+          _updateAvailableFilterValues(_allTransactions);
+
+          // Применяем фильтры по дате только если они активны
+          final filtered = displayTransactions.where((tx) {
+            // Если есть активные фильтры по дате, применяем их
+            if (_hasActiveDateFilters()) {
+              debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
+              if (_dateFilterType == 'month') {
+                if (_selectedYear != null && tx.date.year != _selectedYear) return false;
+                if (_selectedMonth != null && tx.date.month != _selectedMonth) return false;
+              } else if (_dateFilterType == 'period') {
+                if (_startDate != null && tx.date.isBefore(_startDate!)) return false;
+                if (_endDate != null && tx.date.isAfter(_endDate!)) return false;
+              }
+            } else {
+              debugPrint('No active date filters, showing all transactions');
+            }
+            // Если нет активных фильтров по дате, показываем все транзакции
+            return true;
+          }).toList();
+
+          // Группируем транзакции по дням
+          final groupedTransactions = _groupTransactionsByDate(filtered);
+
+          if (filtered.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No transactions found',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
                     ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading transactions',
-                          style: textTheme.titleMedium?.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: _refreshTransactions,
-                          child: Text(
-                            'Retry',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _hasActiveFilters() ? 'with current filters' : 'for ${_getMonthName(month)}',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
-                  );
-                }
+                  ),
+                ],
+              ),
+            );
+          }
 
-                final allTransactions = snapshot.data ?? [];
-                final filteredTransactions = _applyFilters(allTransactions);
-
-                if (filteredTransactions.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.receipt_long,
-                          size: 64,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No transactions found',
-                          style: textTheme.titleMedium?.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _hasActiveFilters() ? 'with current filters' : 'for ${_getMonthName(month)}',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                // Группируем транзакции по дням
-                final groupedTransactions = _groupTransactionsByDate(filteredTransactions);
-
-                return CustomScrollView(
-                  slivers: [
-                    // Floating заголовок Transactions
-                    SliverPersistentHeader(
-                      pinned: false,
-                      floating: false,
-                      delegate: _SliverAppBarDelegate(
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Transactions',
-                            style: textTheme.headlineLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
+          return CustomScrollView(
+            slivers: [
+              // Floating заголовок Transactions
+              SliverPersistentHeader(
+                pinned: false,
+                floating: false,
+                delegate: _SliverAppBarDelegate(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Transactions',
+                      style: textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                    // Список транзакций
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final groupIndex = index ~/ 2;
-                            final isHeader = index % 2 == 0;
-                            final groupKey = groupedTransactions.keys.elementAt(groupIndex);
-                            final groupTransactions = groupedTransactions[groupKey]!;
+                  ),
+                ),
+              ),
+              // Список транзакций
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final groupIndex = index ~/ 2;
+                      final isHeader = index % 2 == 0;
+                      final groupKey = groupedTransactions.keys.elementAt(groupIndex);
+                      final groupTransactions = groupedTransactions[groupKey]!;
+                      
+                      if (isHeader) {
+                        // Заголовок группы
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 8, left: 0, right: 0),
+                          child: Text(
+                            groupKey,
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.primary,
+                              letterSpacing: 0.15,
+                            ),
+                          ),
+                        );
+                      } else {
+                        // Транзакции группы
+                        return Column(
+                          children: groupTransactions.asMap().entries.map((entry) {
+                            final txIndex = entry.key;
+                            final tx = entry.value;
                             
-                            if (isHeader) {
-                              // Заголовок группы
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 16, bottom: 8, left: 0, right: 0),
-                                child: Text(
-                                  groupKey,
-                                  style: textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.primary,
-                                    letterSpacing: 0.15,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              // Транзакции группы
-                              return Column(
-                                children: groupTransactions.asMap().entries.map((entry) {
-                                  final txIndex = entry.key;
-                                  final tx = entry.value;
-                                  
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      left: 0,
-                                      right: 0,
-                                      top: txIndex == 0 ? 0 : 0,
-                                      bottom: txIndex == groupTransactions.length - 1 ? 0 : 0,
-                                    ),
-                                    child: TransactionTile(
-                                      type: tx.type,
-                                      amount: tx.amount,
-                                      category: tx.category,
-                                      categoryIcon: tx.categoryIcon,
-                                      account: tx.account,
-                                      date: tx.date,
-                                      description: tx.description,
-                                      merchantName: tx.merchantName,
-                                      currency: tx.currency,
-                                      isFirst: txIndex == 0,
-                                      isLast: txIndex == groupTransactions.length - 1,
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
-                                          ),
-                                        );
-                                      },
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                left: 0,
+                                right: 0,
+                                top: txIndex == 0 ? 0 : 0,
+                                bottom: txIndex == groupTransactions.length - 1 ? 0 : 0,
+                              ),
+                              child: TransactionTile(
+                                type: tx.type,
+                                amount: tx.amount,
+                                category: tx.category,
+                                categoryIcon: tx.categoryIcon,
+                                account: tx.account,
+                                date: tx.date,
+                                description: tx.description,
+                                merchantName: tx.merchantName,
+                                currency: tx.currency,
+                                isFirst: txIndex == 0,
+                                isLast: txIndex == groupTransactions.length - 1,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
                                     ),
                                   );
-                                }).toList(),
-                              );
-                            }
-                          },
-                          childCount: groupedTransactions.length * 2,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }
+                    },
+                    childCount: groupedTransactions.length * 2,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

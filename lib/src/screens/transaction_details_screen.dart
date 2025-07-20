@@ -3,6 +3,8 @@ import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 import '../widgets/transaction_tile.dart';
 import '../constants/app_typography.dart';
+import 'package:provider/provider.dart';
+import '../providers/transaction_entries_provider.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final String transactionId;

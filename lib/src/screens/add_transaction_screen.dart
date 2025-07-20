@@ -11,6 +11,7 @@ import '../widgets/add_balance_form.dart';
 import '../constants/app_typography.dart';
 import '../widgets/expense_transaction_form.dart';
 import 'package:formz/formz.dart';
+import '../providers/transaction_entries_provider.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -29,7 +30,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void _onSubmit(ExpenseTransactionFormData data) async {
     setState(() { _isLoading = true; });
     try {
-      await ApiService.postTransaction(
+      final provider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+      await provider.createTransaction(
         type: TransactionType.expense,
         amount: null,
         date: data.date,
