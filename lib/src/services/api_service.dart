@@ -13,6 +13,7 @@ import '../models/transaction_entry.dart';
 import '../models/transactions_response.dart';
 import '../models/transaction_entry_data.dart';
 import '../models/categories_response.dart';
+import '../models/merchant.dart';
 
 
 class ApiService {
@@ -358,6 +359,65 @@ class ApiService {
     } catch (e) {
       debugPrint('Error getting transaction by id: $e');
       rethrow;
+    }
+  }
+
+  static Future<List<Merchant>> getMerchants() async {
+    final session = await Amplify.Auth.fetchAuthSession();
+    if (!session.isSignedIn) {
+      throw Exception('User is not signed in');
+    }
+    final userId = await AuthService.getUserId();
+    final cognitoSession = session as CognitoAuthSession;
+    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+    final url = Uri.parse('${AppConfig.baseUrl}/merchants?userId=$userId');
+    final headers = {
+      'Authorization': 'Bearer $token',
+    };
+    debugPrint('[ApiService.getMerchants] URL: $url');
+    debugPrint('[ApiService.getMerchants] HEADERS: $headers');
+    final response = await http.get(url, headers: headers);
+    debugPrint('[ApiService.getMerchants] RESPONSE STATUS: ${response.statusCode}');
+    debugPrint('[ApiService.getMerchants] RESPONSE BODY: ${response.body}');
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final List merchantsJson = data['items'] ?? [];
+      return merchantsJson.map<Merchant>((e) => Merchant.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load merchants: \\${response.statusCode}');
+    }
+  }
+
+  static Future<Merchant> postMerchant({required String name, required String userId}) async {
+    final session = await Amplify.Auth.fetchAuthSession();
+    if (!session.isSignedIn) {
+      throw Exception('User is not signed in');
+    }
+    final cognitoSession = session as CognitoAuthSession;
+    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+    final url = Uri.parse('${AppConfig.baseUrl}/merchants');
+    final body = jsonEncode({'name': name, 'userId': userId});
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    debugPrint('[ApiService.postMerchant] URL: $url');
+    debugPrint('[ApiService.postMerchant] BODY: $body');
+    debugPrint('[ApiService.postMerchant] HEADERS: $headers');
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: body,
+    );
+    debugPrint('[ApiService.postMerchant] RESPONSE STATUS: ${response.statusCode}');
+    debugPrint('[ApiService.postMerchant] RESPONSE BODY: ${response.body}');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return Merchant.fromJson(data);
+    } else {
+      throw Exception('Failed to create merchant: \\${response.statusCode}');
     }
   }
 } 
