@@ -174,6 +174,7 @@ class ApiService {
           categoryName: item['categoryName'] ?? '',
           categoryImageUrl: item['categoryImageUrl'],
           merchantName: item['merchantName'] ?? '',
+          name: item['name'] ?? '',
           merchantImageUrl: item['merchantImageUrl'],
           operationId: item['operationId'] ?? '',
           approvedAt: DateTime.tryParse(item['approvedAt'] ?? '') ?? DateTime.now(),

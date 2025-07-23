@@ -20,6 +20,10 @@ class TransactionEntriesProvider extends ChangeNotifier {
     try {
       final response = await ApiService.getTransactions();
       _entries = response.transactionEntries;
+      // Логируем merchantName для всех транзакций
+      for (final entry in _entries) {
+        debugPrint('[TransactionEntriesProvider] transactionId: ${entry.transactionId}, type: ${entry.type}, merchantName: ${entry.name}');
+      }
     } catch (e) {
       _error = e.toString();
     }

@@ -6,7 +6,7 @@ class TransactionTile extends StatelessWidget {
   final double amount;
   final String category;
   final IconData categoryIcon;
-  final String account;
+  final String balance;
   final DateTime date;
   final String? description;
   final String currency;
@@ -21,7 +21,7 @@ class TransactionTile extends StatelessWidget {
     required this.amount,
     required this.category,
     required this.categoryIcon,
-    required this.account,
+    required this.balance,
     required this.date,
     this.description,
     this.currency = 'EUR',
@@ -124,7 +124,7 @@ class TransactionTile extends StatelessWidget {
                         
                         // Третья строка: баланс и валюта
                         Text(
-                          '$account • $currency',
+                          '$balance • $currency',
                           style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
