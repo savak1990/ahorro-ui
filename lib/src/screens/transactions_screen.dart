@@ -33,6 +33,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Set<String> _selectedAccounts = {};
   Set<String> _selectedCategories = {};
   
+  // Grouping
+  String _groupingType = 'date'; // 'date' or 'category'
+  
   // Available values for filters
   Set<int> _availableYears = {};
   Set<int> _availableMonths = {};
@@ -108,6 +111,37 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     grouped.removeWhere((key, value) => value.isEmpty);
     
     return grouped;
+  }
+
+  // Группировка транзакций по категории
+  Map<String, List<TransactionDisplayData>> _groupTransactionsByCategory(List<TransactionDisplayData> transactions) {
+    final Map<String, List<TransactionDisplayData>> grouped = {};
+    
+    for (final transaction in transactions) {
+      final category = transaction.category;
+      if (!grouped.containsKey(category)) {
+        grouped[category] = [];
+      }
+      grouped[category]!.add(transaction);
+    }
+    
+    // Сортируем категории по алфавиту
+    final sortedKeys = grouped.keys.toList()..sort();
+    final sortedGrouped = <String, List<TransactionDisplayData>>{};
+    for (final key in sortedKeys) {
+      sortedGrouped[key] = grouped[key]!;
+    }
+    
+    return sortedGrouped;
+  }
+
+  // Общий метод группировки
+  Map<String, List<TransactionDisplayData>> _groupTransactions(List<TransactionDisplayData> transactions) {
+    if (_groupingType == 'category') {
+      return _groupTransactionsByCategory(transactions);
+    } else {
+      return _groupTransactionsByDate(transactions);
+    }
   }
 
   void _showDateFilterBottomSheet() async {
@@ -326,6 +360,47 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
+  void _showGroupingOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Group by',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.calendar_today),
+              title: Text('Date'),
+              trailing: _groupingType == 'date' ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              onTap: () {
+                setState(() {
+                  _groupingType = 'date';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.category),
+              title: Text('Category'),
+              trailing: _groupingType == 'category' ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              onTap: () {
+                setState(() {
+                  _groupingType = 'category';
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -340,6 +415,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: Icon(
+              Icons.format_list_bulleted,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            onPressed: _showGroupingOptions,
+          ),
           IconButton(
             icon: Icon(
               Icons.tune,
@@ -427,8 +509,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             return true;
           }).toList();
 
-          // Группируем транзакции по дням
-          final groupedTransactions = _groupTransactionsByDate(filtered);
+          // Группируем транзакции по выбранному типу
+          final groupedTransactions = _groupTransactions(filtered);
 
           if (filtered.isEmpty) {
             return Center(
