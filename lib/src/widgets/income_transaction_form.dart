@@ -12,7 +12,7 @@ import '../services/api_service.dart';
 import '../constants/app_typography.dart';
 import '../models/transaction_type.dart';
 
-// Formz input models
+// Formz input models (можно переиспользовать из expense_transaction_form.dart)
 class AmountInput extends FormzInput<String, String> {
   const AmountInput.pure() : super.pure('');
   const AmountInput.dirty([String value = '']) : super.dirty(value);
@@ -32,7 +32,6 @@ class DescriptionInput extends FormzInput<String, String> {
 
   @override
   String? validator(String value) {
-    //if (value.trim().isEmpty) return 'Описание обязательно';
     return null;
   }
 }
@@ -43,29 +42,28 @@ class BalanceIdInput extends FormzInput<String, String> {
 
   @override
   String? validator(String value) {
-    //if (value.isEmpty) return 'Выберите счёт';
     return null;
   }
 }
 
-class ExpenseTransactionFormData {
+class IncomeTransactionFormData {
   final List<TransactionEntry> entries;
-  final String merchant;
+  final String source;
   final String balanceId;
   final DateTime date;
-  ExpenseTransactionFormData({
+  IncomeTransactionFormData({
     required this.entries,
-    required this.merchant,
+    required this.source,
     required this.balanceId,
     required this.date,
   });
 }
 
-class ExpenseTransactionForm extends StatefulWidget {
+class IncomeTransactionForm extends StatefulWidget {
   final ValueNotifier<FormzSubmissionStatus> formStatus;
-  final ValueChanged<ExpenseTransactionFormData> onSubmit;
+  final ValueChanged<IncomeTransactionFormData> onSubmit;
   final bool isLoading;
-  const ExpenseTransactionForm({
+  const IncomeTransactionForm({
     super.key,
     required this.formStatus,
     required this.onSubmit,
@@ -73,16 +71,16 @@ class ExpenseTransactionForm extends StatefulWidget {
   });
 
   @override
-  ExpenseTransactionFormState createState() => ExpenseTransactionFormState();
+  IncomeTransactionFormState createState() => IncomeTransactionFormState();
 }
 
-class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
+class IncomeTransactionFormState extends State<IncomeTransactionForm> {
   final TextEditingController _descriptionController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   List<_TransactionItem> _items = [];
   String? _fromAccountId;
-  Merchant? _selectedMerchant;
+  Merchant? _selectedSource;
 
   // formz state
   late List<AmountInput> _amountInputs;
@@ -186,9 +184,9 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
         categoryId: _items[i].selectedCategoryId,
       );
     });
-    final data = ExpenseTransactionFormData(
+    final data = IncomeTransactionFormData(
       entries: transactionEntries,
-      merchant: _selectedMerchant?.name ?? '',
+      source: _selectedSource?.name ?? '',
       balanceId: _balanceInput.value,
       date: _selectedDate,
     );
@@ -398,15 +396,17 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Merchant', style: Theme.of(context).textTheme.titleMedium),
+          Text('Source', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           _MerchantChips(
-            selectedMerchant: _selectedMerchant,
+            selectedMerchant: _selectedSource,
             onMerchantSelected: (merchant) {
               setState(() {
-                _selectedMerchant = merchant;
+                _selectedSource = merchant;
               });
             },
+            labelAdd: 'Add source',
+            labelFind: 'Find source',
           ),
           const SizedBox(height: 24),
           InkWell(
@@ -449,7 +449,9 @@ class _TransactionItem {
 class _MerchantChips extends StatelessWidget {
   final Merchant? selectedMerchant;
   final ValueChanged<Merchant?> onMerchantSelected;
-  const _MerchantChips({required this.selectedMerchant, required this.onMerchantSelected});
+  final String labelAdd;
+  final String labelFind;
+  const _MerchantChips({required this.selectedMerchant, required this.onMerchantSelected, this.labelAdd = 'Add merchant', this.labelFind = 'Find merchant'});
 
   @override
   Widget build(BuildContext context) {
@@ -474,7 +476,7 @@ class _MerchantChips extends StatelessWidget {
             });
           },
           icon: const Icon(Icons.add),
-          label: const Text('Add merchant'),
+          label: Text(labelAdd),
         ),
       );
     }
@@ -503,7 +505,7 @@ class _MerchantChips extends StatelessWidget {
             });
           },
           icon: const Icon(Icons.search),
-          label: const Text('Find merchant'),
+          label: Text(labelFind),
         ),
       ],
     );

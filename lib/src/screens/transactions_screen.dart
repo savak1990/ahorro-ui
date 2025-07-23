@@ -522,7 +522,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 amount: tx.amount,
                                 category: tx.category,
                                 categoryIcon: tx.categoryIcon,
-                                account: tx.account,
+                                balance: tx.account,
                                 date: tx.date,
                                 description: tx.description,
                                 merchantName: tx.merchantName,

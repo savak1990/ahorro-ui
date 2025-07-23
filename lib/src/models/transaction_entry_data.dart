@@ -11,6 +11,7 @@ class TransactionEntryData {
   final String categoryName;
   final String? categoryImageUrl;
   final String merchantName;
+  final String name;
   final String? merchantImageUrl;
   final String operationId;
   final DateTime approvedAt;
@@ -29,6 +30,7 @@ class TransactionEntryData {
     required this.categoryName,
     this.categoryImageUrl,
     required this.merchantName,
+    required this.name,
     this.merchantImageUrl,
     required this.operationId,
     required this.approvedAt,
@@ -60,6 +62,7 @@ class TransactionEntryData {
       categoryName: json['categoryName'] ?? '',
       categoryImageUrl: json['categoryImageUrl'],
       merchantName: json['merchantName'] ?? '',
+      name: json['name'] ?? '',
       merchantImageUrl: json['merchantImageUrl'],
       operationId: json['operationId'] ?? '',
       approvedAt: DateTime.tryParse(json['approvedAt'] ?? '') ?? DateTime.now(),

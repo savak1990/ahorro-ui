@@ -12,6 +12,7 @@ import '../constants/app_typography.dart';
 import '../widgets/expense_transaction_form.dart';
 import 'package:formz/formz.dart';
 import '../providers/transaction_entries_provider.dart';
+import '../widgets/income_transaction_form.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -25,6 +26,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final ValueNotifier<FormzSubmissionStatus> _formStatus = ValueNotifier(FormzSubmissionStatus.initial);
   bool _isLoading = false;
   final GlobalKey<ExpenseTransactionFormState> _formKey = GlobalKey<ExpenseTransactionFormState>();
+  final GlobalKey<IncomeTransactionFormState> _incomeFormKey = GlobalKey<IncomeTransactionFormState>();
 
   // callback для сабмита с данными
   void _onSubmit(ExpenseTransactionFormData data) async {
@@ -38,6 +40,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         categoryId: '',
         description: '',
         merchant: data.merchant,
+        transactionEntriesParam: data.entries,
+        balanceId: data.balanceId,
+      );
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction saved!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
+      }
+    }
+  }
+
+  void _onIncomeSubmit(IncomeTransactionFormData data) async {
+    setState(() { _isLoading = true; });
+    try {
+      final provider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+      await provider.createTransaction(
+        type: TransactionType.income,
+        amount: null,
+        date: data.date,
+        categoryId: '',
+        description: '',
+        merchant: data.source, // source сохраняем в merchant
         transactionEntriesParam: data.entries,
         balanceId: data.balanceId,
       );
@@ -94,7 +127,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         onPressed: _isLoading || status != FormzSubmissionStatus.success ? null : () {
-                          _formKey.currentState?.submit();
+                          if (_selectedType == TransactionType.expense) {
+                            _formKey.currentState?.submit();
+                          } else if (_selectedType == TransactionType.income) {
+                            _incomeFormKey.currentState?.submit();
+                          }
                         },
                         child: _isLoading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -145,8 +182,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         onSubmit: _onSubmit,
                         isLoading: _isLoading,
                       )
+                    else if (_selectedType == TransactionType.income)
+                      IncomeTransactionForm(
+                        key: _incomeFormKey,
+                        formStatus: _formStatus,
+                        onSubmit: _onIncomeSubmit,
+                        isLoading: _isLoading,
+                      )
                     else
-                      const Center(child: Text('Пока реализован только расход')),
+                      const Center(child: Text('Пока реализован только расход и доход')), // для movement
                   ],
                 ),
               ),
