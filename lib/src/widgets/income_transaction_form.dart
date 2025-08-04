@@ -396,19 +396,19 @@ class IncomeTransactionFormState extends State<IncomeTransactionForm> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Source', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _MerchantChips(
-            selectedMerchant: _selectedSource,
-            onMerchantSelected: (merchant) {
-              setState(() {
-                _selectedSource = merchant;
-              });
-            },
-            labelAdd: 'Add source',
-            labelFind: 'Find source',
-          ),
-          const SizedBox(height: 24),
+          // Text('Source', style: Theme.of(context).textTheme.titleMedium),
+          // const SizedBox(height: 8),
+          // _MerchantChips(
+          //   selectedMerchant: _selectedSource,
+          //   onMerchantSelected: (merchant) {
+          //     setState(() {
+          //       _selectedSource = merchant;
+          //     });
+          //   },
+          //   labelAdd: 'Add source',
+          //   labelFind: 'Find source',
+          // ),
+          // const SizedBox(height: 24),
           InkWell(
             onTap: () => _selectDate(context),
             child: InputDecorator(

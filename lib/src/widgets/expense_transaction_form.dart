@@ -398,16 +398,16 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Merchant', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _MerchantChips(
-            selectedMerchant: _selectedMerchant,
-            onMerchantSelected: (merchant) {
-              setState(() {
-                _selectedMerchant = merchant;
-              });
-            },
-          ),
+          // Text('Merchant', style: Theme.of(context).textTheme.titleMedium),
+          // const SizedBox(height: 8),
+          // _MerchantChips(
+          //   selectedMerchant: _selectedMerchant,
+          //   onMerchantSelected: (merchant) {
+          //     setState(() {
+          //       _selectedMerchant = merchant;
+          //     });
+          //   },
+          // ),
           const SizedBox(height: 24),
           InkWell(
             onTap: () => _selectDate(context),
@@ -420,7 +420,7 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
               child: Text('${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}'),
             ),
           ),
-          const SizedBox(height: 24),
+          //const SizedBox(height: 24),
         ],
       ),
     );
