@@ -14,6 +14,11 @@ import '../providers/balances_provider.dart';
 import '../providers/merchants_provider.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../widgets/monthly_overview_card.dart';
+import '../widgets/home_header.dart';
+import '../widgets/section_title.dart';
+import '../widgets/platform_loading_indicator.dart';
+import '../widgets/error_state_widget.dart';
+import '../widgets/platform_app_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function(String type)? onShowTransactions;
@@ -123,24 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final monthYear = DateFormat('MMMM, yyyy').format(currentDate);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Home',
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
+      appBar: PlatformAppBar(
         backgroundColor: colorScheme.surface,
-        elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.refresh,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            onPressed: _refreshTransactions,
-          ),
           IconButton(
             icon: Icon(
               Icons.person,
@@ -162,10 +152,13 @@ class _HomeScreenState extends State<HomeScreen> {
           return Consumer<TransactionEntriesProvider>(
             builder: (context, provider, _) {
               if (provider.isLoading) {
-                return Center(child: CircularProgressIndicator(color: colorScheme.primary));
+                return Center(child: PlatformLoadingIndicator());
               }
               if (provider.error != null) {
-                return Center(child: Text('Error loading transactions:  {provider.error}', style: textTheme.bodyLarge?.copyWith(color: colorScheme.error)));
+                return ErrorStateWidget(
+                  message: 'Error loading transactions: ${provider.error}',
+                  onRetry: _refreshTransactions,
+                );
               }
               final entries = provider.entries;
               final monthlyTotals = _calculateMonthlyTotals(entries);
@@ -174,35 +167,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header section with improved typography
-                    Text(
-                      'Hello, $displayUserName!',
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                        letterSpacing: -0.5,
-                      ),
+                    // Header section using reusable widget
+                    HomeHeader(
+                      userName: displayUserName,
+                      dateText: monthYear,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      monthYear,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.15,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Financial Overview Section
-                    Text(
-                      'Financial Overview',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                        letterSpacing: 0.15,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    //const SizedBox(height: 32),
+                    // Financial Overview Section using reusable widget
+                    SectionTitle(title: 'Financial Overview'),
+                    //const SizedBox(height: 16),
                     MonthlyOverviewCard(
                       entries: entries,
                       onTap: (type) {
@@ -211,35 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       },
                     ),
-                    const SizedBox(height: 32),
-                    // Notifications Section
-                    Text(
-                      'Notifications',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                        letterSpacing: 0.15,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Notifications List
-                    Card(
-                      elevation: 0,
-                      color: colorScheme.surfaceContainerHighest,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListItemTile(
-                        title: 'Cafe budget is 90%',
-                        subtitle: 'You\'re approaching your monthly limit',
-                        icon: Icons.notifications,
-                        iconColor: colorScheme.tertiary,
-                        onTap: () {
-                          // Navigate to budget screen or show budget details
-                        },
-                        showDivider: false,
-                      ),
-                    ),
+
                   ],
                 ),
               );
