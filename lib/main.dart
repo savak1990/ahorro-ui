@@ -1,9 +1,9 @@
 import 'package:ahorro_ui/src/screens/home_screen.dart';
 import 'package:ahorro_ui/src/screens/transactions_screen.dart';
-import 'package:ahorro_ui/src/screens/budget_screen.dart';
+// Temporarily hidden: import 'package:ahorro_ui/src/screens/budget_screen.dart';
 import 'package:ahorro_ui/src/screens/settings_screen.dart';
 import 'package:ahorro_ui/src/screens/account_screen.dart';
-import 'package:ahorro_ui/src/screens/txn_ai_screen.dart';
+// Temporarily hidden: import 'package:ahorro_ui/src/screens/txn_ai_screen.dart';
 import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';
 import 'package:ahorro_ui/src/screens/merchant_search_screen.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
@@ -276,8 +276,8 @@ class _MainScreenState extends State<MainScreen> {
       TransactionsScreen(
         initialType: _pendingTransactionType,
       ),
-      const BudgetScreen(),
-      const TxnAiScreen(),
+      // Temporarily hidden: const BudgetScreen(),
+      // Temporarily hidden: const TxnAiScreen(),
     ];
     return Scaffold(
       body: _screens[_selectedIndex],
@@ -300,16 +300,16 @@ class _MainScreenState extends State<MainScreen> {
             selectedIcon: Icon(Icons.swap_horiz),
             label: 'Transactions',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Budget',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy_outlined),
-            label: 'TxnAi',
-          ),
+          // Temporarily hidden: NavigationDestination(
+          //   icon: Icon(Icons.account_balance_wallet_outlined),
+          //   selectedIcon: Icon(Icons.account_balance_wallet),
+          //   label: 'Budget',
+          // ),
+          // Temporarily hidden: NavigationDestination(
+          //   icon: Icon(Icons.smart_toy_outlined),
+          //   selectedIcon: Icon(Icons.smart_toy_outlined),
+          //   label: 'TxnAi',
+          // ),
         ],
       ),
     );

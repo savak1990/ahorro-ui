@@ -101,6 +101,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: maxHeight,
+          minHeight: 400, // Минимальная высота для комфортного использования
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,11 +143,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
             ),
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
@@ -191,6 +191,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       )
                     else
                       const Center(child: Text('Пока реализован только расход и доход')), // для movement
+                    const SizedBox(height: 24), // Отступ снизу
                   ],
                 ),
               ),
