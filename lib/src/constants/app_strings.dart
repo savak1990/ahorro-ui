@@ -10,6 +10,7 @@ class AppStrings {
 
   // Balances screen
   static const String balancesTitle = 'Balances';
+  static const String balancesSubtitle = 'places to keep funds: wallets, pockets, bank accounts';
   static const String addBalanceTooltip = 'Add balance';
   static const String noBalances = 'You have no balances yet';
   static const String errorPrefix = 'Error:';

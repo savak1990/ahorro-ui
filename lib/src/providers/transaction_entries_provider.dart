@@ -9,23 +9,35 @@ class TransactionEntriesProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  List<TransactionEntryData> get entries => _entries;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  TransactionEntriesProvider() {
+    debugPrint('[TransactionEntriesProvider] constructor called');
+  }
+
+  List<TransactionEntryData> get entries {
+    debugPrint('[TransactionEntriesProvider] get entries: ${_entries.length}');
+    return _entries;
+  }
+  bool get isLoading {
+    debugPrint('[TransactionEntriesProvider] get isLoading: $_isLoading');
+    return _isLoading;
+  }
+  String? get error {
+    debugPrint('[TransactionEntriesProvider] get error: $_error');
+    return _error;
+  }
 
   Future<void> loadEntries() async {
+    debugPrint('[TransactionEntriesProvider] loadEntries called');
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
       final response = await ApiService.getTransactions();
       _entries = response.transactionEntries;
-      // Логируем merchantName для всех транзакций
-      for (final entry in _entries) {
-        //debugPrint('[TransactionEntriesProvider] transactionId: ${entry.transactionId}, type: ${entry.type}, merchantName: ${entry.name}');
-      }
+      debugPrint('[TransactionEntriesProvider] loaded ${_entries.length} entries');
     } catch (e) {
       _error = e.toString();
+      debugPrint('[TransactionEntriesProvider] error: $_error');
     }
     _isLoading = false;
     notifyListeners();

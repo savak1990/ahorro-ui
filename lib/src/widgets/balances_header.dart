@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../utils/platform_utils.dart';
 
-class HomeHeader extends StatelessWidget {
-  final String userName;
-  final String dateText;
-  final TextStyle? userNameStyle;
-  final TextStyle? dateStyle;
+class BalancesHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final TextStyle? titleStyle;
+  final TextStyle? subtitleStyle;
 
-  const HomeHeader({
+  const BalancesHeader({
     super.key,
-    required this.userName,
-    required this.dateText,
-    this.userNameStyle,
-    this.dateStyle,
+    required this.title,
+    required this.subtitle,
+    this.titleStyle,
+    this.subtitleStyle,
   });
 
   @override
@@ -23,26 +23,26 @@ class HomeHeader extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     // Платформо-специфичные стили
-    final defaultUserNameStyle = _getPlatformSpecificUserNameStyle(textTheme, colorScheme);
-    final defaultDateStyle = _getPlatformSpecificDateStyle(textTheme, colorScheme);
+    final defaultTitleStyle = _getPlatformSpecificTitleStyle(textTheme, colorScheme);
+    final defaultSubtitleStyle = _getPlatformSpecificSubtitleStyle(textTheme, colorScheme);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hello, $userName!',
-          style: userNameStyle ?? defaultUserNameStyle,
+          title,
+          style: titleStyle ?? defaultTitleStyle,
         ),
         const SizedBox(height: 8),
         Text(
-          dateText,
-          style: dateStyle ?? defaultDateStyle,
+          subtitle,
+          style: subtitleStyle ?? defaultSubtitleStyle,
         ),
       ],
     );
   }
 
-  TextStyle _getPlatformSpecificUserNameStyle(TextTheme textTheme, ColorScheme colorScheme) {
+  TextStyle _getPlatformSpecificTitleStyle(TextTheme textTheme, ColorScheme colorScheme) {
     if (PlatformUtils.isIOS) {
       // iOS стили - более крупные шрифты, SF Pro Display
       return textTheme.headlineMedium?.copyWith(
@@ -68,7 +68,7 @@ class HomeHeader extends StatelessWidget {
     }
   }
 
-  TextStyle _getPlatformSpecificDateStyle(TextTheme textTheme, ColorScheme colorScheme) {
+  TextStyle _getPlatformSpecificSubtitleStyle(TextTheme textTheme, ColorScheme colorScheme) {
     if (PlatformUtils.isIOS) {
       // iOS стили
       return textTheme.titleMedium?.copyWith(

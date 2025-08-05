@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:io';
+import '../utils/platform_utils.dart';
 
 class ErrorStateWidget extends StatelessWidget {
   final String message;
@@ -50,9 +50,9 @@ class ErrorStateWidget extends StatelessWidget {
   }
 
   IconData _getPlatformSpecificIcon() {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return CupertinoIcons.exclamationmark_triangle;
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return Icons.error_outline;
     } else {
       return Icons.error_outline;
@@ -60,9 +60,9 @@ class ErrorStateWidget extends StatelessWidget {
   }
 
   double _getPlatformSpecificIconSize() {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return 48.0;
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return 48.0;
     } else {
       return 48.0;
@@ -70,12 +70,12 @@ class ErrorStateWidget extends StatelessWidget {
   }
 
   TextStyle _getPlatformSpecificTextStyle(TextTheme textTheme, ColorScheme colorScheme) {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return textTheme.bodyLarge?.copyWith(
         color: colorScheme.error,
         fontSize: 16,
       ) ?? const TextStyle();
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return textTheme.bodyLarge?.copyWith(
         color: colorScheme.error,
       ) ?? const TextStyle();
@@ -89,12 +89,12 @@ class ErrorStateWidget extends StatelessWidget {
   Widget _buildPlatformSpecificButton(BuildContext context, ColorScheme colorScheme) {
     final buttonText = retryText ?? 'Retry';
 
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return CupertinoButton(
         onPressed: onRetry,
         child: Text(buttonText),
       );
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return ElevatedButton(
         onPressed: onRetry,
         style: ElevatedButton.styleFrom(
@@ -116,9 +116,9 @@ class ErrorStateWidget extends StatelessWidget {
   }
 
   EdgeInsetsGeometry _getPlatformSpecificPadding() {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return const EdgeInsets.all(24.0);
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return const EdgeInsets.all(16.0);
     } else {
       return const EdgeInsets.all(16.0);

@@ -53,17 +53,17 @@ class ApiService {
         ),
       ];
 
-      debugPrint('[ApiService.postTransaction] --- REQUEST DATA ---');
-      debugPrint('userId: $userId');
-      debugPrint('groupId: ""');
-      debugPrint('balanceId: $balanceId');
-      debugPrint('type: ${type.name}');
-      debugPrint('merchant: ${merchant ?? 'Unknown'}');
-      debugPrint('operationId: ${generateOperationId()}');
-      debugPrint('approvedAt: ${date.toUtc().toIso8601String()}');
-      debugPrint('transactedAt: ${date.toUtc().toIso8601String()}');
-      debugPrint('transactionEntries: ${entries.map((e) => e.toJson()).toList()}');
-      debugPrint('Headers: $headers');
+      // debugPrint('[ApiService.postTransaction] --- REQUEST DATA ---');
+      // debugPrint('userId: $userId');
+      // debugPrint('groupId: ""');
+      // debugPrint('balanceId: $balanceId');
+      // debugPrint('type: ${type.name}');
+      // debugPrint('merchant: ${merchant ?? 'Unknown'}');
+      // debugPrint('operationId: ${generateOperationId()}');
+      // debugPrint('approvedAt: ${date.toUtc().toIso8601String()}');
+      // debugPrint('transactedAt: ${date.toUtc().toIso8601String()}');
+      // debugPrint('transactionEntries: ${entries.map((e) => e.toJson()).toList()}');
+      // debugPrint('Headers: $headers');
 
       final bodyMap = <String, dynamic>{
         'userId': userId,
@@ -87,9 +87,9 @@ class ApiService {
 
       final body = json.encode(bodyMap);
 
-      debugPrint('[ApiService.postTransaction] BODY: $body');
+      // debugPrint('[ApiService.postTransaction] BODY: $body');
 
-      debugPrint('Request URL: $url');
+      // debugPrint('Request URL: $url');
       //debugPrint('Request Headers: $headers');
       //debugPrint('Request Body: $body');
 
@@ -99,19 +99,19 @@ class ApiService {
         body: body,
       );
 
-      debugPrint('[ApiService.postTransaction] --- RESPONSE ---');
-      debugPrint('Response Status Code: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
+      // debugPrint('[ApiService.postTransaction] --- RESPONSE ---');
+      // debugPrint('Response Status Code: ${response.statusCode}');
+      // debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        debugPrint('[ApiService.postTransaction] ERROR: Failed to post transaction. Status code: ${response.statusCode}');
+        //debugPrint('[ApiService.postTransaction] ERROR: Failed to post transaction. Status code: ${response.statusCode}');
         throw Exception('Failed to post transaction. Status code: ${response.statusCode}');
       }
 
-      debugPrint('[ApiService.postTransaction] Transaction posted successfully!');
+      // debugPrint('[ApiService.postTransaction] Transaction posted successfully!');
       return json.decode(response.body);
     } catch (e) {
-      debugPrint('[ApiService.postTransaction] Exception: $e');
+      //debugPrint('[ApiService.postTransaction] Exception: $e');
       debugPrint('Error posting transaction: $e');
       rethrow;
     }
@@ -173,20 +173,20 @@ class ApiService {
         'transactions': [moveOutTransaction, moveInTransaction]
       };
 
-      debugPrint('[ApiService.postMovementTransaction] --- REQUEST DATA ---');
-      debugPrint('userId: $userId');
-      debugPrint('fromBalanceId: $fromBalanceId');
-      debugPrint('toBalanceId: $toBalanceId');
-      debugPrint('amount: $amount');
-      debugPrint('convertedAmount: $convertedAmount');
-      debugPrint('move_out amount: ${(amount * 100).round()}');
-      debugPrint('move_in amount: ${(convertedAmount != null ? convertedAmount * 100 : amount * 100).round()}');
-      debugPrint('date: ${date.toUtc().toIso8601String()}');
-      debugPrint('description: ${description ?? 'Transfer'}');
+      // debugPrint('[ApiService.postMovementTransaction] --- REQUEST DATA ---');
+      // debugPrint('userId: $userId');
+      // debugPrint('fromBalanceId: $fromBalanceId');
+      // debugPrint('toBalanceId: $toBalanceId');
+      // debugPrint('amount: $amount');
+      // debugPrint('convertedAmount: $convertedAmount');
+      // debugPrint('move_out amount: ${(amount * 100).round()}');
+      // debugPrint('move_in amount: ${(convertedAmount != null ? convertedAmount * 100 : amount * 100).round()}');
+      // debugPrint('date: ${date.toUtc().toIso8601String()}');
+      // debugPrint('description: ${description ?? 'Transfer'}');
 
       final body = json.encode(bodyMap);
 
-      debugPrint('[ApiService.postMovementTransaction] BODY: $body');
+      // debugPrint('[ApiService.postMovementTransaction] BODY: $body');
 
       final response = await http.post(
         url,
@@ -194,19 +194,19 @@ class ApiService {
         body: body,
       );
 
-      debugPrint('[ApiService.postMovementTransaction] --- RESPONSE ---');
+      // debugPrint('[ApiService.postMovementTransaction] --- RESPONSE ---');
       debugPrint('Response Status Code: ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        debugPrint('[ApiService.postMovementTransaction] ERROR: Failed to post movement transaction. Status code: ${response.statusCode}');
+        //debugPrint('[ApiService.postMovementTransaction] ERROR: Failed to post movement transaction. Status code: ${response.statusCode}');
         throw Exception('Failed to post movement transaction. Status code: ${response.statusCode}');
       }
 
       debugPrint('[ApiService.postMovementTransaction] Movement transaction posted successfully!');
       return json.decode(response.body);
     } catch (e) {
-      debugPrint('[ApiService.postMovementTransaction] Exception: $e');
+      //debugPrint('[ApiService.postMovementTransaction] Exception: $e');
       debugPrint('Error posting movement transaction: $e');
       rethrow;
     }
@@ -237,8 +237,8 @@ class ApiService {
         headers: headers,
       );
 
-      debugPrint('GET Response Status Code: ${response.statusCode}');
-      debugPrint('GET Response Body: ${response.body}');
+      //debugPrint('GET Response Status Code: ${response.statusCode}');
+      //debugPrint('GET Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
         throw Exception('Failed to get transactions. Status code: ${response.statusCode}');
@@ -314,8 +314,8 @@ class ApiService {
       //debugPrint('GET Categories Response Body: ${response.body}');
 
       if (response.statusCode != 200) {
-        debugPrint('Categories API: Failed with status code: ${response.statusCode}');
-        debugPrint('Categories API: Response body: ${response.body}');
+        //debugPrint('Categories API: Failed with status code: ${response.statusCode}');
+        //debugPrint('Categories API: Response body: ${response.body}');
         throw Exception('Failed to get categories. Status code: ${response.statusCode}. Response: ${response.body}');
       }
 
@@ -356,9 +356,9 @@ class ApiService {
 
       final data = json.decode(response.body);
       final balances = data['items'] as List? ?? [];
-      debugPrint('ApiService: Found ${balances.length} balances in response');
+      //debugPrint('ApiService: Found ${balances.length} balances in response');
       final result = balances.map((e) => Balance.fromJson(e)).toList();
-      debugPrint('ApiService: Parsed ${result.length} Balance objects');
+      //debugPrint('ApiService: Parsed ${result.length} Balance objects');
       return result;
     } catch (e) {
       debugPrint('Error getting balances: $e');
@@ -394,14 +394,14 @@ class ApiService {
         if (description != null && description.isNotEmpty) 'description': description,
       });
 
-      debugPrint('POST Balance Request URL: $url');
-      debugPrint('POST Balance Request Headers: $headers');
-      debugPrint('POST Balance Request Body: $body');
+      //debugPrint('POST Balance Request URL: $url');
+      // debugPrint('POST Balance Request Headers: $headers');
+      // debugPrint('POST Balance Request Body: $body');
 
       final response = await http.post(url, headers: headers, body: body);
 
       debugPrint('POST Balance Response Status Code: ${response.statusCode}');
-      debugPrint('POST Balance Response Body: ${response.body}');
+      //debugPrint('POST Balance Response Body: ${response.body}');
 
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception('Failed to create balance. Status code: ${response.statusCode}');
@@ -443,11 +443,11 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'accept': 'application/json',
       };
-      debugPrint('GET Transaction by ID URL: $url');
-      debugPrint('GET Transaction by ID Headers: $headers');
+      // debugPrint('GET Transaction by ID URL: $url');
+      // debugPrint('GET Transaction by ID Headers: $headers');
       final response = await http.get(url, headers: headers);
-      debugPrint('GET Transaction by ID Status Code: ${response.statusCode}');
-      debugPrint('GET Transaction by ID Body: ${response.body}');
+      //debugPrint('GET Transaction by ID Status Code: ${response.statusCode}');
+      //debugPrint('GET Transaction by ID Body: ${response.body}');
       if (response.statusCode != 200) {
         throw Exception('Failed to get transaction. Status code: ${response.statusCode}');
       }
@@ -471,11 +471,11 @@ class ApiService {
     final headers = {
       'Authorization': 'Bearer $token',
     };
-    debugPrint('[ApiService.getMerchants] URL: $url');
-    debugPrint('[ApiService.getMerchants] HEADERS: $headers');
+    //debugPrint('[ApiService.getMerchants] URL: $url');
+    //debugPrint('[ApiService.getMerchants] HEADERS: $headers');
     final response = await http.get(url, headers: headers);
-    debugPrint('[ApiService.getMerchants] RESPONSE STATUS: ${response.statusCode}');
-    debugPrint('[ApiService.getMerchants] RESPONSE BODY: ${response.body}');
+    //debugPrint('[ApiService.getMerchants] RESPONSE STATUS: ${response.statusCode}');
+    //debugPrint('[ApiService.getMerchants] RESPONSE BODY: ${response.body}');
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
       final List merchantsJson = data['items'] ?? [];
@@ -499,16 +499,16 @@ class ApiService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
-    debugPrint('[ApiService.postMerchant] URL: $url');
-    debugPrint('[ApiService.postMerchant] BODY: $body');
-    debugPrint('[ApiService.postMerchant] HEADERS: $headers');
+    //debugPrint('[ApiService.postMerchant] URL: $url');
+    //debugPrint('[ApiService.postMerchant] BODY: $body');
+    // debugPrint('[ApiService.postMerchant] HEADERS: $headers');
     final response = await http.post(
       url,
       headers: headers,
       body: body,
     );
-    debugPrint('[ApiService.postMerchant] RESPONSE STATUS: ${response.statusCode}');
-    debugPrint('[ApiService.postMerchant] RESPONSE BODY: ${response.body}');
+    //debugPrint('[ApiService.postMerchant] RESPONSE STATUS: ${response.statusCode}');
+    //debugPrint('[ApiService.postMerchant] RESPONSE BODY: ${response.body}');
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> data = jsonDecode(response.body);
       return Merchant.fromJson(data);

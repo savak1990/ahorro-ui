@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:io';
+import '../utils/platform_utils.dart';
 
 class PlatformLoadingIndicator extends StatelessWidget {
   final Color? color;
@@ -28,13 +28,13 @@ class PlatformLoadingIndicator extends StatelessWidget {
   }
 
   Widget _buildPlatformSpecificIndicator(Color color, double size) {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       // iOS - CupertinoActivityIndicator
       return CupertinoActivityIndicator(
         color: color,
         radius: size / 2,
       );
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       // Android - CircularProgressIndicator
       return SizedBox(
         width: size,
@@ -58,9 +58,9 @@ class PlatformLoadingIndicator extends StatelessWidget {
   }
 
   double _getPlatformSpecificSize() {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return 20.0; // iOS размер
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return 24.0; // Android размер
     } else {
       return 24.0; // Web размер
@@ -68,9 +68,9 @@ class PlatformLoadingIndicator extends StatelessWidget {
   }
 
   EdgeInsetsGeometry _getPlatformSpecificPadding() {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return const EdgeInsets.all(20.0); // iOS отступы
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       return const EdgeInsets.all(16.0); // Android отступы
     } else {
       return const EdgeInsets.all(16.0); // Web отступы

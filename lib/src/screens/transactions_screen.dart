@@ -20,6 +20,8 @@ class TransactionsScreen extends StatefulWidget {
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
   List<TransactionDisplayData> _allTransactions = [];
+  bool _showAppBarTitle = false; // Состояние для показа заголовка в AppBar
+  final ScrollController _scrollController = ScrollController(); // Контроллер скролла
   
   // Date filters
   int? _selectedYear;
@@ -54,6 +56,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     if (widget.initialType != null && widget.initialType!.isNotEmpty) {
       _selectedTypes = {widget.initialType!};
     }
+    
+    // Добавляем слушатель скролла
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Показываем заголовок в AppBar когда скроллим вниз больше 100px
+    final showTitle = _scrollController.offset > 100;
+    if (showTitle != _showAppBarTitle) {
+      setState(() {
+        _showAppBarTitle = showTitle;
+      });
+    }
   }
 
   void _refreshTransactions() {
@@ -69,18 +91,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   List<TransactionDisplayData> _applyFilters(List<TransactionDisplayData> transactions) {
-    return transactions.where((transaction) {
+    debugPrint('Applying filters: types=$_selectedTypes, accounts=$_selectedAccounts, categories=$_selectedCategories');
+    debugPrint('Total transactions before filtering: ${transactions.length}');
+    
+    final filtered = transactions.where((transaction) {
       // Type filter
-      if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(transaction.type)) return false;
+      if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(transaction.type)) {
+        debugPrint('Filtered out by type: ${transaction.type}');
+        return false;
+      }
       
       // Account filter
-      if (_selectedAccounts.isNotEmpty && !_selectedAccounts.contains(transaction.account)) return false;
+      if (_selectedAccounts.isNotEmpty && !_selectedAccounts.contains(transaction.account)) {
+        debugPrint('Filtered out by account: ${transaction.account}');
+        return false;
+      }
       
       // Category filter
-      if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(transaction.category)) return false;
+      if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(transaction.category)) {
+        debugPrint('Filtered out by category: ${transaction.category}');
+        return false;
+      }
       
       return true;
     }).toList();
+    
+    debugPrint('Total transactions after filtering: ${filtered.length}');
+    return filtered;
   }
 
   // Группировка транзакций по дням
@@ -352,11 +389,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
 
     if (result != null) {
+      debugPrint('Filters result: $result');
       setState(() {
         _selectedTypes = result['types'] ?? {};
         _selectedAccounts = result['accounts'] ?? {};
         _selectedCategories = result['categories'] ?? {};
       });
+      debugPrint('Updated filters: types=$_selectedTypes, accounts=$_selectedAccounts, categories=$_selectedCategories');
+      // Не нужно вызывать _refreshTransactions(), так как фильтры применяются локально
     }
   }
 
@@ -411,9 +451,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(''),
+        title: _showAppBarTitle 
+            ? Text(
+                'Transactions',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              )
+            : const Text(''),
         backgroundColor: colorScheme.surface,
         elevation: 0,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(
@@ -435,13 +484,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               color: colorScheme.onSurfaceVariant,
             ),
             onPressed: _showDateFilterBottomSheet,
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.refresh,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            onPressed: _refreshTransactions,
           ),
         ],
       ),
@@ -491,7 +533,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           _updateAvailableFilterValues(_allTransactions);
 
           // Применяем фильтры по дате только если они активны
-          final filtered = displayTransactions.where((tx) {
+          final dateFiltered = displayTransactions.where((tx) {
             // Если есть активные фильтры по дате, применяем их
             if (_hasActiveDateFilters()) {
               //debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
@@ -508,6 +550,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             // Если нет активных фильтров по дате, показываем все транзакции
             return true;
           }).toList();
+
+          // Применяем остальные фильтры (тип, аккаунт, категория)
+          final filtered = _applyFilters(dateFiltered);
 
           // Группируем транзакции по выбранному типу
           final groupedTransactions = _groupTransactions(filtered);
@@ -541,94 +586,98 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             );
           }
 
-          return CustomScrollView(
-            slivers: [
-              // Floating заголовок Transactions
-              SliverPersistentHeader(
-                pinned: false,
-                floating: false,
-                delegate: _SliverAppBarDelegate(
+          return RefreshIndicator(
+            onRefresh: () async {
+              _refreshTransactions();
+              // Ждем немного, чтобы показать анимацию
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            child: CustomScrollView(
+              controller: _scrollController, // Добавляем контроллер скролла
+              slivers: [
+                // Большой заголовок Transactions как часть экрана
+                SliverToBoxAdapter(
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
                     child: Text(
                       'Transactions',
-                      style: textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
+                        fontSize: 32,
                       ),
                     ),
                   ),
                 ),
-              ),
-              // Список транзакций
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final groupIndex = index ~/ 2;
-                      final isHeader = index % 2 == 0;
-                      final groupKey = groupedTransactions.keys.elementAt(groupIndex);
-                      final groupTransactions = groupedTransactions[groupKey]!;
-                      
-                      if (isHeader) {
-                        // Заголовок группы
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 16, bottom: 8, left: 0, right: 0),
-                          child: Text(
-                            groupKey,
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.primary,
-                              letterSpacing: 0.15,
+                // Список транзакций
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final groupIndex = index ~/ 2;
+                        final isHeader = index % 2 == 0;
+                        final groupKey = groupedTransactions.keys.elementAt(groupIndex);
+                        final groupTransactions = groupedTransactions[groupKey]!;
+                        
+                        if (isHeader) {
+                          // Заголовок группы
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 8, left: 0, right: 0),
+                            child: Text(
+                              groupKey,
+                              style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.primary,
+                                letterSpacing: 0.15,
+                              ),
                             ),
-                          ),
-                        );
-                      } else {
-                        // Транзакции группы
-                        return Column(
-                          children: groupTransactions.asMap().entries.map((entry) {
-                            final txIndex = entry.key;
-                            final tx = entry.value;
-                            
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: 0,
-                                right: 0,
-                                top: txIndex == 0 ? 0 : 0,
-                                bottom: txIndex == groupTransactions.length - 1 ? 0 : 0,
-                              ),
-                              child: TransactionTile(
-                                type: tx.type,
-                                amount: tx.amount,
-                                category: tx.category,
-                                categoryIcon: tx.categoryIcon,
-                                balance: tx.account,
-                                date: tx.date,
-                                description: tx.description,
-                                merchantName: tx.merchantName,
-                                currency: tx.currency,
-                                isFirst: txIndex == 0,
-                                isLast: txIndex == groupTransactions.length - 1,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      }
-                    },
-                    childCount: groupedTransactions.length * 2,
+                          );
+                        } else {
+                          // Транзакции группы
+                          return Column(
+                            children: groupTransactions.asMap().entries.map((entry) {
+                              final txIndex = entry.key;
+                              final tx = entry.value;
+                              
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  left: 0,
+                                  right: 0,
+                                  top: txIndex == 0 ? 0 : 0,
+                                  bottom: txIndex == groupTransactions.length - 1 ? 0 : 0,
+                                ),
+                                child: TransactionTile(
+                                  type: tx.type,
+                                  amount: tx.amount,
+                                  category: tx.category,
+                                  categoryIcon: tx.categoryIcon,
+                                  balance: tx.account,
+                                  date: tx.date,
+                                  description: tx.description,
+                                  merchantName: tx.merchantName,
+                                  currency: tx.currency,
+                                  isFirst: txIndex == 0,
+                                  isLast: txIndex == groupTransactions.length - 1,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }
+                      },
+                      childCount: groupedTransactions.length * 2,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -785,28 +834,4 @@ class TransactionDisplayData {
     required this.date,
     required this.currency,
   });
-}
-
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
-  const _SliverAppBarDelegate({
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
-  @override
-  double get maxExtent => 56.0;
-
-  @override
-  double get minExtent => 56.0;
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return false;
-  }
 } 

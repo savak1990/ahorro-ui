@@ -15,13 +15,14 @@ import 'src/providers/balances_provider.dart';
 import 'src/providers/categories_provider.dart';
 import 'src/providers/merchants_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:io';
 
 import 'amplifyconfiguration.dart' as stable_config;
 import 'amplifyconfiguration_prod.dart' as prod_config;
 
 import 'src/constants/app_colors.dart';
 import 'src/constants/app_strings.dart';
+import 'src/config/app_theme.dart';
+import 'src/widgets/adaptive_navigation.dart';
 
 import 'src/services/auth_service.dart';
 import 'src/providers/transaction_entries_provider.dart';
@@ -91,150 +92,8 @@ class _MyAppState extends State<MyApp> {
         builder: Authenticator.builder(),
         title: AppStrings.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          primaryColor: AppColors.primary,
-          scaffoldBackgroundColor: AppColors.background,
-          colorScheme: const ColorScheme(
-            primary: AppColors.primary,
-            secondary: AppColors.accent,
-            surface: AppColors.surface,
-            background: AppColors.background,
-            error: AppColors.error,
-            onPrimary: Colors.white,
-            onSecondary: Colors.white,
-            onSurface: AppColors.textPrimary,
-            onBackground: AppColors.textPrimary,
-            onError: Colors.white,
-            brightness: Brightness.light,
-          ),
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: AppColors.surface,
-            foregroundColor: AppColors.primary,
-            iconTheme: IconThemeData(color: AppColors.primary),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.primary,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: AppColors.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
-            labelStyle: const TextStyle(color: AppColors.textSecondary),
-            hintStyle: const TextStyle(color: AppColors.textHint),
-          ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: AppColors.textPrimary),
-            bodyMedium: TextStyle(color: AppColors.textPrimary),
-            titleLarge: TextStyle(color: AppColors.textPrimary),
-            titleMedium: TextStyle(color: AppColors.textPrimary),
-          ),
-          dividerTheme: const DividerThemeData(
-            color: AppColors.divider,
-            thickness: 1,
-          ),
-        ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          primaryColor: AppColors.primary,
-          scaffoldBackgroundColor: const Color(0xFF121212),
-          colorScheme: const ColorScheme(
-            primary: AppColors.surface,
-            secondary: AppColors.accent,
-            surface: Color(0xFF1E1E1E),
-            background: Color(0xFF121212),
-            error: AppColors.error,
-            onPrimary: AppColors.primary,
-            onSecondary: AppColors.primary,
-            onSurface: AppColors.surface,
-            onBackground: AppColors.surface,
-            onError: Colors.white,
-            brightness: Brightness.dark,
-          ),
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Color(0xFF1E1E1E),
-            foregroundColor: AppColors.surface,
-            iconTheme: IconThemeData(color: AppColors.surface),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.surface,
-              foregroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.surface,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: const Color(0xFF1E1E1E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.surface, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
-            labelStyle: const TextStyle(color: AppColors.textSecondary),
-            hintStyle: const TextStyle(color: AppColors.textHint),
-          ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: AppColors.surface),
-            bodyMedium: TextStyle(color: AppColors.surface),
-            titleLarge: TextStyle(color: AppColors.surface),
-            titleMedium: TextStyle(color: AppColors.surface),
-          ),
-          dividerTheme: const DividerThemeData(
-            color: Color(0xFF2C2C2C),
-            thickness: 1,
-          ),
-        ),
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         initialRoute: '/',
         routes: {
@@ -279,39 +138,40 @@ class _MainScreenState extends State<MainScreen> {
       // Temporarily hidden: const BudgetScreen(),
       // Temporarily hidden: const TxnAiScreen(),
     ];
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-            if (index != 1) _pendingTransactionType = null;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.swap_horiz_outlined),
-            selectedIcon: Icon(Icons.swap_horiz),
-            label: 'Transactions',
-          ),
-          // Temporarily hidden: NavigationDestination(
-          //   icon: Icon(Icons.account_balance_wallet_outlined),
-          //   selectedIcon: Icon(Icons.account_balance_wallet),
-          //   label: 'Budget',
-          // ),
-          // Temporarily hidden: NavigationDestination(
-          //   icon: Icon(Icons.smart_toy_outlined),
-          //   selectedIcon: Icon(Icons.smart_toy_outlined),
-          //   label: 'TxnAi',
-          // ),
-        ],
+
+    final List<NavigationDestination> _destinations = const [
+      NavigationDestination(
+        icon: Icon(Icons.home_outlined),
+        selectedIcon: Icon(Icons.home),
+        label: 'Home',
       ),
+      NavigationDestination(
+        icon: Icon(Icons.swap_horiz_outlined),
+        selectedIcon: Icon(Icons.swap_horiz),
+        label: 'Transactions',
+      ),
+      // Temporarily hidden: NavigationDestination(
+      //   icon: Icon(Icons.account_balance_wallet_outlined),
+      //   selectedIcon: Icon(Icons.account_balance_wallet),
+      //   label: 'Budget',
+      // ),
+      // Temporarily hidden: NavigationDestination(
+      //   icon: Icon(Icons.smart_toy_outlined),
+      //   selectedIcon: Icon(Icons.smart_toy_outlined),
+      //   label: 'TxnAi',
+      // ),
+    ];
+
+    return AdaptiveNavigation(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (index) {
+        setState(() {
+          _selectedIndex = index;
+          if (index != 1) _pendingTransactionType = null;
+        });
+      },
+      children: _screens,
+      destinations: _destinations,
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:io';
+import '../utils/platform_utils.dart';
 
 class SectionTitle extends StatelessWidget {
   final String title;
@@ -33,7 +33,7 @@ class SectionTitle extends StatelessWidget {
   }
 
   TextStyle _getPlatformSpecificStyle(TextTheme textTheme, ColorScheme colorScheme) {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       // iOS стили - SF Pro Display, более крупные размеры
       return textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.w600,
@@ -41,7 +41,7 @@ class SectionTitle extends StatelessWidget {
         letterSpacing: 0.15,
         fontSize: 24, // iOS размер
       ) ?? const TextStyle();
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       // Android стили - Material Design
       return textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.w600,
@@ -59,10 +59,10 @@ class SectionTitle extends StatelessWidget {
   }
 
   EdgeInsetsGeometry _getPlatformSpecificPadding() {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       // iOS отступы - обычно больше
       return const EdgeInsets.only(top: 32, bottom: 16);
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       // Android отступы - Material Design
       return const EdgeInsets.only(top: 32, bottom: 16);
     } else {
