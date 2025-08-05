@@ -117,6 +117,101 @@ class ApiService {
     }
   }
 
+  static Future<void> postMovementTransaction({
+    required String fromBalanceId,
+    required String toBalanceId,
+    required double amount,
+    double? convertedAmount,
+    required DateTime date,
+    String? description,
+  }) async {
+    try {
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+
+      final userId = await AuthService.getUserId();
+
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse(AppConfig.transactionsUrl);
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      // Create two transactions: move_out and move_in
+      final moveOutTransaction = {
+        'userId': userId,
+        'balanceId': fromBalanceId,
+        'type': 'move_out',
+        'transactedAt': date.toUtc().toIso8601String(),
+        'transactionEntries': [
+          {
+            'description': description ?? 'Transfer to another account',
+            'amount': (amount * 100).round(), // Convert to cents
+          }
+        ]
+      };
+
+      final moveInTransaction = {
+        'userId': userId,
+        'balanceId': toBalanceId,
+        'type': 'move_in',
+        'transactedAt': date.toUtc().toIso8601String(),
+        'transactionEntries': [
+          {
+            'description': description ?? 'Transfer from another account',
+            'amount': (convertedAmount != null ? convertedAmount * 100 : amount * 100).round(), // Use converted amount if available
+          }
+        ]
+      };
+
+      final bodyMap = {
+        'transactions': [moveOutTransaction, moveInTransaction]
+      };
+
+      debugPrint('[ApiService.postMovementTransaction] --- REQUEST DATA ---');
+      debugPrint('userId: $userId');
+      debugPrint('fromBalanceId: $fromBalanceId');
+      debugPrint('toBalanceId: $toBalanceId');
+      debugPrint('amount: $amount');
+      debugPrint('convertedAmount: $convertedAmount');
+      debugPrint('move_out amount: ${(amount * 100).round()}');
+      debugPrint('move_in amount: ${(convertedAmount != null ? convertedAmount * 100 : amount * 100).round()}');
+      debugPrint('date: ${date.toUtc().toIso8601String()}');
+      debugPrint('description: ${description ?? 'Transfer'}');
+
+      final body = json.encode(bodyMap);
+
+      debugPrint('[ApiService.postMovementTransaction] BODY: $body');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('[ApiService.postMovementTransaction] --- RESPONSE ---');
+      debugPrint('Response Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        debugPrint('[ApiService.postMovementTransaction] ERROR: Failed to post movement transaction. Status code: ${response.statusCode}');
+        throw Exception('Failed to post movement transaction. Status code: ${response.statusCode}');
+      }
+
+      debugPrint('[ApiService.postMovementTransaction] Movement transaction posted successfully!');
+      return json.decode(response.body);
+    } catch (e) {
+      debugPrint('[ApiService.postMovementTransaction] Exception: $e');
+      debugPrint('Error posting movement transaction: $e');
+      rethrow;
+    }
+  }
+
   static Future<TransactionsResponse> getTransactions() async {
     try {
       final session = await Amplify.Auth.fetchAuthSession();
