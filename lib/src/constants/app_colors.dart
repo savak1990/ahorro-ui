@@ -24,7 +24,7 @@ class AppColors {
   static const Color hover = Color(0xFFF9FAFB);          // Ultra Light Gray for hover
 
   // Financial status colors
-  static const Color success = Color(0xFF10B981);        // Green for positive
+  static const Color success = Color(0xFF00A673);        // Green for positive
   static const Color warning = Color(0xFFF59E0B);        // Amber for warnings
   static const Color danger = Color(0xFFDC2626);         // Red for negative
   static const Color info = Color(0xFF3B82F6);           // Blue for information
