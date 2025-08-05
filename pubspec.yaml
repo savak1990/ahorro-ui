@@ -44,6 +44,15 @@ dependencies:
   flutter_dotenv: ^5.1.0
   material_symbols_icons: ^4.2815.1
   formz: ^0.8.0
+  
+  # Кросс-платформенные улучшения
+  responsive_framework: ^1.4.0
+  flutter_staggered_animations: ^1.1.1
+  shimmer: ^3.0.0
+  lottie: ^3.1.2
+  cached_network_image: ^3.3.1
+  flutter_svg: ^2.0.10+1
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
