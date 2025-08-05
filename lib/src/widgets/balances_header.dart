@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:io';
+import '../utils/platform_utils.dart';
 
 class BalancesHeader extends StatelessWidget {
   final String title;
@@ -43,7 +43,7 @@ class BalancesHeader extends StatelessWidget {
   }
 
   TextStyle _getPlatformSpecificTitleStyle(TextTheme textTheme, ColorScheme colorScheme) {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       // iOS стили - более крупные шрифты, SF Pro Display
       return textTheme.headlineMedium?.copyWith(
         fontWeight: FontWeight.w700,
@@ -51,7 +51,7 @@ class BalancesHeader extends StatelessWidget {
         letterSpacing: -0.5,
         fontSize: 32, // iOS обычно использует более крупные шрифты
       ) ?? const TextStyle();
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       // Android стили - Material Design
       return textTheme.headlineMedium?.copyWith(
         fontWeight: FontWeight.w700,
@@ -69,7 +69,7 @@ class BalancesHeader extends StatelessWidget {
   }
 
   TextStyle _getPlatformSpecificSubtitleStyle(TextTheme textTheme, ColorScheme colorScheme) {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       // iOS стили
       return textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.w500,
@@ -77,7 +77,7 @@ class BalancesHeader extends StatelessWidget {
         letterSpacing: 0.15,
         fontSize: 18, // iOS размер
       ) ?? const TextStyle();
-    } else if (Platform.isAndroid) {
+    } else if (PlatformUtils.isAndroid) {
       // Android стили
       return textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.w500,

@@ -7,9 +7,22 @@ class CategoriesProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  List<Category> get categories => _categories;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  CategoriesProvider() {
+    debugPrint('[CategoriesProvider] constructor called');
+  }
+
+  List<Category> get categories {
+    debugPrint('[CategoriesProvider] get categories: ${_categories.length}');
+    return _categories;
+  }
+  bool get isLoading {
+    debugPrint('[CategoriesProvider] get isLoading: $_isLoading');
+    return _isLoading;
+  }
+  String? get error {
+    debugPrint('[CategoriesProvider] get error: $_error');
+    return _error;
+  }
 
   Category? get defaultCategory {
     if (_categories.isEmpty) return null;
@@ -17,17 +30,20 @@ class CategoriesProvider extends ChangeNotifier {
   }
 
   Future<void> loadCategories() async {
+    debugPrint('[CategoriesProvider] loadCategories called');
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
       final response = await ApiService.getCategories();
       _categories = response.categories;
+      debugPrint('[CategoriesProvider] loaded ${_categories.length} categories');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _isLoading = false;
       _error = e.toString();
+      debugPrint('[CategoriesProvider] error: $_error');
       notifyListeners();
     }
   }

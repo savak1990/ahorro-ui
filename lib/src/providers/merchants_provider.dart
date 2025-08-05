@@ -11,33 +11,26 @@ class MerchantsProvider extends ChangeNotifier {
     debugPrint('[MerchantsProvider] constructor called');
   }
 
-  List<Merchant> get merchants {
-    debugPrint('[MerchantsProvider] get merchants: ${_merchants.length}');
-    return _merchants;
-  }
-  bool get isLoading {
-    debugPrint('[MerchantsProvider] get isLoading: $_isLoading');
-    return _isLoading;
-  }
-  String? get error {
-    debugPrint('[MerchantsProvider] get error: $_error');
-    return _error;
-  }
+  List<Merchant> get merchants => _merchants;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadMerchants() async {
     debugPrint('[MerchantsProvider] loadMerchants called');
     _isLoading = true;
     _error = null;
     notifyListeners();
+    
     try {
       _merchants = await ApiService.getMerchants();
       debugPrint('[MerchantsProvider] loaded ${_merchants.length} merchants');
     } catch (e) {
       _error = e.toString();
       debugPrint('[MerchantsProvider] error: $_error');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<Merchant?> createMerchant({required String name, required String userId}) async {

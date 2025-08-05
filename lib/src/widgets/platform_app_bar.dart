@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:io';
+import '../utils/platform_utils.dart';
 
 class PlatformAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
@@ -26,7 +26,7 @@ class PlatformAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return _buildCupertinoNavigationBar(context);
     } else {
       return _buildMaterialAppBar(context);
@@ -82,7 +82,7 @@ class PlatformAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize {
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       return const Size.fromHeight(44.0); // iOS стандартная высота
     } else {
       return const Size.fromHeight(kToolbarHeight); // Material Design высота
