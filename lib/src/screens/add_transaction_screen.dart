@@ -13,6 +13,7 @@ import '../widgets/expense_transaction_form.dart';
 import 'package:formz/formz.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../widgets/income_transaction_form.dart';
+import '../widgets/movement_transaction_form.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -27,6 +28,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isLoading = false;
   final GlobalKey<ExpenseTransactionFormState> _formKey = GlobalKey<ExpenseTransactionFormState>();
   final GlobalKey<IncomeTransactionFormState> _incomeFormKey = GlobalKey<IncomeTransactionFormState>();
+  final GlobalKey<MovementTransactionFormState> _movementFormKey = GlobalKey<MovementTransactionFormState>();
 
   // callback для сабмита с данными
   void _onSubmit(ExpenseTransactionFormData data) async {
@@ -91,6 +93,35 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
+  void _onMovementSubmit(MovementTransactionFormData data) async {
+    setState(() { _isLoading = true; });
+    try {
+      await ApiService.postMovementTransaction(
+        fromBalanceId: data.fromBalanceId,
+        toBalanceId: data.toBalanceId,
+        amount: data.amount,
+        convertedAmount: data.convertedAmount,
+        date: data.date,
+        description: 'Transfer between accounts',
+      );
+      
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transfer saved!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final maxHeight = MediaQuery.of(context).size.height * 0.95;
@@ -132,6 +163,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             _formKey.currentState?.submit();
                           } else if (_selectedType == TransactionType.income) {
                             _incomeFormKey.currentState?.submit();
+                          } else if (_selectedType == TransactionType.movement) {
+                            _movementFormKey.currentState?.submit();
                           }
                         },
                         child: _isLoading
@@ -190,7 +223,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         isLoading: _isLoading,
                       )
                     else
-                      const Center(child: Text('Пока реализован только расход и доход')), // для movement
+                      MovementTransactionForm(
+                        key: _movementFormKey,
+                        formStatus: _formStatus,
+                        onSubmit: _onMovementSubmit,
+                        isLoading: _isLoading,
+                      ),
                     const SizedBox(height: 24), // Отступ снизу
                   ],
                 ),

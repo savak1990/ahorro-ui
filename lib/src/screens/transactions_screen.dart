@@ -494,7 +494,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           final filtered = displayTransactions.where((tx) {
             // Если есть активные фильтры по дате, применяем их
             if (_hasActiveDateFilters()) {
-              debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
+              //debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
               if (_dateFilterType == 'month') {
                 if (_selectedYear != null && tx.date.year != _selectedYear) return false;
                 if (_selectedMonth != null && tx.date.month != _selectedMonth) return false;
@@ -503,7 +503,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 if (_endDate != null && tx.date.isAfter(_endDate!)) return false;
               }
             } else {
-              debugPrint('No active date filters, showing all transactions');
+              //debugPrint('No active date filters, showing all transactions');
             }
             // Если нет активных фильтров по дате, показываем все транзакции
             return true;
