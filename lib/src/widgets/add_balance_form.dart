@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import '../constants/platform_colors.dart';
 import '../constants/app_strings.dart';
 import '../providers/balances_provider.dart';
 import '../services/auth_service.dart';
+import '../utils/platform_utils.dart';
 
 class AddBalanceForm extends StatefulWidget {
   @override
@@ -70,7 +72,20 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(AppStrings.addBalanceTitle, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            // Заголовок с кнопкой закрытия
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  AppStrings.addBalanceTitle, 
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             Text(AppStrings.currencyLabel, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 8),
@@ -84,12 +99,12 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
                   onSelected: (v) {
                     setState(() => _selectedCurrency = currency);
                   },
-                  selectedColor: AppColors.primary,
+                  selectedColor: PlatformColors.primary,
                   labelStyle: TextStyle(
-                    color: selected ? AppColors.surface : AppColors.textPrimary,
+                    color: selected ? PlatformColors.surface : PlatformColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: PlatformColors.surface,
                 );
               }).toList(),
             ),
@@ -98,7 +113,17 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
               controller: _titleController,
               decoration: InputDecoration(
                 labelText: AppStrings.balanceNameLabel,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                  borderSide: BorderSide(color: PlatformColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                  borderSide: BorderSide(color: PlatformColors.primary, width: 2),
+                ),
               ),
               validator: (v) => (v == null || v.trim().isEmpty) ? AppStrings.titleRequired : null,
             ),
@@ -107,7 +132,17 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
               controller: _descriptionController,
               decoration: InputDecoration(
                 labelText: AppStrings.descriptionLabel,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                  borderSide: BorderSide(color: PlatformColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                  borderSide: BorderSide(color: PlatformColors.primary, width: 2),
+                ),
               ),
               minLines: 1,
               maxLines: 3,
@@ -122,10 +157,13 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.surface,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: PlatformColors.primary,
+                  foregroundColor: PlatformColors.surface,
+                  elevation: PlatformUtils.adaptiveElevation,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
+                  ),
+                  padding: PlatformUtils.adaptivePadding,
                 ),
                 onPressed: _isSubmitting ? null : _submit,
                 child: _isSubmitting
