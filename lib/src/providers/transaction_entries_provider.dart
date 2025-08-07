@@ -13,34 +13,17 @@ class TransactionEntriesProvider extends ChangeNotifier {
     debugPrint('[TransactionEntriesProvider] constructor called');
   }
 
-  List<TransactionEntryData> get entries {
-    debugPrint('[TransactionEntriesProvider] get entries: ${_entries.length}');
-    return _entries;
-  }
-  bool get isLoading {
-    debugPrint('[TransactionEntriesProvider] get isLoading: $_isLoading');
-    return _isLoading;
-  }
-  String? get error {
-    debugPrint('[TransactionEntriesProvider] get error: $_error');
-    return _error;
-  }
+  List<TransactionEntryData> get entries => _entries;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadEntries() async {
     debugPrint('[TransactionEntriesProvider] loadEntries called');
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
+    await _executeAsyncOperation(() async {
       final response = await ApiService.getTransactions();
       _entries = response.transactionEntries;
-      debugPrint('[TransactionEntriesProvider] loaded ${_entries.length} entries');
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('[TransactionEntriesProvider] error: $_error');
-    }
-    _isLoading = false;
-    notifyListeners();
+      debugPrint('[TransactionEntriesProvider]: Loaded ${_entries.length} entries');
+    });
   }
 
   Future<void> createTransaction({
@@ -53,10 +36,8 @@ class TransactionEntriesProvider extends ChangeNotifier {
     String? merchant,
     List<TransactionEntry>? transactionEntriesParam,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
+    debugPrint('[TransactionEntriesProvider] createTransaction called');
+    await _executeAsyncOperation(() async {
       await ApiService.postTransaction(
         type: type,
         amount: amount,
@@ -67,28 +48,53 @@ class TransactionEntriesProvider extends ChangeNotifier {
         merchant: merchant,
         transactionEntriesParam: transactionEntriesParam,
       );
+      debugPrint('[TransactionEntriesProvider]: Created new transaction');
       await loadEntries();
+    });
+  }
+
+  Future<Map<String, dynamic>?> getTransactionById(String transactionId) async {
+    debugPrint('[TransactionEntriesProvider] getTransactionById called');
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    
+    try {
+      final data = await ApiService.getTransactionById(transactionId);
+      debugPrint('[TransactionEntriesProvider]: Retrieved transaction: $transactionId');
+      _isLoading = false;
+      notifyListeners();
+      return data;
     } catch (e) {
-      _error = e.toString();
+      _setError(e.toString());
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  Future<void> _executeAsyncOperation(Future<void> Function() operation) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    
+    try {
+      await operation();
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<Map<String, dynamic>?> getTransactionById(String transactionId) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      final data = await ApiService.getTransactionById(transactionId);
-      _isLoading = false;
-      notifyListeners();
-      return data;
-    } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return null;
-    }
+  void _setError(String error) {
+    _error = error;
+    debugPrint('[TransactionEntriesProvider]: error: $_error');
   }
 } 
