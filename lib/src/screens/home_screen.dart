@@ -19,6 +19,7 @@ import '../widgets/section_title.dart';
 import '../widgets/platform_loading_indicator.dart';
 import '../widgets/error_state_widget.dart';
 import '../widgets/platform_app_bar.dart';
+import '../constants/app_constants.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function(String type)? onShowTransactions;
@@ -162,31 +163,55 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               final entries = provider.entries;
               final monthlyTotals = _calculateMonthlyTotals(entries);
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header section using reusable widget
-                    HomeHeader(
-                      userName: displayUserName,
-                      dateText: monthYear,
+              return CustomScrollView(
+                slivers: [
+                  // Header section
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppConstants.horizontalPadding, 
+                        8,
+                        AppConstants.horizontalPadding, 
+                        8
+                      ),
+                      child: HomeHeader(
+                        userName: displayUserName,
+                        dateText: monthYear,
+                      ),
                     ),
-                    //const SizedBox(height: 32),
-                    // Financial Overview Section using reusable widget
-                    SectionTitle(title: 'Financial Overview'),
-                    //const SizedBox(height: 16),
-                    MonthlyOverviewCard(
-                      entries: entries,
-                      onTap: (type) {
-                        if (widget.onShowTransactions != null) {
-                          widget.onShowTransactions!(type);
-                        }
-                      },
+                  ),
+                  // Financial Overview Section
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.horizontalPadding,
+                        vertical: 0,
+                      ),
+                      child: SectionTitle(title: 'Financial Overview'),
                     ),
-
-                  ],
-                ),
+                  ),
+                  // Monthly Overview Card
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppConstants.horizontalPadding,
+                        vertical: 0,
+                      ),
+                      child: MonthlyOverviewCard(
+                        entries: entries,
+                        onTap: (type) {
+                          if (widget.onShowTransactions != null) {
+                            widget.onShowTransactions!(type);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  // Bottom padding for FAB
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 80),
+                  ),
+                ],
               );
             },
           );
@@ -197,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: Colors.white,
+            //backgroundColor: colorScheme.surface,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
@@ -207,8 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _refreshTransactions();
           });
         },
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
         shape: const CircleBorder(),
         child: const Icon(Icons.add),
       ),

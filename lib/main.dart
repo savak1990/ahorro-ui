@@ -22,6 +22,7 @@ import 'amplifyconfiguration_prod.dart' as prod_config;
 import 'src/constants/app_colors.dart';
 import 'src/constants/app_strings.dart';
 import 'src/config/app_theme.dart';
+import 'src/config/adaptive_theme.dart';
 import 'src/widgets/adaptive_navigation.dart';
 
 import 'src/services/auth_service.dart';
@@ -92,8 +93,8 @@ class _MyAppState extends State<MyApp> {
         builder: Authenticator.builder(),
         title: AppStrings.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
+        theme: AdaptiveTheme.lightTheme,
+        darkTheme: AdaptiveTheme.darkTheme,
         themeMode: ThemeMode.system,
         initialRoute: '/',
         routes: {

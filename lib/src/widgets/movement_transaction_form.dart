@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import '../constants/platform_colors.dart';
 import '../models/balance.dart';
 import '../providers/balances_provider.dart';
 import '../widgets/add_balance_form.dart';
+import '../widgets/balance_chips.dart';
 import 'package:formz/formz.dart';
 
 class MovementTransactionFormData {
@@ -97,11 +99,14 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: PlatformColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: AddBalanceForm(),
       ),
-      builder: (context) => AddBalanceForm(),
     ).then((_) {
       // Refresh balances after adding new one
       Provider.of<BalancesProvider>(context, listen: false).loadBalances();
@@ -273,56 +278,22 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // From Balance Selection
-              Text(
-                'From Balance',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: balances.map((balance) {
-                  final selected = _selectedFromBalanceId == balance.id;
-                  return ChoiceChip(
-                    label: Text('${balance.title} (${balance.currency})'),
-                    selected: selected,
-                    onSelected: (v) => _onFromBalanceChanged(balance.id),
-                    selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: selected ? AppColors.surface : AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    backgroundColor: AppColors.surface,
-                  );
-                }).toList(),
+              BalanceChips(
+                selectedBalanceId: _selectedFromBalanceId,
+                onBalanceSelected: _onFromBalanceChanged,
+                title: 'From Balance',
+                allowDeselect: false,
               ),
               const SizedBox(height: 24),
 
               // To Balance Selection
-              Text(
-                'To Balance',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: balances.where((balance) => balance.id != _selectedFromBalanceId).map((balance) {
-                  final selected = _selectedToBalanceId == balance.id;
-                  return ChoiceChip(
-                    label: Text('${balance.title} (${balance.currency})'),
-                    selected: selected,
-                    onSelected: (v) => _onToBalanceChanged(balance.id),
-                    selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: selected ? AppColors.surface : AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    backgroundColor: AppColors.surface,
-                  );
-                }).toList(),
+              BalanceChips(
+                selectedBalanceId: _selectedToBalanceId,
+                onBalanceSelected: _onToBalanceChanged,
+                title: 'To Balance',
+                allowDeselect: false,
+                showAddButton: false, // Не показываем кнопку добавления для второго баланса
+                excludeBalanceIds: _selectedFromBalanceId != null ? [_selectedFromBalanceId!] : null,
               ),
               const SizedBox(height: 24),
 

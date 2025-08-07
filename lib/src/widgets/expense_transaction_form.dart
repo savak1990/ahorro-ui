@@ -11,6 +11,8 @@ import '../models/merchant.dart';
 import '../services/api_service.dart';
 import '../constants/app_typography.dart';
 import '../models/transaction_type.dart';
+import '../widgets/add_balance_form.dart';
+import '../widgets/balance_chips.dart';
 
 // Formz input models
 class AmountInput extends FormzInput<String, String> {
@@ -348,55 +350,22 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Balance', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 8.0,
-                  children: [
-                    ...balances.map((balance) => ChoiceChip(
-                      label: Text(balance.title),
-                      selected: _balanceInput.value == balance.balanceId,
-                      onSelected: (selected) {
-                        // Если баланс один, не позволяем его отжать
-                        if (balances.length == 1) return;
-                        
-                        setState(() {
-                          if (selected) {
-                            _balanceInput = BalanceIdInput.dirty(balance.balanceId);
-                          } else if (_balanceInput.value == balance.balanceId) {
-                            // Если пытаемся отжать выбранный баланс, выбираем первый доступный
-                            final firstBalance = balances.firstWhere((b) => b.balanceId != balance.balanceId);
-                            _balanceInput = BalanceIdInput.dirty(firstBalance.balanceId);
-                          }
-                          _updateFormzState();
-                        });
-                      },
-                    )),
-                  ],
-                ),
-              ),
-            ],
+          BalanceChips(
+            selectedBalanceId: _balanceInput.value.isEmpty ? null : _balanceInput.value,
+            onBalanceSelected: (balanceId) {
+              setState(() {
+                _balanceInput = BalanceIdInput.dirty(balanceId ?? '');
+                _updateFormzState();
+              });
+            },
+            title: 'Balance',
+            allowDeselect: false,
           ),
           if (_balanceInput.isNotValid)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 4),
               child: Text(_balanceInput.error ?? '', style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
             ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).pushNamed('/add_balance');
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add balance'),
-            ),
-          ),
           const SizedBox(height: 24),
           // Text('Merchant', style: Theme.of(context).textTheme.titleMedium),
           // const SizedBox(height: 8),

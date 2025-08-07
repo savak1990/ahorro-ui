@@ -9,6 +9,7 @@ import '../models/transaction_entry_data.dart';
 import 'transaction_details_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_entries_provider.dart';
+import '../constants/app_constants.dart';
 
 class TransactionsScreen extends StatefulWidget {
   final String? initialType;
@@ -598,7 +599,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 // Большой заголовок Transactions как часть экрана
                 SliverToBoxAdapter(
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(AppConstants.horizontalPadding, 24, AppConstants.horizontalPadding, AppConstants.screenPadding),
                     child: Text(
                       'Transactions',
                       style: textTheme.headlineMedium?.copyWith(
@@ -611,7 +612,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 // Список транзакций
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.horizontalPadding, vertical: 8),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
