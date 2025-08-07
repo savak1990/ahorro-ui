@@ -17,32 +17,44 @@ class MerchantsProvider extends ChangeNotifier {
 
   Future<void> loadMerchants() async {
     debugPrint('[MerchantsProvider] loadMerchants called');
+    await _executeAsyncOperation(() async {
+      _merchants = await ApiService.getMerchants();
+      debugPrint('[MerchantsProvider]: Loaded ${_merchants.length} merchants');
+    });
+  }
+
+  Future<Merchant?> createMerchant({required String name, required String userId}) async {
+    debugPrint('[MerchantsProvider] createMerchant called');
+    await _executeAsyncOperation(() async {
+      final merchant = await ApiService.postMerchant(name: name, userId: userId);
+      _merchants.insert(0, merchant);
+      debugPrint('[MerchantsProvider]: Created new merchant: ${merchant.name}');
+    });
+    return _merchants.isNotEmpty ? _merchants.first : null;
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  Future<void> _executeAsyncOperation(Future<void> Function() operation) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
     
     try {
-      _merchants = await ApiService.getMerchants();
-      debugPrint('[MerchantsProvider] loaded ${_merchants.length} merchants');
+      await operation();
     } catch (e) {
-      _error = e.toString();
-      debugPrint('[MerchantsProvider] error: $_error');
+      _setError(e.toString());
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<Merchant?> createMerchant({required String name, required String userId}) async {
-    try {
-      final merchant = await ApiService.postMerchant(name: name, userId: userId);
-      _merchants.insert(0, merchant);
-      notifyListeners();
-      return merchant;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return null;
-    }
+  void _setError(String error) {
+    _error = error;
+    debugPrint('[MerchantsProvider]: error: $_error');
   }
 } 

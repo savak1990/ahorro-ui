@@ -11,18 +11,9 @@ class CategoriesProvider extends ChangeNotifier {
     debugPrint('[CategoriesProvider] constructor called');
   }
 
-  List<Category> get categories {
-    debugPrint('[CategoriesProvider] get categories: ${_categories.length}');
-    return _categories;
-  }
-  bool get isLoading {
-    debugPrint('[CategoriesProvider] get isLoading: $_isLoading');
-    return _isLoading;
-  }
-  String? get error {
-    debugPrint('[CategoriesProvider] get error: $_error');
-    return _error;
-  }
+  List<Category> get categories => _categories;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Category? get defaultCategory {
     if (_categories.isEmpty) return null;
@@ -31,20 +22,35 @@ class CategoriesProvider extends ChangeNotifier {
 
   Future<void> loadCategories() async {
     debugPrint('[CategoriesProvider] loadCategories called');
+    await _executeAsyncOperation(() async {
+      final response = await ApiService.getCategories();
+      _categories = response.categories;
+      debugPrint('[CategoriesProvider]: Loaded ${_categories.length} categories');
+    });
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  Future<void> _executeAsyncOperation(Future<void> Function() operation) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+    
     try {
-      final response = await ApiService.getCategories();
-      _categories = response.categories;
-      debugPrint('[CategoriesProvider] loaded ${_categories.length} categories');
-      _isLoading = false;
-      notifyListeners();
+      await operation();
     } catch (e) {
+      _setError(e.toString());
+    } finally {
       _isLoading = false;
-      _error = e.toString();
-      debugPrint('[CategoriesProvider] error: $_error');
       notifyListeners();
     }
+  }
+
+  void _setError(String error) {
+    _error = error;
+    debugPrint('[CategoriesProvider]: error: $_error');
   }
 } 
