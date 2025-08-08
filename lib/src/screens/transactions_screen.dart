@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/transaction_tile.dart';
 import '../models/filter_option.dart';
-import '../services/api_service.dart';
 import 'add_transaction_screen.dart';
 import '../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
-import '../models/transaction_entry_data.dart';
 import '../models/transaction_display_data.dart';
 import '../models/grouping_type.dart';
 import '../models/date_filter_type.dart';
@@ -16,6 +14,7 @@ import '../widgets/active_date_filters_summary.dart';
 import 'transaction_details_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_entries_provider.dart';
+import '../providers/transactions_filter_provider.dart';
 import '../constants/app_constants.dart';
 import '../constants/app_strings.dart';
 import '../widgets/typography.dart';
@@ -29,31 +28,8 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  List<TransactionDisplayData> _allTransactions = [];
-  bool _showAppBarTitle = false; // Состояние для показа заголовка в AppBar
-  final ScrollController _scrollController = ScrollController(); // Контроллер скролла
-  
-  // Date filters
-  int? _selectedYear;
-  int? _selectedMonth;
-  DateTime? _startDate;
-  DateTime? _endDate;
-  DateFilterType _dateFilterType = DateFilterType.month;
-  
-  // New chip-based filters
-  Set<String> _selectedTypes = {};
-  Set<String> _selectedAccounts = {};
-  Set<String> _selectedCategories = {};
-  
-  // Grouping
-  GroupingType _groupingType = GroupingType.date;
-  
-  // Available values for filters
-  Set<int> _availableYears = {};
-  Set<int> _availableMonths = {};
-  Set<String> _availableAccounts = {};
-  Set<String> _availableTypes = {};
-  Set<String> _availableCategories = {};
+  bool _showAppBarTitle = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -61,7 +37,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     // Данные транзакций загружаются при старте приложения через AppStateProvider.initializeApp()
     // Если initialType задан, выставляем фильтр по типу
     if (widget.initialType != null && widget.initialType!.isNotEmpty) {
-      _selectedTypes = {widget.initialType!};
+      // Установим стартовый фильтр через провайдер после первой сборки
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
+        filter.toggleType(widget.initialType!, true);
+      });
     }
     
     // Добавляем слушатель скролла
@@ -89,299 +69,68 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
   }
 
-  void _updateAvailableFilterValues(List<TransactionDisplayData> transactions) {
-    _availableYears = transactions.map((t) => t.date.year).toSet();
-    _availableMonths = transactions.map((t) => t.date.month).toSet();
-    _availableAccounts = transactions.map((t) => t.account).toSet();
-    _availableTypes = transactions.map((t) => t.type).toSet();
-    _availableCategories = transactions.map((t) => t.category).toSet();
-  }
+  // moved to provider
 
-  List<TransactionDisplayData> _applyFilters(List<TransactionDisplayData> transactions) {
-    if (kDebugMode) {
-      debugPrint('Applying filters: types=$_selectedTypes, accounts=$_selectedAccounts, categories=$_selectedCategories');
-      debugPrint('Total transactions before filtering: ${transactions.length}');
-    }
-    
-    final filtered = transactions.where((transaction) {
-      // Type filter
-      if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(transaction.type)) {
-        return false;
-      }
-      
-      // Account filter
-      if (_selectedAccounts.isNotEmpty && !_selectedAccounts.contains(transaction.account)) {
-        return false;
-      }
-      
-      // Category filter
-      if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(transaction.category)) {
-        return false;
-      }
-      
-      return true;
-    }).toList();
-    
-    if (kDebugMode) {
-      debugPrint('Total transactions after filtering: ${filtered.length}');
-    }
-    return filtered;
-  }
+  // moved to provider
 
-  // Группировка транзакций по дням
-  Map<String, List<TransactionDisplayData>> _groupTransactionsByDate(List<TransactionDisplayData> transactions) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final weekAgo = today.subtract(const Duration(days: 7));
-    
-    final Map<String, List<TransactionDisplayData>> grouped = {
-      AppStrings.groupToday: [],
-      AppStrings.groupPrevious7Days: [],
-      AppStrings.groupEarlier: [],
-    };
-    
-    for (final transaction in transactions) {
-      final transactionDate = DateTime(transaction.date.year, transaction.date.month, transaction.date.day);
-      
-      if (transactionDate == today) {
-        grouped[AppStrings.groupToday]!.add(transaction);
-      } else if (transactionDate.isAfter(weekAgo) && transactionDate.isBefore(today)) {
-        grouped[AppStrings.groupPrevious7Days]!.add(transaction);
-      } else {
-        grouped[AppStrings.groupEarlier]!.add(transaction);
-      }
-    }
-    
-    // Удаляем пустые группы
-    grouped.removeWhere((key, value) => value.isEmpty);
-    
-    return grouped;
-  }
-
-  // Группировка транзакций по категории
-  Map<String, List<TransactionDisplayData>> _groupTransactionsByCategory(List<TransactionDisplayData> transactions) {
-    final Map<String, List<TransactionDisplayData>> grouped = {};
-    
-    for (final transaction in transactions) {
-      final category = transaction.category;
-      if (!grouped.containsKey(category)) {
-        grouped[category] = [];
-      }
-      grouped[category]!.add(transaction);
-    }
-    
-    // Сортируем категории по алфавиту
-    final sortedKeys = grouped.keys.toList()..sort();
-    final sortedGrouped = <String, List<TransactionDisplayData>>{};
-    for (final key in sortedKeys) {
-      sortedGrouped[key] = grouped[key]!;
-    }
-    
-    return sortedGrouped;
-  }
-
-  // Общий метод группировки
-  Map<String, List<TransactionDisplayData>> _groupTransactions(List<TransactionDisplayData> transactions) {
-    if (_groupingType == GroupingType.category) {
-      return _groupTransactionsByCategory(transactions);
-    } else {
-      return _groupTransactionsByDate(transactions);
-    }
-  }
+  // Группировка перенесена в провайдер
 
   void _showDateFilterBottomSheet() async {
+    final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       builder: (context) => DateFilterBottomSheet(
-        initialFilterType: _dateFilterType.name,
-        initialYear: _selectedYear,
-        initialMonth: _selectedMonth,
-        initialStartDate: _startDate,
-        initialEndDate: _endDate,
-        availableYears: _availableYears,
+        initialFilterType: filter.dateFilterType.name,
+        initialYear: filter.selectedYear,
+        initialMonth: filter.selectedMonth,
+        initialStartDate: filter.startDate,
+        initialEndDate: filter.endDate,
+        availableYears: filter.availableYears,
       ),
     );
 
     if (result != null) {
-      setState(() {
-        final String typeStr = result['filterType'] as String;
-        _dateFilterType = typeStr == 'period' ? DateFilterType.period : DateFilterType.month;
-        _selectedYear = result['year'];
-        _selectedMonth = result['month'];
-        _startDate = result['startDate'];
-        _endDate = result['endDate'];
-      });
+      final String typeStr = result['filterType'] as String;
+      filter.setDateFilterType(typeStr == 'period' ? DateFilterType.period : DateFilterType.month);
+      filter.setYear(result['year']);
+      filter.setMonth(result['month']);
+      filter.setStartDate(result['startDate']);
+      filter.setEndDate(result['endDate']);
       _refreshTransactions();
     }
   }
 
   void _onTypeFilterChanged(String value, bool selected) {
-    setState(() {
-      if (value == 'all') {
-        _selectedTypes.clear();
-      } else {
-        if (selected) {
-          _selectedTypes.add(value);
-        } else {
-          _selectedTypes.remove(value);
-        }
-      }
-    });
+    Provider.of<TransactionsFilterProvider>(context, listen: false).toggleType(value, selected);
   }
 
   void _onAccountFilterChanged(String value, bool selected) {
-    setState(() {
-      if (value == 'all') {
-        _selectedAccounts.clear();
-      } else {
-        if (selected) {
-          _selectedAccounts.add(value);
-        } else {
-          _selectedAccounts.remove(value);
-        }
-      }
-    });
+    Provider.of<TransactionsFilterProvider>(context, listen: false).toggleAccount(value, selected);
   }
 
   void _onCategoryFilterChanged(String value, bool selected) {
-    setState(() {
-      if (value == 'all') {
-        _selectedCategories.clear();
-      } else {
-        if (selected) {
-          _selectedCategories.add(value);
-        } else {
-          _selectedCategories.remove(value);
-        }
-      }
-    });
+    Provider.of<TransactionsFilterProvider>(context, listen: false).toggleCategory(value, selected);
   }
 
   void _clearAllFilters() {
-    setState(() {
-      _selectedYear = null;
-      _selectedMonth = null;
-      _startDate = null;
-      _endDate = null;
-      _selectedTypes.clear();
-      _selectedAccounts.clear();
-      _selectedCategories.clear();
-    });
+    Provider.of<TransactionsFilterProvider>(context, listen: false).clearAllFilters();
     _refreshTransactions();
   }
 
-  IconData _getCategoryIcon(String categoryName) {
-    switch (categoryName.toLowerCase()) {
-      case 'groceries':
-      case 'food':
-        return Icons.shopping_cart;
-      case 'transport':
-      case 'taxi':
-        return Icons.directions_car;
-      case 'cafe':
-      case 'restaurant':
-        return Icons.local_cafe;
-      case 'salary':
-      case 'income':
-        return Icons.attach_money;
-      case 'gift':
-        return Icons.card_giftcard;
-      case 'multiple categories':
-        return Icons.blur_circular;
-      default:
-        return Icons.category;
-    }
-  }
+  // removed: icon mapping now handled via Category.getCategoryIcon in provider
 
-  List<FilterOption> _getTypeFilterOptions() {
-    final options = <FilterOption>[
-      const FilterOption(
-        value: 'all',
-        label: 'All Types',
-        isAllOption: true,
-      ),
-    ];
+  List<FilterOption> _getTypeFilterOptions() => Provider.of<TransactionsFilterProvider>(context, listen: false).getTypeFilterOptions();
 
-    for (final type in _availableTypes) {
-      final icon = type == 'income' ? Icons.trending_up : 
-                   type == 'expense' ? Icons.trending_down : 
-                   Icons.swap_horiz;
-      final color = type == 'income' ? Colors.green : 
-                    type == 'expense' ? Colors.red : 
-                    Colors.blue;
-      
-      options.add(FilterOption(
-        value: type,
-        label: type.capitalize(),
-        icon: icon,
-        color: color,
-        count: _getTransactionCountByType(type),
-      ));
-    }
+  List<FilterOption> _getAccountFilterOptions() => Provider.of<TransactionsFilterProvider>(context, listen: false).getAccountFilterOptions();
 
-    return options;
-  }
+  List<FilterOption> _getCategoryFilterOptions() => Provider.of<TransactionsFilterProvider>(context, listen: false).getCategoryFilterOptions();
 
-  List<FilterOption> _getAccountFilterOptions() {
-    final options = <FilterOption>[
-      const FilterOption(
-        value: 'all',
-        label: 'All Accounts',
-        isAllOption: true,
-      ),
-    ];
+  // moved to provider
 
-    for (final account in _availableAccounts) {
-      options.add(FilterOption(
-        value: account,
-        label: account,
-        icon: Icons.account_balance,
-        count: _getTransactionCountByAccount(account),
-      ));
-    }
+  // moved to provider
 
-    return options;
-  }
-
-  List<FilterOption> _getCategoryFilterOptions() {
-    final options = <FilterOption>[
-      const FilterOption(
-        value: 'all',
-        label: 'All Categories',
-        isAllOption: true,
-      ),
-    ];
-
-    for (final category in _availableCategories) {
-      options.add(FilterOption(
-        value: category,
-        label: category,
-        icon: _getCategoryIcon(category),
-        count: _getTransactionCountByCategory(category),
-      ));
-    }
-
-    return options;
-  }
-
-  int _getTransactionCountByType(String type) {
-    // Пока возвращаем 0, так как подсчет требует доступа к текущим данным
-    // В будущем можно добавить кэширование результатов
-    return 0;
-  }
-
-  int _getTransactionCountByAccount(String account) {
-    // Пока возвращаем 0, так как подсчет требует доступа к текущим данным
-    // В будущем можно добавить кэширование результатов
-    return 0;
-  }
-
-  int _getTransactionCountByCategory(String category) {
-    // Пока возвращаем 0, так как подсчет требует доступа к текущим данным
-    // В будущем можно добавить кэширование результатов
-    return 0;
-  }
+  // moved to provider
 
   void _showFiltersBottomSheet() async {
     final result = await showModalBottomSheet<Map<String, Set<String>>>(
@@ -391,21 +140,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         typeOptions: _getTypeFilterOptions(),
         accountOptions: _getAccountFilterOptions(),
         categoryOptions: _getCategoryFilterOptions(),
-        initialSelectedTypes: _selectedTypes,
-        initialSelectedAccounts: _selectedAccounts,
-        initialSelectedCategories: _selectedCategories,
+        initialSelectedTypes: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedTypes,
+        initialSelectedAccounts: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedAccounts,
+        initialSelectedCategories: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedCategories,
       ),
     );
 
     if (result != null) {
       debugPrint('Filters result: $result');
-      setState(() {
-        _selectedTypes = result['types'] ?? {};
-        _selectedAccounts = result['accounts'] ?? {};
-        _selectedCategories = result['categories'] ?? {};
-      });
-      debugPrint('Updated filters: types=$_selectedTypes, accounts=$_selectedAccounts, categories=$_selectedCategories');
-      // Не нужно вызывать _refreshTransactions(), так как фильтры применяются локально
+      Provider.of<TransactionsFilterProvider>(context, listen: false).updateSelections(
+        types: result['types'],
+        accounts: result['accounts'],
+        categories: result['categories'],
+      );
+      debugPrint('Updated filters via provider');
     }
   }
 
@@ -425,10 +173,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ListTile(
               leading: Icon(Icons.calendar_today),
               title: Text('Date'),
-              trailing: _groupingType == GroupingType.date ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              trailing: Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType == GroupingType.date ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
               onTap: () {
                 setState(() {
-                  _groupingType = GroupingType.date;
+                  Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType = GroupingType.date;
                 });
                 Navigator.pop(context);
               },
@@ -436,10 +184,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ListTile(
               leading: Icon(Icons.category),
               title: Text('Category'),
-              trailing: _groupingType == GroupingType.category ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              trailing: Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType == GroupingType.category ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
               onTap: () {
                 setState(() {
-                  _groupingType = GroupingType.category;
+                  Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType = GroupingType.category;
                 });
                 Navigator.pop(context);
               },
@@ -472,28 +220,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         centerTitle: true,
-        bottom: (_hasActiveDateFilters() || _hasActiveNonDateFilters())
+        bottom: (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters ||
+                Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
             ? PreferredSize(
                 preferredSize: Size.fromHeight(
-                  (_hasActiveDateFilters() ? 40 : 0) + (_hasActiveNonDateFilters() ? 40 : 0),
+                  (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters ? 40 : 0) +
+                      (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters ? 40 : 0),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_hasActiveDateFilters())
+                    if (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters)
                       ActiveDateFiltersSummary(
-                        dateFilterType: _dateFilterType,
-                        selectedYear: _selectedYear,
-                        selectedMonth: _selectedMonth,
-                        startDate: _startDate,
-                        endDate: _endDate,
-                        onClear: _clearDateFilters,
+                        dateFilterType: Provider.of<TransactionsFilterProvider>(context).dateFilterType,
+                        selectedYear: Provider.of<TransactionsFilterProvider>(context).selectedYear,
+                        selectedMonth: Provider.of<TransactionsFilterProvider>(context).selectedMonth,
+                        startDate: Provider.of<TransactionsFilterProvider>(context).startDate,
+                        endDate: Provider.of<TransactionsFilterProvider>(context).endDate,
+                        onClear: () => Provider.of<TransactionsFilterProvider>(context, listen: false).clearDateFilters(),
                       ),
-                    if (_hasActiveNonDateFilters())
+                    if (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
                       ActiveFiltersSummary(
-                        selectedTypes: _selectedTypes,
-                        selectedAccounts: _selectedAccounts,
-                        selectedCategories: _selectedCategories,
+                        selectedTypes: Provider.of<TransactionsFilterProvider>(context).selectedTypes,
+                        selectedAccounts: Provider.of<TransactionsFilterProvider>(context).selectedAccounts,
+                        selectedCategories: Provider.of<TransactionsFilterProvider>(context).selectedCategories,
                         onClear: _clearAllFilters,
                       ),
                   ],
@@ -524,12 +274,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           ),
         ],
       ),
-      body: Consumer<TransactionEntriesProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
+      body: Consumer2<TransactionEntriesProvider, TransactionsFilterProvider>(
+        builder: (context, entriesProvider, filterProvider, _) {
+          if (entriesProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (provider.error != null) {
+          if (entriesProvider.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -548,54 +298,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           }
 
           // Преобразуем entries в display-структуру (группировка и т.д.)
-          final entries = provider.entries;
-          final displayTransactions = entries.map((entry) {
-            final key = '${entry.transactionId}_${entry.type}_${entry.balanceTitle}_${entry.balanceCurrency}_${entry.approvedAt.toIso8601String()}_${entry.merchantName}';
-            return TransactionDisplayData(
-              id: entry.transactionId,
-              type: entry.type,
-              amount: entry.amount,
-              category: entry.categoryName,
-              categoryIcon: _getCategoryIcon(entry.categoryName),
-              account: entry.balanceTitle,
-              merchantName: entry.merchantName,
-              date: entry.transactedAt,
-              currency: entry.balanceCurrency,
-            );
-          }).toList();
+          // Передаём entries провайдеру фильтров после кадра, чтобы избежать notify во время build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            filterProvider.setEntries(entriesProvider.entries);
+          });
 
-          // Сохраняем все транзакции для фильтров
-          _allTransactions = displayTransactions;
-          // Формируем фильтры по годам и месяцам на основе всех транзакций
-          _updateAvailableFilterValues(_allTransactions);
+          // Получаем сгруппированные данные из провайдера
+          final groupedTransactions = filterProvider.groupedTransactions;
 
-          // Применяем фильтры по дате только если они активны
-          final bool hasActiveDateFilters = _hasActiveDateFilters();
-          final dateFiltered = displayTransactions.where((tx) {
-            // Если есть активные фильтры по дате, применяем их
-            if (hasActiveDateFilters) {
-              //debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
-              if (_dateFilterType == DateFilterType.month) {
-                if (_selectedYear != null && tx.date.year != _selectedYear) return false;
-                if (_selectedMonth != null && tx.date.month != _selectedMonth) return false;
-              } else if (_dateFilterType == DateFilterType.period) {
-                if (_startDate != null && tx.date.isBefore(_startDate!)) return false;
-                if (_endDate != null && tx.date.isAfter(_endDate!)) return false;
-              }
-            } else {
-              //debugPrint('No active date filters, showing all transactions');
-            }
-            // Если нет активных фильтров по дате, показываем все транзакции
-            return true;
-          }).toList();
-
-          // Применяем остальные фильтры (тип, аккаунт, категория)
-          final filtered = _applyFilters(dateFiltered);
-
-          // Группируем транзакции по выбранному типу
-          final groupedTransactions = _groupTransactions(filtered);
-
-          if (filtered.isEmpty) {
+          if (groupedTransactions.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -614,7 +325,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _hasActiveFilters() ? 'with current filters' : 'for ${_getMonthName(month)}',
+                    (filterProvider.hasActiveDateFilters || filterProvider.hasActiveNonDateFilters)
+                        ? 'with current filters'
+                        : 'for ${_getMonthName(month)}',
                     style: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -692,11 +405,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  bool _hasActiveFilters() {
-    return _selectedTypes.isNotEmpty ||
-           _selectedAccounts.isNotEmpty ||
-           _selectedCategories.isNotEmpty;
-  }
+  // moved to provider
 
   String _getMonthName(DateTime date) {
     const months = [
@@ -706,85 +415,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return months[date.month - 1];
   }
 
-  bool _hasActiveDateFilters() {
-    final hasActive = _selectedYear != null ||
-           _selectedMonth != null ||
-           _startDate != null ||
-           _endDate != null;
-    return hasActive;
-  }
+  // moved to provider
 
-  String _getActiveDateFiltersText() {
-    final filters = <String>[];
-    
-    if (_dateFilterType == DateFilterType.month) {
-      if (_selectedYear != null) filters.add('Year: $_selectedYear');
-      if (_selectedMonth != null) filters.add('Month: ${_getMonthName(DateTime(2024, _selectedMonth!))}');
-    } else if (_dateFilterType == DateFilterType.period) {
-      if (_startDate != null) filters.add('Start: ${_startDate.toString().split(' ')[0]}');
-      if (_endDate != null) filters.add('End: ${_endDate.toString().split(' ')[0]}');
-    }
-    
-    return filters.join(', ');
-  }
+  // moved to provider
 
   void _clearDateFilters() {
-    setState(() {
-      _selectedYear = null;
-      _selectedMonth = null;
-      _startDate = null;
-      _endDate = null;
-    });
+    Provider.of<TransactionsFilterProvider>(context, listen: false).clearDateFilters();
     _refreshTransactions();
   }
 
-  bool _hasActiveNonDateFilters() {
-    return _selectedTypes.isNotEmpty ||
-           _selectedAccounts.isNotEmpty ||
-           _selectedCategories.isNotEmpty;
-  }
+  // moved to provider
 
-  Widget _buildActiveFiltersSummary() {
-    // Этот метод будет создавать виджет для отображения активных фильтров
-    final filters = <String>[];
-    if (_selectedTypes.isNotEmpty) filters.add('Type: ${_selectedTypes.map((t) => t.capitalize()).join(', ')}');
-    if (_selectedAccounts.isNotEmpty) filters.add('Balance: ${_selectedAccounts.join(', ')}');
-    if (_selectedCategories.isNotEmpty) filters.add('Category: ${_selectedCategories.join(', ')}');
+  // moved to separate widget
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
-      child: Row(
-        children: [
-          Icon(Icons.filter_list, size: 16),
-          const SizedBox(width: 8),
-          Expanded(child: Text(filters.join(' • '), overflow: TextOverflow.ellipsis)),
-          TextButton(
-            onPressed: _clearAllFilters,
-            child: Text('Clear'),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveDateFiltersSummary() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Row(
-        children: [
-          Icon(Icons.calendar_today, size: 16),
-          const SizedBox(width: 8),
-          Expanded(child: Text(_getActiveDateFiltersText())),
-          TextButton(
-            onPressed: _clearDateFilters,
-            child: Text('Clear'),
-          )
-        ],
-      ),
-    );
-  }
+  // moved to separate widget
 }
 
 // Extension for string capitalization

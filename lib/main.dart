@@ -25,6 +25,7 @@ import 'src/services/auth_service.dart';
 import 'src/providers/transaction_entries_provider.dart';
 import 'src/providers/app_state_provider.dart';
 import 'src/providers/amplify_provider.dart';
+import 'src/providers/transactions_filter_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<CategoriesProvider>.value(value: appState.categories),
         ChangeNotifierProvider<MerchantsProvider>.value(value: appState.merchants),
         ChangeNotifierProvider<TransactionEntriesProvider>.value(value: appState.transactions),
+        ChangeNotifierProvider<TransactionsFilterProvider>(create: (_) => TransactionsFilterProvider()),
       ],
       child: MaterialApp(
         title: AppStrings.appTitle,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transaction_display_data.dart';
-import 'transaction_tile.dart';
+import 'group_items_card.dart';
 import 'typography.dart';
 
 class GroupedTransactionsSliver extends StatelessWidget {
@@ -18,48 +18,26 @@ class GroupedTransactionsSliver extends StatelessWidget {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          final groupIndex = index ~/ 2;
-          final isHeader = index % 2 == 0;
-          final groupKey = groupedTransactions.keys.elementAt(groupIndex);
+          final groupKey = groupedTransactions.keys.elementAt(index);
           final groupItems = groupedTransactions[groupKey]!;
-
-          if (isHeader) {
-            return TitleEmphasizedLarge(
-              text: groupKey,
-              padding: const EdgeInsets.only(top: 16, bottom: 8),
-            );
-          } else {
-            return Column(
-              children: groupItems.asMap().entries.map((entry) {
-                final txIndex = entry.key;
-                final tx = entry.value;
-                return Padding(
-                  padding: EdgeInsets.only(
-                    left: 0,
-                    right: 0,
-                    top: txIndex == 0 ? 0 : 0,
-                    bottom: txIndex == groupItems.length - 1 ? 0 : 0,
-                  ),
-                  child: TransactionTile(
-                    type: tx.type,
-                    amount: tx.amount,
-                    category: tx.category,
-                    categoryIcon: tx.categoryIcon,
-                    balance: tx.account,
-                    date: tx.date,
-                    description: tx.description,
-                    merchantName: tx.merchantName,
-                    currency: tx.currency,
-                    isFirst: txIndex == 0,
-                    isLast: txIndex == groupItems.length - 1,
-                    onTap: () => onTapTransaction(tx),
-                  ),
-                );
-              }).toList(),
-            );
-          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TitleEmphasizedLarge(
+                  text: groupKey,
+                  padding: const EdgeInsets.only(bottom: 8),
+                ),
+                GroupItemsCard(
+                  items: groupItems,
+                  onTapTransaction: onTapTransaction,
+                ),
+              ],
+            ),
+          );
         },
-        childCount: groupedTransactions.length * 2,
+        childCount: groupedTransactions.length,
       ),
     );
   }

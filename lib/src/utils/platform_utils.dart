@@ -24,7 +24,7 @@ class PlatformUtils {
   // Методы для работы с платформо-специфичными стилями
   static double get adaptiveElevation {
     if (isIOS) return 0.0; // iOS не использует тени
-    if (isAndroid) return 4.0; // Android использует Material Design тени
+    if (isAndroid) return 6.0; // Android использует Material Design тени
     return 2.0; // Web использует средние тени
   }
 

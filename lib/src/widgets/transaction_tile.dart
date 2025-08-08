@@ -40,23 +40,21 @@ class TransactionTile extends StatelessWidget {
     final isExpense = type == 'expense';
     final isIncome = type == 'income';
     
-    // Определяем иконку типа транзакции
+    // Определяем иконку типа транзакции (форма меняется, цвет фиксированный по теме)
     IconData typeIcon;
-    Color typeColor;
-    
     if (isIncome) {
       typeIcon = Icons.trending_up;
-      typeColor = colorScheme.primary;
     } else if (isExpense) {
       typeIcon = Icons.trending_down;
-      typeColor = colorScheme.error;
     } else {
       typeIcon = Icons.swap_horiz;
-      typeColor = colorScheme.secondary;
     }
+    final Color iconColor = colorScheme.onSecondaryContainer;
+    final Color iconBackgroundColor = colorScheme.secondaryContainer;
 
     return Card(
       elevation: 0,
+      color: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: isFirst ? const Radius.circular(16) : Radius.zero,
@@ -85,12 +83,12 @@ class TransactionTile extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: typeColor.withOpacity(0.1),
+                      color: iconBackgroundColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       typeIcon,
-                      color: typeColor,
+                      color: iconColor,
                       size: 22,
                     ),
                   ),
