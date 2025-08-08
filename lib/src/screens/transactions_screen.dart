@@ -7,6 +7,12 @@ import 'add_transaction_screen.dart';
 import '../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
 import '../models/transaction_entry_data.dart';
+import '../models/transaction_display_data.dart';
+import '../models/grouping_type.dart';
+import '../models/date_filter_type.dart';
+import '../widgets/grouped_transactions_sliver.dart';
+import '../widgets/active_filters_summary.dart';
+import '../widgets/active_date_filters_summary.dart';
 import 'transaction_details_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_entries_provider.dart';
@@ -32,7 +38,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   int? _selectedMonth;
   DateTime? _startDate;
   DateTime? _endDate;
-  String _dateFilterType = 'month'; // 'month' or 'period'
+  DateFilterType _dateFilterType = DateFilterType.month;
   
   // New chip-based filters
   Set<String> _selectedTypes = {};
@@ -40,7 +46,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Set<String> _selectedCategories = {};
   
   // Grouping
-  String _groupingType = 'date'; // 'date' or 'category'
+  GroupingType _groupingType = GroupingType.date;
   
   // Available values for filters
   Set<int> _availableYears = {};
@@ -138,11 +144,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       final transactionDate = DateTime(transaction.date.year, transaction.date.month, transaction.date.day);
       
       if (transactionDate == today) {
-        grouped['Today']!.add(transaction);
+        grouped[AppStrings.groupToday]!.add(transaction);
       } else if (transactionDate.isAfter(weekAgo) && transactionDate.isBefore(today)) {
-        grouped['Previous 7 Days']!.add(transaction);
+        grouped[AppStrings.groupPrevious7Days]!.add(transaction);
       } else {
-        grouped['Earlier']!.add(transaction);
+        grouped[AppStrings.groupEarlier]!.add(transaction);
       }
     }
     
@@ -176,7 +182,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   // Общий метод группировки
   Map<String, List<TransactionDisplayData>> _groupTransactions(List<TransactionDisplayData> transactions) {
-    if (_groupingType == 'category') {
+    if (_groupingType == GroupingType.category) {
       return _groupTransactionsByCategory(transactions);
     } else {
       return _groupTransactionsByDate(transactions);
@@ -188,7 +194,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) => DateFilterBottomSheet(
-        initialFilterType: _dateFilterType,
+        initialFilterType: _dateFilterType.name,
         initialYear: _selectedYear,
         initialMonth: _selectedMonth,
         initialStartDate: _startDate,
@@ -199,7 +205,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     if (result != null) {
       setState(() {
-        _dateFilterType = result['filterType'];
+        final String typeStr = result['filterType'] as String;
+        _dateFilterType = typeStr == 'period' ? DateFilterType.period : DateFilterType.month;
         _selectedYear = result['year'];
         _selectedMonth = result['month'];
         _startDate = result['startDate'];
@@ -418,10 +425,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ListTile(
               leading: Icon(Icons.calendar_today),
               title: Text('Date'),
-              trailing: _groupingType == 'date' ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              trailing: _groupingType == GroupingType.date ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
               onTap: () {
                 setState(() {
-                  _groupingType = 'date';
+                  _groupingType = GroupingType.date;
                 });
                 Navigator.pop(context);
               },
@@ -429,10 +436,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ListTile(
               leading: Icon(Icons.category),
               title: Text('Category'),
-              trailing: _groupingType == 'category' ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              trailing: _groupingType == GroupingType.category ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
               onTap: () {
                 setState(() {
-                  _groupingType = 'category';
+                  _groupingType = GroupingType.category;
                 });
                 Navigator.pop(context);
               },
@@ -465,6 +472,34 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         centerTitle: true,
+        bottom: (_hasActiveDateFilters() || _hasActiveNonDateFilters())
+            ? PreferredSize(
+                preferredSize: Size.fromHeight(
+                  (_hasActiveDateFilters() ? 40 : 0) + (_hasActiveNonDateFilters() ? 40 : 0),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_hasActiveDateFilters())
+                      ActiveDateFiltersSummary(
+                        dateFilterType: _dateFilterType,
+                        selectedYear: _selectedYear,
+                        selectedMonth: _selectedMonth,
+                        startDate: _startDate,
+                        endDate: _endDate,
+                        onClear: _clearDateFilters,
+                      ),
+                    if (_hasActiveNonDateFilters())
+                      ActiveFiltersSummary(
+                        selectedTypes: _selectedTypes,
+                        selectedAccounts: _selectedAccounts,
+                        selectedCategories: _selectedCategories,
+                        onClear: _clearAllFilters,
+                      ),
+                  ],
+                ),
+              )
+            : null,
         actions: [
           IconButton(
             icon: Icon(
@@ -540,10 +575,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             // Если есть активные фильтры по дате, применяем их
             if (hasActiveDateFilters) {
               //debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
-              if (_dateFilterType == 'month') {
+              if (_dateFilterType == DateFilterType.month) {
                 if (_selectedYear != null && tx.date.year != _selectedYear) return false;
                 if (_selectedMonth != null && tx.date.month != _selectedMonth) return false;
-              } else if (_dateFilterType == 'period') {
+              } else if (_dateFilterType == DateFilterType.period) {
                 if (_startDate != null && tx.date.isBefore(_startDate!)) return false;
                 if (_endDate != null && tx.date.isAfter(_endDate!)) return false;
               }
@@ -615,61 +650,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 // Список транзакций
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: AppConstants.horizontalPadding, vertical: 8),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final groupIndex = index ~/ 2;
-                        final isHeader = index % 2 == 0;
-                        final groupKey = groupedTransactions.keys.elementAt(groupIndex);
-                        final groupTransactions = groupedTransactions[groupKey]!;
-                        
-                        if (isHeader) {
-                          // Заголовок группы
-                          return TitleEmphasizedLarge(
-                            text: groupKey,
-                            padding: const EdgeInsets.only(top: 16, bottom: 8),
-                          );
-                        } else {
-                          // Транзакции группы
-                          return Column(
-                            children: groupTransactions.asMap().entries.map((entry) {
-                              final txIndex = entry.key;
-                              final tx = entry.value;
-                              
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  left: 0,
-                                  right: 0,
-                                  top: txIndex == 0 ? 0 : 0,
-                                  bottom: txIndex == groupTransactions.length - 1 ? 0 : 0,
-                                ),
-                                child: TransactionTile(
-                                  type: tx.type,
-                                  amount: tx.amount,
-                                  category: tx.category,
-                                  categoryIcon: tx.categoryIcon,
-                                  balance: tx.account,
-                                  date: tx.date,
-                                  description: tx.description,
-                                  merchantName: tx.merchantName,
-                                  currency: tx.currency,
-                                  isFirst: txIndex == 0,
-                                  isLast: txIndex == groupTransactions.length - 1,
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        }
-                      },
-                      childCount: groupedTransactions.length * 2,
-                    ),
+                  sliver: GroupedTransactionsSliver(
+                    groupedTransactions: groupedTransactions,
+                    onTapTransaction: (tx) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -728,10 +717,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   String _getActiveDateFiltersText() {
     final filters = <String>[];
     
-    if (_dateFilterType == 'month') {
+    if (_dateFilterType == DateFilterType.month) {
       if (_selectedYear != null) filters.add('Year: $_selectedYear');
       if (_selectedMonth != null) filters.add('Month: ${_getMonthName(DateTime(2024, _selectedMonth!))}');
-    } else if (_dateFilterType == 'period') {
+    } else if (_dateFilterType == DateFilterType.period) {
       if (_startDate != null) filters.add('Start: ${_startDate.toString().split(' ')[0]}');
       if (_endDate != null) filters.add('End: ${_endDate.toString().split(' ')[0]}');
     }
@@ -805,28 +794,4 @@ extension StringExtension on String {
   }
 }
 
-class TransactionDisplayData {
-  final String id;
-  final String type;
-  final double amount;
-  final String category;
-  final IconData categoryIcon;
-  final String account;
-  final String? description;
-  final String? merchantName;
-  final DateTime date;
-  final String currency;
-
-  TransactionDisplayData({
-    required this.id,
-    required this.type,
-    required this.amount,
-    required this.category,
-    required this.categoryIcon,
-    required this.account,
-    this.description,
-    this.merchantName,
-    required this.date,
-    required this.currency,
-  });
-} 
+// moved to ../models/transaction_display_data.dart

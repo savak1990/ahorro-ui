@@ -1,0 +1,5 @@
+enum DateFilterType {
+  month,
+  period,
+}
+
