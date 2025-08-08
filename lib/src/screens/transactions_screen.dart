@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../widgets/transaction_tile.dart';
 import '../models/filter_option.dart';
 import '../services/api_service.dart';
@@ -89,32 +90,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   List<TransactionDisplayData> _applyFilters(List<TransactionDisplayData> transactions) {
-    debugPrint('Applying filters: types=$_selectedTypes, accounts=$_selectedAccounts, categories=$_selectedCategories');
-    debugPrint('Total transactions before filtering: ${transactions.length}');
+    if (kDebugMode) {
+      debugPrint('Applying filters: types=$_selectedTypes, accounts=$_selectedAccounts, categories=$_selectedCategories');
+      debugPrint('Total transactions before filtering: ${transactions.length}');
+    }
     
     final filtered = transactions.where((transaction) {
       // Type filter
       if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(transaction.type)) {
-        debugPrint('Filtered out by type: ${transaction.type}');
         return false;
       }
       
       // Account filter
       if (_selectedAccounts.isNotEmpty && !_selectedAccounts.contains(transaction.account)) {
-        debugPrint('Filtered out by account: ${transaction.account}');
         return false;
       }
       
       // Category filter
       if (_selectedCategories.isNotEmpty && !_selectedCategories.contains(transaction.category)) {
-        debugPrint('Filtered out by category: ${transaction.category}');
         return false;
       }
       
       return true;
     }).toList();
     
-    debugPrint('Total transactions after filtering: ${filtered.length}');
+    if (kDebugMode) {
+      debugPrint('Total transactions after filtering: ${filtered.length}');
+    }
     return filtered;
   }
 
@@ -531,9 +533,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           _updateAvailableFilterValues(_allTransactions);
 
           // Применяем фильтры по дате только если они активны
+          final bool hasActiveDateFilters = _hasActiveDateFilters();
           final dateFiltered = displayTransactions.where((tx) {
             // Если есть активные фильтры по дате, применяем их
-            if (_hasActiveDateFilters()) {
+            if (hasActiveDateFilters) {
               //debugPrint('Applying date filters: type=$_dateFilterType, year=$_selectedYear, month=$_selectedMonth');
               if (_dateFilterType == 'month') {
                 if (_selectedYear != null && tx.date.year != _selectedYear) return false;
@@ -724,7 +727,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
            _selectedMonth != null ||
            _startDate != null ||
            _endDate != null;
-    debugPrint('_hasActiveDateFilters: year=$_selectedYear, month=$_selectedMonth, start=$_startDate, end=$_endDate, result=$hasActive');
     return hasActive;
   }
 
