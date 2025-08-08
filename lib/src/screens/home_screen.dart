@@ -53,21 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
-      categoriesProvider.loadCategories();
-      final balancesProvider = Provider.of<BalancesProvider>(context, listen: false);
-      balancesProvider.loadBalances().then((_) {
-        final balances = balancesProvider.balances;
-        final hasActive = balances.any((b) => b.deletedAt == null);
-        if (!hasActive) {
-          Navigator.of(context).pushReplacementNamed('/default-balance-currency');
-        }
-      });
-      final merchantsProvider = Provider.of<MerchantsProvider>(context, listen: false);
-      merchantsProvider.loadMerchants();
-      Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
-    });
+    // Данные инициализируются через AppStateProvider.initializeApp() в main.dart
     _userNameFuture = _fetchUserName();
   }
 

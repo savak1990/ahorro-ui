@@ -49,10 +49,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    // Загружаем транзакции через провайдер
-    Future.microtask(() {
-      Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
-    });
+    // Данные транзакций загружаются при старте приложения через AppStateProvider.initializeApp()
     // Если initialType задан, выставляем фильтр по типу
     if (widget.initialType != null && widget.initialType!.isNotEmpty) {
       _selectedTypes = {widget.initialType!};

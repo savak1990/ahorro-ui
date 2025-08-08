@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import '../models/balance.dart';
 import '../services/api_service.dart';
+import 'base_provider.dart';
 
-class BalancesProvider extends ChangeNotifier {
+class BalancesProvider extends BaseProvider {
+  BalancesProvider();
+
   List<Balance> _balances = [];
-  bool _isLoading = false;
-  String? _error;
+  static const Duration _cacheDuration = Duration(minutes: 60);
 
-  BalancesProvider() {
-    debugPrint('[BalancesProvider] constructor called');
-  }
-  
   List<Balance> get balances => _balances;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  String? get error => errorMessage;
 
-  Future<void> loadBalances() async {
-    debugPrint('[BalancesProvider] loadBalances called');
-    await _executeAsyncOperation(() async {
+  Future<void> loadBalances({bool forceRefresh = false}) async {
+    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _balances.isNotEmpty) {
+      return;
+    }
+    await execute(() async {
       _balances = await ApiService.getBalances();
       debugPrint('[BalancesProvider]: Loaded ${_balances.length} balances');
     });
@@ -30,7 +29,7 @@ class BalancesProvider extends ChangeNotifier {
     required String title,
     String? description,
   }) async {
-    await _executeAsyncOperation(() async {
+    await execute(() async {
       final response = await ApiService.postBalance(
         userId: userId,
         groupId: groupId,
@@ -49,39 +48,14 @@ class BalancesProvider extends ChangeNotifier {
 
   Future<void> deleteBalance(String balanceId) async {
     if (balanceId.trim().isEmpty) {
-      _setError('ID баланса не может быть пустым');
+      setErrorMessage('ID баланса не может быть пустым');
       return;
     }
 
-    await _executeAsyncOperation(() async {
+    await execute(() async {
       await ApiService.deleteBalance(balanceId);
       _balances.removeWhere((balance) => balance.balanceId == balanceId);
       debugPrint('[BalancesProvider]: Deleted balance: $balanceId');
     });
-  }
-
-  void clearError() {
-    _error = null;
-    notifyListeners();
-  }
-
-  Future<void> _executeAsyncOperation(Future<void> Function() operation) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    
-    try {
-      await operation();
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  void _setError(String error) {
-    _error = error;
-    debugPrint('[BalancesProvider]: error: $_error');
   }
 } 
