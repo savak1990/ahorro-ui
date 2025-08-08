@@ -3,44 +3,26 @@ import '../models/transaction_entry_data.dart';
 import '../services/api_service.dart';
 import '../models/transaction_type.dart';
 import '../models/transaction_entry.dart';
+import 'base_provider.dart';
 
-class TransactionEntriesProvider extends ChangeNotifier {
+class TransactionEntriesProvider extends BaseProvider {
+  TransactionEntriesProvider();
+
   List<TransactionEntryData> _entries = [];
-  bool _isLoading = false;
-  String? _error;
+  static const Duration _cacheDuration = Duration(minutes: 15);
 
-  TransactionEntriesProvider() {
-    debugPrint('[TransactionEntriesProvider] constructor called');
-  }
+  List<TransactionEntryData> get entries => _entries;
+  String? get error => errorMessage;
 
-  List<TransactionEntryData> get entries {
-    debugPrint('[TransactionEntriesProvider] get entries: ${_entries.length}');
-    return _entries;
-  }
-  bool get isLoading {
-    debugPrint('[TransactionEntriesProvider] get isLoading: $_isLoading');
-    return _isLoading;
-  }
-  String? get error {
-    debugPrint('[TransactionEntriesProvider] get error: $_error');
-    return _error;
-  }
-
-  Future<void> loadEntries() async {
-    debugPrint('[TransactionEntriesProvider] loadEntries called');
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
+  Future<void> loadEntries({bool forceRefresh = false}) async {
+    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _entries.isNotEmpty) {
+      return;
+    }
+    await execute(() async {
       final response = await ApiService.getTransactions();
       _entries = response.transactionEntries;
       debugPrint('[TransactionEntriesProvider] loaded ${_entries.length} entries');
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('[TransactionEntriesProvider] error: $_error');
-    }
-    _isLoading = false;
-    notifyListeners();
+    });
   }
 
   Future<void> createTransaction({
@@ -53,10 +35,7 @@ class TransactionEntriesProvider extends ChangeNotifier {
     String? merchant,
     List<TransactionEntry>? transactionEntriesParam,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
+    await execute(() async {
       await ApiService.postTransaction(
         type: type,
         amount: amount,
@@ -67,27 +46,17 @@ class TransactionEntriesProvider extends ChangeNotifier {
         merchant: merchant,
         transactionEntriesParam: transactionEntriesParam,
       );
-      await loadEntries();
-    } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
-    }
+      await loadEntries(forceRefresh: true);
+    });
   }
 
   Future<Map<String, dynamic>?> getTransactionById(String transactionId) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
     try {
-      final data = await ApiService.getTransactionById(transactionId);
-      _isLoading = false;
-      notifyListeners();
+      final data = await execute(() async {
+        return await ApiService.getTransactionById(transactionId);
+      });
       return data;
     } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
       return null;
     }
   }

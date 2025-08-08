@@ -133,9 +133,9 @@ class _CategoryPickerDialogState extends State<CategoryPickerDialog>
                               ),
                               const SizedBox(height: 8),
                               TextButton(
-                                onPressed: () {
-                                  categoriesProvider.loadCategories();
-                                },
+                                  onPressed: () {
+                                    categoriesProvider.loadCategories(forceRefresh: true);
+                                  },
                                 child: const Text('Retry'),
                               ),
                             ],

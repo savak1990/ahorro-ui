@@ -1,46 +1,36 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/merchant.dart';
+import 'base_provider.dart';
 
-class MerchantsProvider extends ChangeNotifier {
+class MerchantsProvider extends BaseProvider {
+  MerchantsProvider();
+
   List<Merchant> _merchants = [];
-  bool _isLoading = false;
-  String? _error;
-
-  MerchantsProvider() {
-    debugPrint('[MerchantsProvider] constructor called');
-  }
+  static const Duration _cacheDuration = Duration(minutes: 60);
 
   List<Merchant> get merchants => _merchants;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  String? get error => errorMessage;
 
-  Future<void> loadMerchants() async {
-    debugPrint('[MerchantsProvider] loadMerchants called');
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    
-    try {
-      _merchants = await ApiService.getMerchants();
-      debugPrint('[MerchantsProvider] loaded ${_merchants.length} merchants');
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('[MerchantsProvider] error: $_error');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  Future<void> loadMerchants({bool forceRefresh = false}) async {
+    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _merchants.isNotEmpty) {
+      return;
     }
+    await execute(() async {
+      _merchants = await ApiService.getMerchants();
+      debugPrint('[MerchantsProvider]: Loaded ${_merchants.length} merchants');
+    });
   }
 
   Future<Merchant?> createMerchant({required String name, required String userId}) async {
     try {
       final merchant = await ApiService.postMerchant(name: name, userId: userId);
       _merchants.insert(0, merchant);
+      debugPrint('[MerchantsProvider]: Created new merchant: ${merchant.name}');
       notifyListeners();
       return merchant;
     } catch (e) {
-      _error = e.toString();
+      setErrorMessage(e.toString());
       notifyListeners();
       return null;
     }

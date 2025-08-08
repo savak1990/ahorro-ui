@@ -109,7 +109,7 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
       ),
     ).then((_) {
       // Refresh balances after adding new one
-      Provider.of<BalancesProvider>(context, listen: false).loadBalances();
+    Provider.of<BalancesProvider>(context, listen: false).loadBalances(forceRefresh: true);
     });
   }
 

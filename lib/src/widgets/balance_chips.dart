@@ -103,7 +103,7 @@ class BalanceChips extends StatelessWidget {
                       ),
                     ).then((_) {
                       // Обновляем балансы после добавления нового
-                      Provider.of<BalancesProvider>(context, listen: false).loadBalances();
+                      Provider.of<BalancesProvider>(context, listen: false).loadBalances(forceRefresh: true);
                     });
                   },
                   icon: const Icon(Icons.add),
