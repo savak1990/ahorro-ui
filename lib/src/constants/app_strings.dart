@@ -22,4 +22,24 @@ class AppStrings {
   static const String descriptionLabel = 'Description (optional)';
   static const String titleRequired = 'Title is required';
   static const String createButton = 'Create';
+
+  // Home page
+  static const String financialOverviewTitle = 'Financial Overview';
+  static const String monthYearDatePattern = 'MMMM, yyyy';
+  static String helloUser(String name) => 'Hello, $name!';
+
+  // Account page
+  static const String accountTitle = 'Account';
+  static const String generalTitle = 'General';
+
+  // Transactions page
+  static const String transactionsTitle = 'Transactions';
+  static const String groupToday = 'Today';
+  static const String groupPrevious7Days = 'Previous 7 Days';
+  static const String groupEarlier = 'Earlier';
+
+  // Transaction details page
+  static const String transactionDetailsInformationTitle = 'Information';
+  static const String transactionDetailsPeriodTitle = 'Period';
+  static const String transactionDetailsEntriesTitle = 'Entries';
 }

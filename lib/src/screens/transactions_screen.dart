@@ -11,6 +11,8 @@ import 'transaction_details_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../constants/app_constants.dart';
+import '../constants/app_strings.dart';
+import '../widgets/typography.dart';
 
 class TransactionsScreen extends StatefulWidget {
   final String? initialType;
@@ -127,9 +129,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final weekAgo = today.subtract(const Duration(days: 7));
     
     final Map<String, List<TransactionDisplayData>> grouped = {
-      'Today': [],
-      'Previous 7 Days': [],
-      'Earlier': [],
+      AppStrings.groupToday: [],
+      AppStrings.groupPrevious7Days: [],
+      AppStrings.groupEarlier: [],
     };
     
     for (final transaction in transactions) {
@@ -453,7 +455,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       appBar: AppBar(
         title: _showAppBarTitle 
             ? Text(
-                'Transactions',
+                AppStrings.transactionsTitle,
                 style: textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurface,
@@ -599,14 +601,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 // Большой заголовок Transactions как часть экрана
                 SliverToBoxAdapter(
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(AppConstants.horizontalPadding, 24, AppConstants.horizontalPadding, AppConstants.screenPadding),
-                    child: Text(
-                      'Transactions',
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                        fontSize: 32,
-                      ),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppConstants.horizontalPadding,
+                      24,
+                      AppConstants.horizontalPadding,
+                      AppConstants.screenPadding,
+                    ),
+                    child: const HeadlineEmphasizedLarge(
+                      text: AppStrings.transactionsTitle,
                     ),
                   ),
                 ),
@@ -623,16 +625,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         
                         if (isHeader) {
                           // Заголовок группы
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 16, bottom: 8, left: 0, right: 0),
-                            child: Text(
-                              groupKey,
-                              style: textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
-                                letterSpacing: 0.15,
-                              ),
-                            ),
+                          return TitleEmphasizedLarge(
+                            text: groupKey,
+                            padding: const EdgeInsets.only(top: 16, bottom: 8),
                           );
                         } else {
                           // Транзакции группы

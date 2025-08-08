@@ -1,7 +1,6 @@
 import 'package:ahorro_ui/src/screens/home_screen.dart';
 import 'package:ahorro_ui/src/screens/transactions_screen.dart';
 // Temporarily hidden: import 'package:ahorro_ui/src/screens/budget_screen.dart';
-import 'package:ahorro_ui/src/screens/settings_screen.dart';
 import 'package:ahorro_ui/src/screens/account_screen.dart';
 // Temporarily hidden: import 'package:ahorro_ui/src/screens/txn_ai_screen.dart';
 import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';

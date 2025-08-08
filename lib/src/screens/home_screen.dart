@@ -3,21 +3,16 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 
-import '../constants/app_colors.dart';
-import '../widgets/list_item_tile.dart';
 import 'add_transaction_screen.dart';
-import '../providers/categories_provider.dart';
-import '../providers/balances_provider.dart';
-import '../providers/merchants_provider.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../providers/amplify_provider.dart';
 import '../widgets/monthly_overview_card.dart';
-import '../widgets/home_header.dart';
-import '../widgets/section_title.dart';
 import '../widgets/platform_loading_indicator.dart';
 import '../widgets/error_state_widget.dart';
 import '../widgets/platform_app_bar.dart';
 import '../constants/app_constants.dart';
+import '../constants/app_strings.dart';
+import '../widgets/typography.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function(String type)? onShowTransactions;
@@ -85,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final currentDate = DateTime.now();
-    final monthYear = DateFormat('MMMM, yyyy').format(currentDate);
+    final monthYear = DateFormat(AppStrings.monthYearDatePattern).format(currentDate);
 
     final amplify = context.watch<AmplifyProvider>();
     final displayUserName = amplify.currentUserName ?? 'User';
@@ -120,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final monthlyTotals = _calculateMonthlyTotals(entries);
           return CustomScrollView(
             slivers: [
-              // Header section
+              // Header section (Headline + Label)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -129,20 +124,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     AppConstants.horizontalPadding, 
                     8
                   ),
-                  child: HomeHeader(
-                    userName: displayUserName,
-                    dateText: monthYear,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      HeadlineEmphasizedLarge(
+                        text: AppStrings.helloUser(displayUserName),
+                      ),
+                      const SizedBox(height: 8),
+                      LabelEmphasizedMedium(
+                        text: monthYear,
+                      ),
+                    ],
                   ),
                 ),
               ),
-              // Financial Overview Section
+              // Financial Overview Section (Title)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.horizontalPadding,
                     vertical: 0,
                   ),
-                  child: SectionTitle(title: 'Financial Overview'),
+                  child: TitleEmphasizedLarge(text: AppStrings.financialOverviewTitle),
                 ),
               ),
               // Monthly Overview Card

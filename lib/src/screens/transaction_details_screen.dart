@@ -3,6 +3,8 @@ import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 import '../widgets/transaction_tile.dart';
 import '../constants/app_typography.dart';
+import '../widgets/typography.dart';
+import '../constants/app_strings.dart';
 import 'package:provider/provider.dart';
 import '../providers/transaction_entries_provider.dart';
 
@@ -111,6 +113,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   Widget _buildDetails(BuildContext context, ThemeData theme, TextTheme textTheme) {
     final tx = transactionData!;
     final type = tx['Type'] ?? '-';
+    final String _typeStr = type.toString();
+    final String displayType = _typeStr.isNotEmpty
+        ? _typeStr[0].toUpperCase() + _typeStr.substring(1)
+        : '-';
     final entries = (tx['TransactionEntries'] as List?) ?? [];
     double totalAmount = 0.0;
     for (final entry in entries) {
@@ -171,9 +177,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        type[0].toUpperCase() + type.substring(1),
-                        style: AppTypography.headlineLarge.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                      HeadlineEmphasizedLarge(
+                        text: displayType,
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -202,7 +207,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             ),
             const SizedBox(height: 32),
             // INFORMATION
-            Text('Information', style: AppTypography.titleLarge.copyWith(color: theme.colorScheme.onSurface)),
+            const TitleEmphasizedLarge(text: AppStrings.transactionDetailsInformationTitle),
             const SizedBox(height: 8),
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -222,7 +227,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             ),
             const SizedBox(height: 24),
             // PERIOD
-            Text('Period', style: AppTypography.titleLarge.copyWith(color: theme.colorScheme.onSurface)),
+            const TitleEmphasizedLarge(text: AppStrings.transactionDetailsPeriodTitle),
             const SizedBox(height: 8),
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -239,7 +244,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             const SizedBox(height: 24),
             // ENTRIES
             if (entries.isNotEmpty) ...[
-              Text('Entries', style: AppTypography.titleLarge.copyWith(color: theme.colorScheme.onSurface)),
+              const TitleEmphasizedLarge(text: AppStrings.transactionDetailsEntriesTitle),
               const SizedBox(height: 8),
               Card(
                 shape: RoundedRectangleBorder(

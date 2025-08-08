@@ -4,8 +4,9 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/services.dart';
 import '../../src/constants/app_colors.dart';
 import '../../src/screens/balances_screen.dart';
-import '../widgets/section_title.dart';
 import '../widgets/platform_app_bar.dart';
+import '../widgets/typography.dart';
+import '../constants/app_strings.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -108,7 +109,7 @@ class _AccountScreenState extends State<AccountScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Account Header
-                SectionTitle(title: 'Account'),
+                const HeadlineEmphasizedLarge(text: AppStrings.accountTitle),
                 
                 // Profile Section
                 Container(
@@ -233,7 +234,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 // ),
                 
                 // General Section
-                SectionTitle(title: 'General'),
+                const TitleEmphasizedLarge(text: AppStrings.generalTitle),
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.surface,
@@ -256,7 +257,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           Icon(Icons.account_balance_wallet, color: AppColors.primary),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('Balances', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                            child: Text(AppStrings.balancesTitle, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                           ),
                           Icon(Icons.arrow_forward_ios, size: 18, color: AppColors.accent),
                         ],

@@ -3,12 +3,10 @@ import 'package:provider/provider.dart';
 import '../../src/constants/app_colors.dart';
 import '../models/balance.dart';
 import '../providers/balances_provider.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
 import '../widgets/add_balance_form.dart';
 import '../widgets/balance_tile.dart';
-import '../services/auth_service.dart';
 import '../constants/app_strings.dart';
-import '../widgets/balances_header.dart';
+import '../widgets/typography.dart';
 
 class BalancesScreen extends StatelessWidget {
   const BalancesScreen({super.key});
@@ -68,9 +66,14 @@ class BalancesScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: BalancesHeader(
-        title: AppStrings.balancesTitle,
-        subtitle: AppStrings.balancesSubtitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 4),
+          const HeadlineEmphasizedLarge(text: AppStrings.balancesTitle),
+          const SizedBox(height: 8),
+          const LabelEmphasizedMedium(text: AppStrings.balancesSubtitle),
+        ],
       ),
     );
   }
