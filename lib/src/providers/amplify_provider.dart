@@ -5,8 +5,11 @@ import 'base_provider.dart';
 
 class AmplifyProvider extends BaseProvider {
   bool _isConfigured = false;
+  String? _currentUserName;
+  bool _isFetchingUserName = false;
 
   bool get isConfigured => _isConfigured || Amplify.isConfigured;
+  String? get currentUserName => _currentUserName;
 
   Future<void> configure(String amplifyconfig) async {
     if (isConfigured) {
@@ -27,5 +30,26 @@ class AmplifyProvider extends BaseProvider {
       _isConfigured = true;
       debugPrint('[AmplifyProvider]: configured');
     });
+  }
+
+  Future<void> loadCurrentUserName() async {
+    if (!isConfigured || _isFetchingUserName || _currentUserName != null) return;
+    _isFetchingUserName = true;
+    try {
+      final attributes = await Amplify.Auth.fetchUserAttributes();
+      final nameAttr = attributes.firstWhere(
+        (attr) => attr.userAttributeKey.key == 'name',
+        orElse: () => const AuthUserAttribute(
+          userAttributeKey: CognitoUserAttributeKey.name,
+          value: 'User',
+        ),
+      );
+      _currentUserName = (nameAttr.value.isNotEmpty) ? nameAttr.value : 'User';
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[AmplifyProvider]: failed to fetch user name: $e');
+    } finally {
+      _isFetchingUserName = false;
+    }
   }
 }

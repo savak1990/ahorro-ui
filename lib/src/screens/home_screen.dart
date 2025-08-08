@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 
 import '../constants/app_colors.dart';
-import '../services/api_service.dart';
 import '../widgets/list_item_tile.dart';
 import 'add_transaction_screen.dart';
 import '../providers/categories_provider.dart';
 import '../providers/balances_provider.dart';
 import '../providers/merchants_provider.dart';
 import '../providers/transaction_entries_provider.dart';
+import '../providers/amplify_provider.dart';
 import '../widgets/monthly_overview_card.dart';
 import '../widgets/home_header.dart';
 import '../widgets/section_title.dart';
@@ -32,30 +30,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Timer? _tooltipTimer;
   bool _showTooltip = false;
-  late Future<String> _userNameFuture;
-
-  Future<String> _fetchUserName() async {
-    try {
-      final attributes = await Amplify.Auth.fetchUserAttributes();
-      final nameAttr = attributes.firstWhere(
-        (attr) => attr.userAttributeKey.key == 'name',
-        orElse: () => const AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.name,
-          value: 'User',
-        ),
-      );
-      return nameAttr.value;
-    } catch (e) {
-      return 'User';
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Данные инициализируются через AppStateProvider.initializeApp() в main.dart
-    _userNameFuture = _fetchUserName();
-  }
 
   @override
   void dispose() {
@@ -69,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _showTooltip = true;
-          print('Tooltip should be visible now: $_showTooltip');
         });
       }
     });
@@ -114,6 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentDate = DateTime.now();
     final monthYear = DateFormat('MMMM, yyyy').format(currentDate);
 
+    final amplify = context.watch<AmplifyProvider>();
+    final displayUserName = amplify.currentUserName ?? 'User';
+
     return Scaffold(
       appBar: PlatformAppBar(
         backgroundColor: colorScheme.surface,
@@ -129,77 +105,68 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<String>(
-        future: _userNameFuture,
-        builder: (context, nameSnapshot) {
-          String displayUserName = 'User';
-          if (nameSnapshot.connectionState == ConnectionState.done && nameSnapshot.hasData && nameSnapshot.data!.isNotEmpty) {
-            displayUserName = nameSnapshot.data!;
+      body: Consumer<TransactionEntriesProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return Center(child: PlatformLoadingIndicator());
           }
-          return Consumer<TransactionEntriesProvider>(
-            builder: (context, provider, _) {
-              if (provider.isLoading) {
-                return Center(child: PlatformLoadingIndicator());
-              }
-              if (provider.error != null) {
-                return ErrorStateWidget(
-                  message: 'Error loading transactions: ${provider.error}',
-                  onRetry: _refreshTransactions,
-                );
-              }
-              final entries = provider.entries;
-              final monthlyTotals = _calculateMonthlyTotals(entries);
-              return CustomScrollView(
-                slivers: [
-                  // Header section
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppConstants.horizontalPadding, 
-                        8,
-                        AppConstants.horizontalPadding, 
-                        8
-                      ),
-                      child: HomeHeader(
-                        userName: displayUserName,
-                        dateText: monthYear,
-                      ),
-                    ),
+          if (provider.error != null) {
+            return ErrorStateWidget(
+              message: 'Error loading transactions: ${provider.error}',
+              onRetry: _refreshTransactions,
+            );
+          }
+          final entries = provider.entries;
+          final monthlyTotals = _calculateMonthlyTotals(entries);
+          return CustomScrollView(
+            slivers: [
+              // Header section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppConstants.horizontalPadding, 
+                    8,
+                    AppConstants.horizontalPadding, 
+                    8
                   ),
-                  // Financial Overview Section
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.horizontalPadding,
-                        vertical: 0,
-                      ),
-                      child: SectionTitle(title: 'Financial Overview'),
-                    ),
+                  child: HomeHeader(
+                    userName: displayUserName,
+                    dateText: monthYear,
                   ),
-                  // Monthly Overview Card
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.horizontalPadding,
-                        vertical: 0,
-                      ),
-                      child: MonthlyOverviewCard(
-                        entries: entries,
-                        onTap: (type) {
-                          if (widget.onShowTransactions != null) {
-                            widget.onShowTransactions!(type);
-                          }
-                        },
-                      ),
-                    ),
+                ),
+              ),
+              // Financial Overview Section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.horizontalPadding,
+                    vertical: 0,
                   ),
-                  // Bottom padding for FAB
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 80),
+                  child: SectionTitle(title: 'Financial Overview'),
+                ),
+              ),
+              // Monthly Overview Card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.horizontalPadding,
+                    vertical: 0,
                   ),
-                ],
-              );
-            },
+                  child: MonthlyOverviewCard(
+                    entries: entries,
+                    onTap: (type) {
+                      if (widget.onShowTransactions != null) {
+                        widget.onShowTransactions!(type);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              // Bottom padding for FAB
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 80),
+              ),
+            ],
           );
         },
       ),
@@ -208,13 +175,11 @@ class _HomeScreenState extends State<HomeScreen> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            //backgroundColor: colorScheme.surface,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             builder: (context) => const AddTransactionScreen(),
           ).then((_) {
-            // Update transactions after adding new one
             _refreshTransactions();
           });
         },
