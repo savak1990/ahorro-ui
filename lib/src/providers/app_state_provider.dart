@@ -27,6 +27,7 @@ class AppStateProvider extends ChangeNotifier {
 
   Future<void> initializeApp(String amplifyconfig) async {
     await _amplify.configure(amplifyconfig);
+    await _amplify.loadCurrentUserName();
     await Future.wait([
       _categories.loadCategories(),
       _balances.loadBalances(),
