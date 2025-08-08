@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
-import '../constants/platform_colors.dart';
 import '../models/balance.dart';
 import '../providers/balances_provider.dart';
 import '../widgets/add_balance_form.dart';
@@ -102,7 +101,7 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: PlatformColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: AddBalanceForm(),
@@ -229,11 +228,14 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  size: 64,
-                  color: AppColors.textSecondary,
-                ),
+                Builder(builder: (context) {
+                  final scheme = Theme.of(context).colorScheme;
+                  return Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 64,
+                    color: scheme.onSurfaceVariant,
+                  );
+                }),
                 const SizedBox(height: 16),
                 Text(
                   'Minimum 2 balances required',
@@ -246,26 +248,29 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
                 Text(
                   'You need at least 2 active balances to make transfers between them.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.surface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: _showAddBalanceForm,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Balance'),
-                  ),
+                    child: Builder(builder: (context) {
+                      final scheme = Theme.of(context).colorScheme;
+                      return ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: scheme.primary,
+                          foregroundColor: scheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: _showAddBalanceForm,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Balance'),
+                      );
+                    }),
                 ),
               ],
             ),

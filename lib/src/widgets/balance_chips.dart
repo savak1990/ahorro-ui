@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/balances_provider.dart';
-import '../constants/platform_colors.dart';
 import '../utils/platform_utils.dart';
 import '../widgets/add_balance_form.dart';
 
@@ -25,6 +24,7 @@ class BalanceChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Consumer<BalancesProvider>(
       builder: (context, provider, _) {
         final balances = provider.balances;
@@ -69,12 +69,12 @@ class BalanceChips extends StatelessWidget {
                         }
                       }
                     },
-                    selectedColor: PlatformColors.primary,
+                    selectedColor: colorScheme.primary,
                     labelStyle: TextStyle(
-                      color: selected ? PlatformColors.surface : PlatformColors.textPrimary,
+                      color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
-                    backgroundColor: PlatformColors.surface,
+                    backgroundColor: colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
                     ),
@@ -96,7 +96,7 @@ class BalanceChips extends StatelessWidget {
                       backgroundColor: Colors.transparent,
                       builder: (context) => Container(
                         decoration: BoxDecoration(
-                          color: PlatformColors.surface,
+                          color: colorScheme.surface,
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                         ),
                         child: AddBalanceForm(),
@@ -109,7 +109,7 @@ class BalanceChips extends StatelessWidget {
                   icon: const Icon(Icons.add),
                   label: const Text('Add balance'),
                   style: TextButton.styleFrom(
-                    foregroundColor: PlatformColors.primary,
+                    foregroundColor: colorScheme.primary,
                   ),
                 ),
               ),

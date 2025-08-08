@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../src/constants/app_colors.dart';
+// Removed AppColors in favor of Theme.of(context).colorScheme
 import '../models/balance.dart';
 import '../providers/balances_provider.dart';
 import '../widgets/add_balance_form.dart';
@@ -13,9 +13,10 @@ class BalancesScreen extends StatelessWidget {
 
   // Extracted AppBar builder
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return AppBar(
-      backgroundColor: AppColors.surface,
-      foregroundColor: AppColors.textPrimary,
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.onSurface,
       elevation: 0,
       actions: [
         IconButton(
@@ -55,7 +56,7 @@ class BalancesScreen extends StatelessWidget {
             child: Center(
               child: Text(
                 AppStrings.noBalances,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
           ),
@@ -108,7 +109,7 @@ class BalancesScreen extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                        child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ),
                     ],
                   ),
@@ -144,7 +145,7 @@ class BalancesScreen extends StatelessWidget {
         debugPrint('BalancesScreen: isLoading=${provider.isLoading}, error=${provider.error}, balancesCount=${provider.balances.length}');
         return Scaffold(
           appBar: _buildAppBar(context),
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: () {
             if (provider.isLoading) {
               return _buildLoading(context);

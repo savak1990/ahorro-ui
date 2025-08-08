@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../constants/app_colors.dart';
+// Removed AppColors in favor of Theme.of(context).colorScheme
 
 class TransactionTile extends StatelessWidget {
   final String type; // 'income', 'expense', 'movement'
@@ -46,13 +46,13 @@ class TransactionTile extends StatelessWidget {
     
     if (isIncome) {
       typeIcon = Icons.trending_up;
-      typeColor = AppColors.success;
+      typeColor = colorScheme.primary;
     } else if (isExpense) {
       typeIcon = Icons.trending_down;
-      typeColor = AppColors.danger;
+      typeColor = colorScheme.error;
     } else {
       typeIcon = Icons.swap_horiz;
-      typeColor = AppColors.info;
+      typeColor = colorScheme.secondary;
     }
 
     return Card(
@@ -147,7 +147,7 @@ class TransactionTile extends StatelessWidget {
                         amount.toStringAsFixed(2),
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: colorScheme.primary,
                         ),
                       ),
                       const SizedBox(height: 2),

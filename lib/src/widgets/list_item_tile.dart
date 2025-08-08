@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../constants/platform_colors.dart';
 
 class ListItemTile extends StatelessWidget {
   final String title;
@@ -52,14 +51,14 @@ class ListItemTile extends StatelessWidget {
             title,
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w500,
-              color: PlatformColors.textPrimary, 
+              color: colorScheme.onSurface, 
             ),
           ),
           subtitle: subtitle != null
               ? Text(
                   subtitle!,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: PlatformColors.textSecondary,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 )
               : null,
@@ -68,7 +67,7 @@ class ListItemTile extends StatelessWidget {
                   ? Icon(
                       Icons.arrow_forward_ios,
                       size: 16,
-                      color: PlatformColors.textSecondary,
+                      color: colorScheme.onSurfaceVariant,
                     )
                   : null),
           onTap: onTap,
@@ -76,7 +75,7 @@ class ListItemTile extends StatelessWidget {
         if (showDivider)
           Divider(
             height: 1,
-            color: PlatformColors.divider,
+            color: colorScheme.outlineVariant,
             indent: 56,
             endIndent: 16,
           ),

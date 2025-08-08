@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/balance.dart';
-import '../constants/app_colors.dart';
+// Removed AppColors in favor of Theme.of(context).colorScheme
 
 class BalanceTile extends StatelessWidget {
   final Balance balance;
@@ -9,16 +9,17 @@ class BalanceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final isDeleted = balance.deletedAt != null;
     return Opacity(
       opacity: isDeleted ? 0.5 : 1.0,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
         ),
         child: ListTile(
-          leading: Icon(Icons.account_balance_wallet, color: AppColors.primary),
+          leading: Icon(Icons.account_balance_wallet, color: scheme.primary),
           title: Row(
             children: [
               Expanded(
@@ -53,7 +54,7 @@ class BalanceTile extends StatelessWidget {
           trailing: isDeleted
               ? null
               : IconButton(
-                  icon: const Icon(Icons.delete, color: AppColors.error),
+                  icon: Icon(Icons.delete, color: scheme.error),
                   tooltip: 'Delete',
                   onPressed: onDelete,
                 ),

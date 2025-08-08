@@ -2,7 +2,7 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/services.dart';
-import '../../src/constants/app_colors.dart';
+// Removed AppColors in favor of Theme.of(context).colorScheme
 import '../../src/screens/balances_screen.dart';
 import '../widgets/platform_app_bar.dart';
 import '../widgets/typography.dart';
@@ -60,32 +60,28 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PlatformAppBar(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           IconButton(
             icon: Icon(
               Icons.logout,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             onPressed: () async {
               try {
                 await Amplify.Auth.signOut();
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error signing out: $e'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
+                  final scheme = Theme.of(context).colorScheme;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error signing out: $e'), backgroundColor: scheme.error));
                 }
               }
             },
           ),
         ],
       ),
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: FutureBuilder<Map<String, dynamic>>(
         future: _userInfoFuture,
         builder: (context, snapshot) {
@@ -114,7 +110,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 // Profile Section
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   margin: const EdgeInsets.only(bottom: 24),
@@ -124,7 +120,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.person, size: 28, color: AppColors.primary),
+                          Icon(Icons.person, size: 28, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -137,12 +133,12 @@ class _AccountScreenState extends State<AccountScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.email, size: 20, color: AppColors.accent),
+                          Icon(Icons.email, size: 20, color: Theme.of(context).colorScheme.secondary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               email,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
+                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface),
                             ),
                           ),
                         ],
@@ -237,7 +233,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 const TitleEmphasizedLarge(text: AppStrings.generalTitle),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   margin: const EdgeInsets.only(bottom: 32),
@@ -254,12 +250,12 @@ class _AccountScreenState extends State<AccountScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                       child: Row(
                         children: [
-                          Icon(Icons.account_balance_wallet, color: AppColors.primary),
+                          Icon(Icons.account_balance_wallet, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(AppStrings.balancesTitle, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                           ),
-                          Icon(Icons.arrow_forward_ios, size: 18, color: AppColors.accent),
+                          Icon(Icons.arrow_forward_ios, size: 18, color: Theme.of(context).colorScheme.secondary),
                         ],
                       ),
                     ),
