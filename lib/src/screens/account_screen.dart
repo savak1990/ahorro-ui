@@ -7,6 +7,8 @@ import '../../src/screens/balances_screen.dart';
 import '../widgets/platform_app_bar.dart';
 import '../widgets/typography.dart';
 import '../constants/app_strings.dart';
+import '../widgets/settings_section_card.dart';
+import '../widgets/settings_list_item.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -231,35 +233,21 @@ class _AccountScreenState extends State<AccountScreen> {
                 
                 // General Section
                 const TitleEmphasizedLarge(text: AppStrings.generalTitle),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 32),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const BalancesScreen(),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                      child: Row(
-                        children: [
-                          Icon(Icons.account_balance_wallet, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(AppStrings.balancesTitle, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                SettingsSectionCard(
+                  margin: const EdgeInsets.only(top: 12, bottom: 32),
+                  children: [
+                    SettingsListItem(
+                      title: AppStrings.balancesTitle,
+                      leadingIcon: Icons.account_balance_wallet,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const BalancesScreen(),
                           ),
-                          Icon(Icons.arrow_forward_ios, size: 18, color: Theme.of(context).colorScheme.secondary),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),

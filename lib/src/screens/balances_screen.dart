@@ -7,6 +7,7 @@ import '../widgets/add_balance_form.dart';
 import '../widgets/balance_tile.dart';
 import '../constants/app_strings.dart';
 import '../widgets/typography.dart';
+import '../widgets/settings_section_card.dart';
 
 class BalancesScreen extends StatelessWidget {
   const BalancesScreen({super.key});
@@ -86,40 +87,43 @@ class BalancesScreen extends StatelessWidget {
       padding: EdgeInsets.zero,
       children: [
         _buildHeader(context),
-        ListView.separated(
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: balances.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final Balance balance = balances[index];
-            return BalanceTile(
-              balance: balance,
-              onDelete: balance.deletedAt != null ? null : () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete balance?'),
-                    content: Text('Are you sure you want to delete the balance "${balance.title}"?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await provider.deleteBalance(balance.balanceId);
-                }
-              },
-            );
-          },
+          child: SettingsSectionCard(
+            margin: const EdgeInsets.only(top: 0, bottom: 32),
+            padding: EdgeInsets.zero,
+            children: [
+              for (final balance in balances)
+                BalanceTile(
+                  balance: balance,
+                  useCardBackground: false,
+                  onDelete: balance.deletedAt != null
+                      ? null
+                      : () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete balance?'),
+                              content: Text('Are you sure you want to delete the balance "${balance.title}"?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await provider.deleteBalance(balance.balanceId);
+                          }
+                        },
+                ),
+            ],
+          ),
         ),
       ],
     );

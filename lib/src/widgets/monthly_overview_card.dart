@@ -37,8 +37,8 @@ class MonthlyOverviewCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final monthlyTotals = _calculateMonthlyTotals(entries);
     return Card(
-      elevation: PlatformUtils.adaptiveElevation,
-      color: colorScheme.surface,
+      elevation: 0,
+      color: colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius)
       ),
@@ -48,14 +48,14 @@ class MonthlyOverviewCard extends StatelessWidget {
             title: 'Expense',
             subtitle: '${monthlyTotals['expense']?.toStringAsFixed(2) ?? '0.00'} EUR',
             icon: Icons.trending_down,
-            iconColor: colorScheme.error,
+            iconColor: colorScheme.onSecondaryContainer,
             onTap: onTap != null ? () => onTap!('expense') : null,
           ),
           ListItemTile(
             title: 'Income',
             subtitle: '${monthlyTotals['income']?.toStringAsFixed(2) ?? '0.00'} EUR',
             icon: Icons.trending_up,
-            iconColor: colorScheme.primary,
+            iconColor: colorScheme.onSecondaryContainer,
             onTap: onTap != null ? () => onTap!('income') : null,
             showDivider: false,
           ),
