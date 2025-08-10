@@ -5,6 +5,22 @@ class MaterialTheme {
 
   const MaterialTheme(this.textTheme);
 
+  // Success colors extension
+  // Provides semantic success colors across all theme variants
+  static const SuccessColors _lightSuccess = SuccessColors(
+    success: Color(0xFF059669),
+    onSuccess: Color(0xFFFFFFFF),
+    successContainer: Color(0xFFD1FAE5),
+    onSuccessContainer: Color(0xFF064E3B),
+  );
+
+  static const SuccessColors _darkSuccess = SuccessColors(
+    success: Color(0xFF34D399),
+    onSuccess: Color(0xFF00150E),
+    successContainer: Color(0xFF0B3B2C),
+    onSuccessContainer: Color(0xFF7AE9C1),
+  );
+
   static ColorScheme lightScheme() {
     return const ColorScheme(
       brightness: Brightness.light,
@@ -57,7 +73,7 @@ class MaterialTheme {
   }
 
   ThemeData light() {
-    return theme(lightScheme());
+    return theme(lightScheme(), success: _lightSuccess);
   }
 
   static ColorScheme lightMediumContrastScheme() {
@@ -112,7 +128,7 @@ class MaterialTheme {
   }
 
   ThemeData lightMediumContrast() {
-    return theme(lightMediumContrastScheme());
+    return theme(lightMediumContrastScheme(), success: _lightSuccess);
   }
 
   static ColorScheme lightHighContrastScheme() {
@@ -167,7 +183,7 @@ class MaterialTheme {
   }
 
   ThemeData lightHighContrast() {
-    return theme(lightHighContrastScheme());
+    return theme(lightHighContrastScheme(), success: _lightSuccess);
   }
 
   static ColorScheme darkScheme() {
@@ -222,7 +238,7 @@ class MaterialTheme {
   }
 
   ThemeData dark() {
-    return theme(darkScheme());
+    return theme(darkScheme(), success: _darkSuccess);
   }
 
   static ColorScheme darkMediumContrastScheme() {
@@ -277,7 +293,7 @@ class MaterialTheme {
   }
 
   ThemeData darkMediumContrast() {
-    return theme(darkMediumContrastScheme());
+    return theme(darkMediumContrastScheme(), success: _darkSuccess);
   }
 
   static ColorScheme darkHighContrastScheme() {
@@ -332,11 +348,10 @@ class MaterialTheme {
   }
 
   ThemeData darkHighContrast() {
-    return theme(darkHighContrastScheme());
+    return theme(darkHighContrastScheme(), success: _darkSuccess);
   }
 
-
-  ThemeData theme(ColorScheme colorScheme) => ThemeData(
+  ThemeData theme(ColorScheme colorScheme, {required SuccessColors success}) => ThemeData(
      useMaterial3: true,
      brightness: colorScheme.brightness,
      colorScheme: colorScheme,
@@ -346,6 +361,9 @@ class MaterialTheme {
      ),
      scaffoldBackgroundColor: colorScheme.background,
      canvasColor: colorScheme.surface,
+     extensions: <ThemeExtension<dynamic>>[
+       success,
+     ],
   );
 
 
@@ -386,4 +404,44 @@ class ColorFamily {
   final Color onColor;
   final Color colorContainer;
   final Color onColorContainer;
+}
+
+class SuccessColors extends ThemeExtension<SuccessColors> {
+  final Color success;
+  final Color onSuccess;
+  final Color successContainer;
+  final Color onSuccessContainer;
+
+  const SuccessColors({
+    required this.success,
+    required this.onSuccess,
+    required this.successContainer,
+    required this.onSuccessContainer,
+  });
+
+  @override
+  SuccessColors copyWith({
+    Color? success,
+    Color? onSuccess,
+    Color? successContainer,
+    Color? onSuccessContainer,
+  }) {
+    return SuccessColors(
+      success: success ?? this.success,
+      onSuccess: onSuccess ?? this.onSuccess,
+      successContainer: successContainer ?? this.successContainer,
+      onSuccessContainer: onSuccessContainer ?? this.onSuccessContainer,
+    );
+  }
+
+  @override
+  SuccessColors lerp(ThemeExtension<SuccessColors>? other, double t) {
+    if (other is! SuccessColors) return this;
+    return SuccessColors(
+      success: Color.lerp(success, other.success, t)!,
+      onSuccess: Color.lerp(onSuccess, other.onSuccess, t)!,
+      successContainer: Color.lerp(successContainer, other.successContainer, t)!,
+      onSuccessContainer: Color.lerp(onSuccessContainer, other.onSuccessContainer, t)!,
+    );
+  }
 }

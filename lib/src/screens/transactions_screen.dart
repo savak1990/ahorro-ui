@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/transaction_tile.dart';
 import '../models/filter_option.dart';
-import 'add_transaction_screen.dart';
+import '../widgets/add_transaction_bottom_sheet.dart';
 import '../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
 import '../models/transaction_display_data.dart';
@@ -381,18 +381,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              child: Container(
-                color: Colors.white,
-                child: const AddTransactionScreen(),
-              ),
-            ),
-          ).then((_) {
+          showAddTransactionBottomSheet(context).then((_) {
             _refreshTransactions();
           });
         },

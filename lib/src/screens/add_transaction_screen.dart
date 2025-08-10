@@ -14,6 +14,7 @@ import 'package:formz/formz.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../widgets/income_transaction_form.dart';
 import '../widgets/movement_transaction_form.dart';
+import '../config/theme.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -47,8 +48,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       );
       if (mounted) {
         setState(() { _isLoading = false; });
+        final success = Theme.of(context).extension<SuccessColors>();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction saved!'), backgroundColor: Colors.green),
+          SnackBar(
+            content: const Text('Transaction saved!'),
+            backgroundColor: success?.successContainer,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         Navigator.pop(context);
       }
@@ -78,8 +84,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       );
       if (mounted) {
         setState(() { _isLoading = false; });
+        final success = Theme.of(context).extension<SuccessColors>();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction saved!'), backgroundColor: Colors.green),
+          SnackBar(
+            content: const Text('Transaction saved!'),
+            backgroundColor: success?.successContainer,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         Navigator.pop(context);
       }
@@ -107,8 +118,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       
       if (mounted) {
         setState(() { _isLoading = false; });
+        final success = Theme.of(context).extension<SuccessColors>();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transfer saved!'), backgroundColor: Colors.green),
+          SnackBar(
+            content: const Text('Transfer saved!'),
+            backgroundColor: success?.successContainer,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         Navigator.pop(context);
       }
@@ -168,7 +184,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           }
                         },
                         child: _isLoading
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : const Text('Save'),
                       );
                     },

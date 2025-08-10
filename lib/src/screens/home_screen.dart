@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 
-import 'add_transaction_screen.dart';
+import '../widgets/add_transaction_bottom_sheet.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../providers/amplify_provider.dart';
 import '../widgets/monthly_overview_card.dart';
@@ -175,14 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            builder: (context) => const AddTransactionScreen(),
-          ).then((_) {
+          showAddTransactionBottomSheet(context).then((_) {
             _refreshTransactions();
           });
         },

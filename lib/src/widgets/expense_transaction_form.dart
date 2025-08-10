@@ -13,6 +13,7 @@ import '../constants/app_typography.dart';
 import '../models/transaction_type.dart';
 import '../widgets/add_balance_form.dart';
 import '../widgets/balance_chips.dart';
+import '../widgets/transaction_item_row.dart';
 
 // Formz input models
 class AmountInput extends FormzInput<String, String> {
@@ -230,114 +231,32 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
             itemCount: _items.length,
             itemBuilder: (context, i) {
               final item = _items[i];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                elevation: 1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey[200]!),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          final selected = await showDialog<Category?>(
-                            context: context,
-                            builder: (context) => CategoryPickerDialog(
-                              selectedCategoryId: item.selectedCategoryId,
-                            ),
-                          );
-                          if (selected != null) {
-                            setState(() {
-                              item.selectedCategoryId = selected.id;
-                              item.selectedCategoryName = selected.name;
-                              item.selectedCategoryIcon = selected.iconData;
-                            });
-                          }
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: Colors.grey[100],
-                          child: item.selectedCategoryIcon != null
-                              ? Icon(item.selectedCategoryIcon, color: Theme.of(context).colorScheme.primary)
-                              : const Icon(Icons.category, color: Colors.grey),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          controller: item.nameController,
-                          onChanged: (val) {
-                            _descInputs[i] = DescriptionInput.dirty(val);
-                            _updateFormzState();
-                            setState(() {});
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Description',
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            errorText: _descInputs[i].isNotValid ? _descInputs[i].error : null,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 90,
-                        child: TextField(
-                          controller: item.amountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          onChanged: (val) {
-                            _amountInputs[i] = AmountInput.dirty(val);
-                            _updateFormzState();
-                            setState(() {});
-                          },
-                          decoration: InputDecoration(
-                            hintText: '0.00',
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: (_amountInputs[i].isNotValid && !_amountInputs[i].isPure)
-                                    ? Colors.red
-                                    : Colors.grey,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: (_amountInputs[i].isNotValid && !_amountInputs[i].isPure)
-                                    ? Colors.red
-                                    : Colors.grey,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: (_amountInputs[i].isNotValid && !_amountInputs[i].isPure)
-                                    ? Colors.red
-                                    : Theme.of(context).colorScheme.primary,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_items.length > 1)
-                        IconButton(
-                          icon: Icon(Icons.remove_circle_outline, color: Colors.red.shade300),
-                          onPressed: () => _removeItem(i),
-                          tooltip: 'Remove',
-                        ),
-                    ],
-                  ),
-                ),
+              return TransactionItemRow(
+                nameController: item.nameController,
+                amountController: item.amountController,
+                selectedCategoryId: item.selectedCategoryId,
+                selectedCategoryIcon: item.selectedCategoryIcon,
+                onCategorySelected: (selected) {
+                  setState(() {
+                    item.selectedCategoryId = selected.id;
+                    item.selectedCategoryName = selected.name;
+                    item.selectedCategoryIcon = selected.iconData;
+                  });
+                },
+                onNameChanged: (val) {
+                  _descInputs[i] = DescriptionInput.dirty(val);
+                  _updateFormzState();
+                  setState(() {});
+                },
+                onAmountChanged: (val) {
+                  _amountInputs[i] = AmountInput.dirty(val);
+                  _updateFormzState();
+                  setState(() {});
+                },
+                descriptionErrorText: _descInputs[i].isNotValid ? _descInputs[i].error : null,
+                hasAmountError: (_amountInputs[i].isNotValid && !_amountInputs[i].isPure),
+                canRemove: _items.length > 1,
+                onRemove: () => _removeItem(i),
               );
             },
           ),
