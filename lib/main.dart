@@ -7,6 +7,9 @@ import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';
 import 'package:ahorro_ui/src/screens/merchant_search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:amplify_authenticator/amplify_authenticator.dart';
+import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import 'dart:async';
 import 'src/providers/balances_provider.dart';
 import 'src/providers/categories_provider.dart';
 import 'src/providers/merchants_provider.dart';
@@ -22,6 +25,7 @@ import 'src/config/adaptive_theme.dart';
 import 'src/widgets/adaptive_navigation.dart';
 
 import 'src/services/auth_service.dart';
+import 'package:amplify_flutter/amplify_flutter.dart';
 import 'src/providers/transaction_entries_provider.dart';
 import 'src/providers/app_state_provider.dart';
 import 'src/providers/amplify_provider.dart';
@@ -48,17 +52,43 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late String amplifyconfig;
+  StreamSubscription? _hubSub;
 
   @override
   void initState() {
     super.initState();
     const env = String.fromEnvironment('ENV', defaultValue: 'stable');
     amplifyconfig = env == 'prod' ? prod_config.amplifyconfig : stable_config.amplifyconfig;
-    // Запускаем инициализацию через AppStateProvider
-    // Используем addPostFrameCallback, чтобы контекст уже был смонтирован
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Конфигурируем Amplify один раз до появления Authenticator UI
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final appState = context.read<AppStateProvider>();
-      appState.initializeApp(amplifyconfig);
+      await appState.amplify.configure(amplifyconfig);
+      // Если уже залогинен при старте – инициализируем данные
+      try {
+        final session = await Amplify.Auth.fetchAuthSession();
+        if (session.isSignedIn) {
+          await appState.initializeApp(amplifyconfig);
+        }
+      } catch (_) {}
+      // Подписка на события аутентификации
+      _hubSub = Amplify.Hub.listen(HubChannel.Auth, (event) async {
+        if (!mounted) return;
+        if (event is AuthHubEvent) {
+          switch (event.type) {
+            case AuthHubEventType.signedIn:
+              await appState.initializeApp(amplifyconfig);
+              break;
+            case AuthHubEventType.signedOut:
+            case AuthHubEventType.sessionExpired:
+              // Можно очистить кэш, если потребуется
+              break;
+            default:
+              break;
+          }
+        } else if (event.eventName == 'SIGNED_IN') {
+          await appState.initializeApp(amplifyconfig);
+        }
+      });
     });
   }
 
@@ -75,20 +105,23 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<TransactionEntriesProvider>.value(value: appState.transactions),
         ChangeNotifierProvider<TransactionsFilterProvider>(create: (_) => TransactionsFilterProvider()),
       ],
-      child: MaterialApp(
-        title: AppStrings.appTitle,
-        debugShowCheckedModeBanner: false,
-        theme: AdaptiveTheme.lightTheme,
-        darkTheme: AdaptiveTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const MainScreen(),
-          '/account': (context) => const AccountScreen(),
-          '/transactions': (context) => const TransactionsScreen(),
-          '/default-balance-currency': (context) => const DefaultBalanceCurrencyScreen(),
-          '/merchant_search': (context) => const MerchantSearchScreen(),
-        },
+      child: Authenticator(
+        child: MaterialApp(
+          builder: Authenticator.builder(),
+          title: AppStrings.appTitle,
+          debugShowCheckedModeBanner: false,
+          theme: AdaptiveTheme.lightTheme,
+          darkTheme: AdaptiveTheme.darkTheme,
+          themeMode: ThemeMode.system,
+          initialRoute: '/',
+          routes: {
+            '/': (context) => _AuthGate(amplifyconfig: amplifyconfig),
+            '/account': (context) => const AccountScreen(),
+            '/transactions': (context) => const TransactionsScreen(),
+            '/default-balance-currency': (context) => const DefaultBalanceCurrencyScreen(),
+            '/merchant_search': (context) => const MerchantSearchScreen(),
+          },
+        ),
       ),
     );
   }
@@ -147,5 +180,21 @@ class _MainScreenState extends State<MainScreen> {
       children: _screens,
       destinations: _destinations,
     );
+  }
+}
+
+class _AuthGate extends StatefulWidget {
+  final String amplifyconfig;
+  const _AuthGate({required this.amplifyconfig});
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  @override
+  Widget build(BuildContext context) {
+    // Authenticator сам управляет показом форм/детей; тут просто корневой экран
+    return const MainScreen();
   }
 }

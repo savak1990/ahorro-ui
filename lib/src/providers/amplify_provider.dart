@@ -32,6 +32,20 @@ class AmplifyProvider extends BaseProvider {
     });
   }
 
+  Future<void> ensureSignedIn() async {
+    await execute(() async {
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        try {
+          await Amplify.Auth.signInWithWebUI();
+        } catch (e) {
+          debugPrint('[AmplifyProvider]: sign-in cancelled or failed: $e');
+          rethrow;
+        }
+      }
+    });
+  }
+
   Future<void> loadCurrentUserName() async {
     if (!isConfigured || _isFetchingUserName || _currentUserName != null) return;
     _isFetchingUserName = true;

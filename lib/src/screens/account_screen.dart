@@ -34,6 +34,10 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<Map<String, dynamic>> _fetchUserInfo() async {
+    final session = await Amplify.Auth.fetchAuthSession();
+    if (!session.isSignedIn) {
+      throw Exception('SignedOut');
+    }
     final attributes = await Amplify.Auth.fetchUserAttributes();
     
     final nameAttribute = attributes.firstWhere(
@@ -73,6 +77,8 @@ class _AccountScreenState extends State<AccountScreen> {
             onPressed: () async {
               try {
                 await Amplify.Auth.signOut();
+                if (!mounted) return;
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
               } catch (e) {
                 if (context.mounted) {
                   final scheme = Theme.of(context).colorScheme;
@@ -91,6 +97,16 @@ class _AccountScreenState extends State<AccountScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
+            // Если вышли из аккаунта или сессии нет — уводим на AuthGate
+            final message = snapshot.error.toString();
+            if (message.contains('SignedOut') || message.contains('No user is currently signed in')) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                }
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data == null) {
