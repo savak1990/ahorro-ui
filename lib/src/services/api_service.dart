@@ -17,6 +17,21 @@ import '../models/merchant.dart';
 
 
 class ApiService {
+  // Centralized auth headers builder
+  static Future<Map<String, String>> _buildAuthHeaders({bool includeJson = false, String? requestId}) async {
+    final session = await Amplify.Auth.fetchAuthSession();
+    if (!session.isSignedIn) {
+      throw Exception('User is not signed in');
+    }
+    final token = (session as CognitoAuthSession).userPoolTokensResult.value.idToken.raw;
+    return {
+      if (includeJson) 'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+      if (requestId != null) 'X-Request-Id': requestId,
+    };
+  }
+
   static Future<void> postTransaction({
     required TransactionType type,
     double? amount,
@@ -28,21 +43,10 @@ class ApiService {
     List<TransactionEntry>? transactionEntriesParam,
   }) async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
-
       final userId = await AuthService.getUserId();
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
       final url = Uri.parse(AppConfig.transactionsUrl);
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+      final operationId = generateOperationId();
+      final headers = await _buildAuthHeaders(includeJson: true, requestId: operationId);
 
       // Form transactionEntries from passed data or create single element
       final entries = transactionEntriesParam ?? [
@@ -69,7 +73,7 @@ class ApiService {
         'userId': userId,
         'groupId': '',
         'type': type.name,
-        'operationId': generateOperationId(),
+        'operationId': operationId,
         'approvedAt': date.toUtc().toIso8601String(),
         'transactedAt': date.toUtc().toIso8601String(),
       };
@@ -93,11 +97,13 @@ class ApiService {
       //debugPrint('Request Headers: $headers');
       //debugPrint('Request Body: $body');
 
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
 
       // debugPrint('[ApiService.postTransaction] --- RESPONSE ---');
       // debugPrint('Response Status Code: ${response.statusCode}');
@@ -126,21 +132,10 @@ class ApiService {
     String? description,
   }) async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
-
       final userId = await AuthService.getUserId();
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
       final url = Uri.parse(AppConfig.transactionsUrl);
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+      final requestId = generateOperationId();
+      final headers = await _buildAuthHeaders(includeJson: true, requestId: requestId);
 
       // Create two transactions: move_out and move_in
       final moveOutTransaction = {
@@ -188,11 +183,13 @@ class ApiService {
 
       // debugPrint('[ApiService.postMovementTransaction] BODY: $body');
 
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
 
       // debugPrint('[ApiService.postMovementTransaction] --- RESPONSE ---');
       debugPrint('Response Status Code: ${response.statusCode}');
@@ -214,20 +211,10 @@ class ApiService {
 
   static Future<TransactionsResponse> getTransactions() async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
-
       final userId = await AuthService.getUserId();
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
-      final url = Uri.parse('${AppConfig.transactionsUrl}?userId=$userId');
-      final headers = {
-        'Authorization': 'Bearer $token',
-      };
+      final base = Uri.parse(AppConfig.transactionsUrl);
+      final url = base.replace(queryParameters: {'userId': userId});
+      final headers = await _buildAuthHeaders();
 
       //debugPrint('GET Request URL: $url');
       //debugPrint('GET Request Headers: $headers');
@@ -235,7 +222,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: headers,
-      );
+      ).timeout(const Duration(seconds: 25));
 
       //debugPrint('GET Response Status Code: ${response.statusCode}');
       //debugPrint('GET Response Body: ${response.body}');
@@ -289,18 +276,8 @@ class ApiService {
 
   static Future<CategoriesResponse> getCategories() async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
       final url = Uri.parse(AppConfig.categoriesUrl);
-      final headers = {
-        'Authorization': 'Bearer $token',
-      };
+      final headers = await _buildAuthHeaders();
 
       //debugPrint('GET Categories Request URL: $url');
       //debugPrint('GET Categories Request Headers: $headers');
@@ -308,7 +285,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: headers,
-      );
+      ).timeout(const Duration(seconds: 25));
 
       //debugPrint('GET Categories Response Status Code: ${response.statusCode}');
       //debugPrint('GET Categories Response Body: ${response.body}');
@@ -329,23 +306,15 @@ class ApiService {
 
   static Future<List<Balance>> getBalances() async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
       final userId = await AuthService.getUserId();
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
-      final url = Uri.parse('${AppConfig.baseUrl}/balances?userId=$userId');
-      final headers = {
-        'Authorization': 'Bearer $token',
-      };
+      final base = Uri.parse(AppConfig.balancesUrl);
+      final url = base.replace(queryParameters: {'userId': userId});
+      final headers = await _buildAuthHeaders();
 
       //debugPrint('GET Balances Request URL: $url');
       //debugPrint('GET Balances Request Headers: $headers');
 
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 25));
 
      // debugPrint('GET Balances Response Status Code: ${response.statusCode}');
       //debugPrint('GET Balances Response Body: ${response.body}');
@@ -374,18 +343,8 @@ class ApiService {
     String? description,
   }) async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
       final url = Uri.parse('${AppConfig.baseUrl}/balances');
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+      final headers = await _buildAuthHeaders(includeJson: true);
       final body = json.encode({
         'userId': userId,
         'groupId': groupId,
@@ -398,7 +357,13 @@ class ApiService {
       // debugPrint('POST Balance Request Headers: $headers');
       // debugPrint('POST Balance Request Body: $body');
 
-      final response = await http.post(url, headers: headers, body: body);
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
 
       debugPrint('POST Balance Response Status Code: ${response.statusCode}');
       //debugPrint('POST Balance Response Body: ${response.body}');
@@ -414,39 +379,28 @@ class ApiService {
   }
 
   static Future<void> deleteBalance(String balanceId) async {
-    final session = await Amplify.Auth.fetchAuthSession();
-    if (!session.isSignedIn) throw Exception('User is not signed in');
-    final cognitoSession = session as CognitoAuthSession;
-    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+    final url = Uri.parse('${AppConfig.balancesUrl}/$balanceId');
+    final headers = await _buildAuthHeaders();
 
-    final url = Uri.parse('${AppConfig.baseUrl}/balances/$balanceId');
-    final headers = {
-      'Authorization': 'Bearer $token',
-    };
-
-    final response = await http.delete(url, headers: headers);
+    final response = await http
+        .delete(
+          url,
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 25));
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete balance. Status code:  [31m${response.statusCode} [0m');
+      throw Exception('Failed to delete balance. Status code: ${response.statusCode}');
     }
   }
 
   static Future<Map<String, dynamic>> getTransactionById(String transactionId) async {
     try {
-      final session = await Amplify.Auth.fetchAuthSession();
-      if (!session.isSignedIn) {
-        throw Exception('User is not signed in');
-      }
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
       final url = Uri.parse('${AppConfig.transactionsUrl}/$transactionId');
-      final headers = {
-        'Authorization': 'Bearer $token',
-        'accept': 'application/json',
-      };
+      final headers = await _buildAuthHeaders();
       if (kDebugMode) {
         debugPrint('[ApiService.getTransactionById] URL: $url');
       }
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 25));
       if (kDebugMode) {
         debugPrint('[ApiService.getTransactionById] STATUS: ${response.statusCode}');
         debugPrint('[ApiService.getTransactionById] BODY: ${response.body}');
@@ -462,21 +416,13 @@ class ApiService {
   }
 
   static Future<List<Merchant>> getMerchants() async {
-    final session = await Amplify.Auth.fetchAuthSession();
-    if (!session.isSignedIn) {
-      throw Exception('User is not signed in');
-    }
     final userId = await AuthService.getUserId();
-    final cognitoSession = session as CognitoAuthSession;
-    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
-    final url = Uri.parse('${AppConfig.baseUrl}/merchants?userId=$userId');
-    final headers = {
-      'Authorization': 'Bearer $token',
-    };
+    final base = Uri.parse(AppConfig.merchantsUrl);
+    final url = base.replace(queryParameters: {'userId': userId});
+    final headers = await _buildAuthHeaders();
     //debugPrint('[ApiService.getMerchants] URL: $url');
     //debugPrint('[ApiService.getMerchants] HEADERS: $headers');
-    final response = await http.get(url, headers: headers);
+    final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 25));
     //debugPrint('[ApiService.getMerchants] RESPONSE STATUS: ${response.statusCode}');
     //debugPrint('[ApiService.getMerchants] RESPONSE BODY: ${response.body}');
     if (response.statusCode == 200) {
@@ -484,39 +430,31 @@ class ApiService {
       final List merchantsJson = data['items'] ?? [];
       return merchantsJson.map<Merchant>((e) => Merchant.fromJson(e)).toList();
     } else {
-      throw Exception('Failed to load merchants: \\${response.statusCode}');
+      throw Exception('Failed to load merchants: ${response.statusCode}');
     }
   }
 
   static Future<Merchant> postMerchant({required String name, required String userId}) async {
-    final session = await Amplify.Auth.fetchAuthSession();
-    if (!session.isSignedIn) {
-      throw Exception('User is not signed in');
-    }
-    final cognitoSession = session as CognitoAuthSession;
-    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
-    final url = Uri.parse('${AppConfig.baseUrl}/merchants');
+    final url = Uri.parse(AppConfig.merchantsUrl);
     final body = jsonEncode({'name': name, 'userId': userId});
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    final headers = await _buildAuthHeaders(includeJson: true);
     //debugPrint('[ApiService.postMerchant] URL: $url');
     //debugPrint('[ApiService.postMerchant] BODY: $body');
     // debugPrint('[ApiService.postMerchant] HEADERS: $headers');
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: body,
-    );
+    final response = await http
+        .post(
+          url,
+          headers: headers,
+          body: body,
+        )
+        .timeout(const Duration(seconds: 25));
     //debugPrint('[ApiService.postMerchant] RESPONSE STATUS: ${response.statusCode}');
     //debugPrint('[ApiService.postMerchant] RESPONSE BODY: ${response.body}');
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> data = jsonDecode(response.body);
       return Merchant.fromJson(data);
     } else {
-      throw Exception('Failed to create merchant: \\${response.statusCode}');
+      throw Exception('Failed to create merchant: ${response.statusCode}');
     }
   }
 } 
