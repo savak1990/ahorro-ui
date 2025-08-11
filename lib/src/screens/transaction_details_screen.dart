@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
-import '../widgets/transaction_tile.dart';
 import '../constants/app_typography.dart';
 import '../widgets/typography.dart';
 import '../constants/app_strings.dart';
-import 'package:provider/provider.dart';
-import '../providers/transaction_entries_provider.dart';
+import '../widgets/settings_section_card.dart';
+import '../widgets/list_item_tile.dart';
+import '../widgets/category_picker_dialog.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final String transactionId;
@@ -34,6 +35,26 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     });
     try {
       final data = await ApiService.getTransactionById(widget.transactionId);
+      if (kDebugMode) {
+        try {
+          final entries = (data['TransactionEntries'] as List?) ?? const [];
+          debugPrint('[TX_DETAILS] Loaded transaction ${widget.transactionId}: keys=${data.keys.toList()}');
+          debugPrint('[TX_DETAILS] Entries count: ${entries.length}');
+          for (int i = 0; i < entries.length; i++) {
+            final e = entries[i] as Map<String, dynamic>;
+            final catObj = e['Category'];
+            String catNameFromObj = '-';
+            String catNameLegacy = '-';
+            if (catObj is Map<String, dynamic>) {
+              catNameFromObj = (catObj['Name'] ?? '-').toString();
+              catNameLegacy = (catObj['CategoryName'] ?? '-').toString();
+            }
+            debugPrint('[TX_DETAILS] Entry[$i]: NameField="${e['Name']}", Category.Name="$catNameFromObj", Category.CategoryName="$catNameLegacy", Amount=${e['Amount']}, Description=${e['Description']}');
+          }
+        } catch (logErr) {
+          debugPrint('[TX_DETAILS] Logging error: $logErr');
+        }
+      }
       setState(() {
         transactionData = data;
         isLoading = false;
@@ -63,28 +84,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     }
   }
 
-  IconData _getCategoryIcon(String categoryName) {
-    switch (categoryName.toLowerCase()) {
-      case 'groceries':
-      case 'food':
-        return Icons.shopping_cart;
-      case 'transport':
-      case 'taxi':
-        return Icons.directions_car;
-      case 'cafe':
-      case 'restaurant':
-        return Icons.local_cafe;
-      case 'salary':
-      case 'income':
-        return Icons.attach_money;
-      case 'gift':
-        return Icons.card_giftcard;
-      case 'multiple categories':
-        return Icons.blur_circular;
-      default:
-        return Icons.category;
-    }
-  }
+  // Используем общий маппинг иконок категорий из getCategoryIcon (category_picker_dialog.dart)
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +125,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         totalAmount += (double.tryParse(amt.toString()) ?? 0.0) / 100;
       }
     }
+    if (kDebugMode) {
+      debugPrint('[TX_DETAILS] Building UI: type=$_typeStr, entries=${entries.length}');
+    }
     final mainEntry = entries.isNotEmpty ? entries[0] as Map<String, dynamic> : null;
     final description = mainEntry != null ? mainEntry['Description'] : null;
     final date = tx['TransactedAt'] ?? tx['ApprovedAt'] ?? tx['CreatedAt'];
@@ -139,30 +142,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         : '-';
 
     Color valueColor = theme.colorScheme.onSurfaceVariant;
-
-    Widget infoRow(IconData icon, String label, String? value) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0),
-        child: Row(
-          children: [
-            Icon(icon, color: theme.colorScheme.primary, size: 22),
-            const SizedBox(width: 12),
-            Text(label, style: AppTypography.bodyLarge.copyWith(color: theme.colorScheme.onSurface)),
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  (value == null || value.toString().isEmpty || value == '-') ? 'unknown' : value.toString(),
-                  style: AppTypography.bodyMuted.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  textAlign: TextAlign.right,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 
     return SingleChildScrollView(
       child: Padding(
@@ -209,135 +188,88 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             // INFORMATION
             const TitleEmphasizedLarge(text: AppStrings.transactionDetailsInformationTitle),
             const SizedBox(height: 8),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            SettingsSectionCard(
               margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  children: [
-                    infoRow(Icons.account_balance_wallet, 'Wallet', balance),
-                    if (description != null && description.toString().isNotEmpty) ...[
-                      const Divider(height: 1, thickness: 1),
-                      infoRow(Icons.description, 'Description', description?.toString()),
-                    ],
-                  ],
+              padding: EdgeInsets.zero,
+              children: [
+                ListItemTile(
+                  title: 'Wallet',
+                  icon: Icons.account_balance_wallet,
+                  iconColor: theme.colorScheme.primary,
+                  trailing: Text(
+                    (balance == null || balance.toString().isEmpty || balance == '-') ? 'unknown' : balance.toString(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+                if (description != null && description.toString().isNotEmpty)
+                  ListItemTile(
+                    title: 'Description',
+                    icon: Icons.description,
+                    iconColor: theme.colorScheme.primary,
+                    trailing: Text(
+                      description.toString(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 24),
             // PERIOD
             const TitleEmphasizedLarge(text: AppStrings.transactionDetailsPeriodTitle),
             const SizedBox(height: 8),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            SettingsSectionCard(
               margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Column(
-                  children: [
-                    infoRow(Icons.calendar_today, 'Approved at', formattedApprovedAt),
-                  ],
+              padding: EdgeInsets.zero,
+              children: [
+                ListItemTile(
+                  title: 'Approved at',
+                  icon: Icons.calendar_today,
+                  iconColor: theme.colorScheme.primary,
+                  trailing: Text(
+                    (formattedApprovedAt.isEmpty || formattedApprovedAt == '-') ? 'unknown' : formattedApprovedAt,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 24),
             // ENTRIES
             if (entries.isNotEmpty) ...[
               const TitleEmphasizedLarge(text: AppStrings.transactionDetailsEntriesTitle),
               const SizedBox(height: 8),
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              SettingsSectionCard(
                 margin: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (int i = 0; i < entries.length; i++) ...[
-                      if (i > 0) const Divider(height: 1, thickness: 1),
-                      Builder(builder: (context) {
-                        final e = entries[i] as Map<String, dynamic>;
-                        final cat = e['Category']?['CategoryName'] ?? '-';
-                        final amt = e['Amount'] != null ? (double.tryParse(e['Amount'].toString()) ?? 0.0) / 100 : 0.0;
-                        final desc = e['Description'] ?? '';
-                        return Container(
-                          decoration: BoxDecoration(
-                            borderRadius: i == 0 && entries.length == 1
-                                ? BorderRadius.circular(16)
-                                : i == 0
-                                    ? const BorderRadius.vertical(top: Radius.circular(16))
-                                    : i == entries.length - 1
-                                        ? const BorderRadius.vertical(bottom: Radius.circular(16))
-                                        : BorderRadius.zero,
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(_getCategoryIcon(cat), color: theme.colorScheme.primary, size: 22),
+                padding: EdgeInsets.zero,
+                children: [
+                  for (int i = 0; i < entries.length; i++)
+                    Builder(builder: (context) {
+                      final e = entries[i] as Map<String, dynamic>;
+                      final cat = (e['Category']?['Name'] ?? e['Name'] ?? e['Category']?['CategoryName'] ?? '-').toString();
+                      final amt = e['Amount'] != null ? (double.tryParse(e['Amount'].toString()) ?? 0.0) / 100 : 0.0;
+                      final desc = e['Description'] ?? '';
+                      final iconData = getCategoryIcon(cat);
+                      if (kDebugMode) {
+                        debugPrint('[TX_DETAILS] Render Entry[$i]: Name="${e['Name']}", catResolved="$cat", iconCode=${iconData.codePoint}, family=${iconData.fontFamily}, desc="$desc"');
+                      }
+                      return ListItemTile(
+                        title: cat,
+                        subtitle: desc.toString().isNotEmpty ? desc.toString() : null,
+                        icon: iconData,
+                        iconColor: theme.colorScheme.primary,
+                        trailing: Text(
+                          '${amt.toStringAsFixed(2)} $currency',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: valueColor,
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      cat,
-                                      style: AppTypography.bodyLarge.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                        color: theme.colorScheme.onSurface,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (desc.toString().isNotEmpty) ...[
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        desc,
-                                        style: AppTypography.bodyLarge.copyWith(
-                                          color: valueColor,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    '${amt.toStringAsFixed(2)} ',
-                                    style: AppTypography.bodyLarge.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: valueColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    currency,
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: valueColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ],
-                ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }),
+                ],
               ),
             ],
           ],

@@ -443,11 +443,14 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'accept': 'application/json',
       };
-      // debugPrint('GET Transaction by ID URL: $url');
-      // debugPrint('GET Transaction by ID Headers: $headers');
+      if (kDebugMode) {
+        debugPrint('[ApiService.getTransactionById] URL: $url');
+      }
       final response = await http.get(url, headers: headers);
-      //debugPrint('GET Transaction by ID Status Code: ${response.statusCode}');
-      //debugPrint('GET Transaction by ID Body: ${response.body}');
+      if (kDebugMode) {
+        debugPrint('[ApiService.getTransactionById] STATUS: ${response.statusCode}');
+        debugPrint('[ApiService.getTransactionById] BODY: ${response.body}');
+      }
       if (response.statusCode != 200) {
         throw Exception('Failed to get transaction. Status code: ${response.statusCode}');
       }
