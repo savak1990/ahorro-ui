@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'operation_id_service.dart';
 import '../services/auth_service.dart';
+import '../services/api_logger.dart';
 
 import '../config/app_config.dart';
 import '../models/transaction_type.dart';
@@ -14,7 +15,6 @@ import '../models/transactions_response.dart';
 import '../models/transaction_entry_data.dart';
 import '../models/categories_response.dart';
 import '../models/merchant.dart';
-
 
 class ApiService {
   static Future<void> postTransaction({
@@ -27,7 +27,21 @@ class ApiService {
     String? merchant,
     List<TransactionEntry>? transactionEntriesParam,
   }) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'postTransaction';
+
     try {
+      ApiLogger.logOperationStart(operation, {
+        'type': type.name,
+        'amount': amount,
+        'date': date.toIso8601String(),
+        'categoryId': categoryId,
+        'balanceId': balanceId,
+        'description': description,
+        'merchant': merchant,
+        'entriesCount': transactionEntriesParam?.length ?? 1,
+      });
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -45,25 +59,14 @@ class ApiService {
       };
 
       // Form transactionEntries from passed data or create single element
-      final entries = transactionEntriesParam ?? [
-        TransactionEntry(
-          description: description ?? '',
-          amount: ((amount ?? 0.0) * 100).round(),
-          categoryId: categoryId,
-        ),
-      ];
-
-      // debugPrint('[ApiService.postTransaction] --- REQUEST DATA ---');
-      // debugPrint('userId: $userId');
-      // debugPrint('groupId: ""');
-      // debugPrint('balanceId: $balanceId');
-      // debugPrint('type: ${type.name}');
-      // debugPrint('merchant: ${merchant ?? 'Unknown'}');
-      // debugPrint('operationId: ${generateOperationId()}');
-      // debugPrint('approvedAt: ${date.toUtc().toIso8601String()}');
-      // debugPrint('transactedAt: ${date.toUtc().toIso8601String()}');
-      // debugPrint('transactionEntries: ${entries.map((e) => e.toJson()).toList()}');
-      // debugPrint('Headers: $headers');
+      final entries = transactionEntriesParam ??
+          [
+            TransactionEntry(
+              description: description ?? '',
+              amount: ((amount ?? 0.0) * 100).round(),
+              categoryId: categoryId,
+            ),
+          ];
 
       final bodyMap = <String, dynamic>{
         'userId': userId,
@@ -82,16 +85,16 @@ class ApiService {
       if (entries.isNotEmpty) {
         bodyMap['transactionEntries'] = entries.map((e) => e.toJson()).toList();
       }
-      // description и categoryId не передаем, если пустые
-      // amount на верхнем уровне не передаем
 
       final body = json.encode(bodyMap);
 
-      // debugPrint('[ApiService.postTransaction] BODY: $body');
-
-      // debugPrint('Request URL: $url');
-      //debugPrint('Request Headers: $headers');
-      //debugPrint('Request Body: $body');
+      ApiLogger.logRequest(
+        method: 'POST',
+        url: url.toString(),
+        headers: headers,
+        body: bodyMap,
+        operation: operation,
+      );
 
       final response = await http.post(
         url,
@@ -99,19 +102,34 @@ class ApiService {
         body: body,
       );
 
-      // debugPrint('[ApiService.postTransaction] --- RESPONSE ---');
-      // debugPrint('Response Status Code: ${response.statusCode}');
-      // debugPrint('Response Body: ${response.body}');
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'POST',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        //debugPrint('[ApiService.postTransaction] ERROR: Failed to post transaction. Status code: ${response.statusCode}');
-        throw Exception('Failed to post transaction. Status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to post transaction. Status code: ${response.statusCode}');
       }
 
-      // debugPrint('[ApiService.postTransaction] Transaction posted successfully!');
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return json.decode(response.body);
-    } catch (e) {
-      //debugPrint('[ApiService.postTransaction] Exception: $e');
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'POST',
+        url: AppConfig.transactionsUrl,
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error posting transaction: $e');
       rethrow;
     }
@@ -125,7 +143,19 @@ class ApiService {
     required DateTime date,
     String? description,
   }) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'postMovementTransaction';
+
     try {
+      ApiLogger.logOperationStart(operation, {
+        'fromBalanceId': fromBalanceId,
+        'toBalanceId': toBalanceId,
+        'amount': amount,
+        'convertedAmount': convertedAmount,
+        'date': date.toIso8601String(),
+        'description': description,
+      });
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -164,7 +194,9 @@ class ApiService {
         'transactionEntries': [
           {
             'description': description ?? 'Transfer from another account',
-            'amount': (convertedAmount != null ? convertedAmount * 100 : amount * 100).round(), // Use converted amount if available
+            'amount':
+                (convertedAmount != null ? convertedAmount * 100 : amount * 100)
+                    .round(), // Use converted amount if available
           }
         ]
       };
@@ -173,20 +205,15 @@ class ApiService {
         'transactions': [moveOutTransaction, moveInTransaction]
       };
 
-      // debugPrint('[ApiService.postMovementTransaction] --- REQUEST DATA ---');
-      // debugPrint('userId: $userId');
-      // debugPrint('fromBalanceId: $fromBalanceId');
-      // debugPrint('toBalanceId: $toBalanceId');
-      // debugPrint('amount: $amount');
-      // debugPrint('convertedAmount: $convertedAmount');
-      // debugPrint('move_out amount: ${(amount * 100).round()}');
-      // debugPrint('move_in amount: ${(convertedAmount != null ? convertedAmount * 100 : amount * 100).round()}');
-      // debugPrint('date: ${date.toUtc().toIso8601String()}');
-      // debugPrint('description: ${description ?? 'Transfer'}');
-
       final body = json.encode(bodyMap);
 
-      // debugPrint('[ApiService.postMovementTransaction] BODY: $body');
+      ApiLogger.logRequest(
+        method: 'POST',
+        url: url.toString(),
+        headers: headers,
+        body: bodyMap,
+        operation: operation,
+      );
 
       final response = await http.post(
         url,
@@ -194,26 +221,46 @@ class ApiService {
         body: body,
       );
 
-      // debugPrint('[ApiService.postMovementTransaction] --- RESPONSE ---');
-      debugPrint('Response Status Code: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'POST',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        //debugPrint('[ApiService.postMovementTransaction] ERROR: Failed to post movement transaction. Status code: ${response.statusCode}');
-        throw Exception('Failed to post movement transaction. Status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to post movement transaction. Status code: ${response.statusCode}');
       }
 
-      debugPrint('[ApiService.postMovementTransaction] Movement transaction posted successfully!');
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return json.decode(response.body);
-    } catch (e) {
-      //debugPrint('[ApiService.postMovementTransaction] Exception: $e');
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'POST',
+        url: AppConfig.transactionsUrl,
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error posting movement transaction: $e');
       rethrow;
     }
   }
 
   static Future<TransactionsResponse> getTransactions() async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'getTransactions';
+
     try {
+      ApiLogger.logOperationStart(operation);
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -229,19 +276,33 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      //debugPrint('GET Request URL: $url');
-      //debugPrint('GET Request Headers: $headers');
+      ApiLogger.logRequest(
+        method: 'GET',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
 
       final response = await http.get(
         url,
         headers: headers,
       );
 
-      //debugPrint('GET Response Status Code: ${response.statusCode}');
-      //debugPrint('GET Response Body: ${response.body}');
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'GET',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to get transactions. Status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to get transactions. Status code: ${response.statusCode}');
       }
 
       final data = json.decode(response.body);
@@ -272,23 +333,39 @@ class ApiService {
           name: item['name'] ?? '',
           merchantImageUrl: item['merchantImageUrl'],
           operationId: item['operationId'] ?? '',
-          approvedAt: DateTime.tryParse(item['approvedAt'] ?? '') ?? DateTime.now(),
-          transactedAt: DateTime.tryParse(item['transactedAt'] ?? '') ?? DateTime.now(),
+          approvedAt:
+              DateTime.tryParse(item['approvedAt'] ?? '') ?? DateTime.now(),
+          transactedAt:
+              DateTime.tryParse(item['transactedAt'] ?? '') ?? DateTime.now(),
         );
       }).toList();
 
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return TransactionsResponse(
         transactionEntries: transactionEntries,
         nextToken: data['nextToken'],
       );
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'GET',
+        url: '${AppConfig.transactionsUrl}?userId={userId}',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error getting transactions: $e');
       rethrow;
     }
   }
 
   static Future<CategoriesResponse> getCategories() async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'getCategories';
+
     try {
+      ApiLogger.logOperationStart(operation);
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -302,33 +379,59 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      //debugPrint('GET Categories Request URL: $url');
-      //debugPrint('GET Categories Request Headers: $headers');
+      ApiLogger.logRequest(
+        method: 'GET',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
 
       final response = await http.get(
         url,
         headers: headers,
       );
 
-      //debugPrint('GET Categories Response Status Code: ${response.statusCode}');
-      //debugPrint('GET Categories Response Body: ${response.body}');
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'GET',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode != 200) {
-        //debugPrint('Categories API: Failed with status code: ${response.statusCode}');
-        //debugPrint('Categories API: Response body: ${response.body}');
-        throw Exception('Failed to get categories. Status code: ${response.statusCode}. Response: ${response.body}');
+        throw Exception(
+            'Failed to get categories. Status code: ${response.statusCode}. Response: ${response.body}');
       }
 
       final data = json.decode(response.body);
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return CategoriesResponse.fromJson(data);
-    } on Exception catch (e) {
+    } on Exception catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'GET',
+        url: AppConfig.categoriesUrl,
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error getting categories: $e');
       rethrow;
     }
   }
 
   static Future<List<Balance>> getBalances() async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'getBalances';
+
     try {
+      ApiLogger.logOperationStart(operation);
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -342,25 +445,47 @@ class ApiService {
         'Authorization': 'Bearer $token',
       };
 
-      //debugPrint('GET Balances Request URL: $url');
-      //debugPrint('GET Balances Request Headers: $headers');
+      ApiLogger.logRequest(
+        method: 'GET',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
 
       final response = await http.get(url, headers: headers);
 
-     // debugPrint('GET Balances Response Status Code: ${response.statusCode}');
-      //debugPrint('GET Balances Response Body: ${response.body}');
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'GET',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to get balances. Status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to get balances. Status code: ${response.statusCode}');
       }
 
       final data = json.decode(response.body);
       final balances = data['items'] as List? ?? [];
-      //debugPrint('ApiService: Found ${balances.length} balances in response');
       final result = balances.map((e) => Balance.fromJson(e)).toList();
-      //debugPrint('ApiService: Parsed ${result.length} Balance objects');
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'GET',
+        url: '${AppConfig.baseUrl}/balances?userId={userId}',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error getting balances: $e');
       rethrow;
     }
@@ -373,7 +498,18 @@ class ApiService {
     required String title,
     String? description,
   }) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'postBalance';
+
     try {
+      ApiLogger.logOperationStart(operation, {
+        'userId': userId,
+        'groupId': groupId,
+        'currency': currency,
+        'title': title,
+        'description': description,
+      });
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -386,52 +522,125 @@ class ApiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       };
-      final body = json.encode({
+
+      final bodyMap = {
         'userId': userId,
         'groupId': groupId,
         'currency': currency,
         'title': title,
-        if (description != null && description.isNotEmpty) 'description': description,
-      });
+        if (description != null && description.isNotEmpty)
+          'description': description,
+      };
+      final body = json.encode(bodyMap);
 
-      //debugPrint('POST Balance Request URL: $url');
-      // debugPrint('POST Balance Request Headers: $headers');
-      // debugPrint('POST Balance Request Body: $body');
+      ApiLogger.logRequest(
+        method: 'POST',
+        url: url.toString(),
+        headers: headers,
+        body: bodyMap,
+        operation: operation,
+      );
 
       final response = await http.post(url, headers: headers, body: body);
 
-      debugPrint('POST Balance Response Status Code: ${response.statusCode}');
-      //debugPrint('POST Balance Response Body: ${response.body}');
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'POST',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('Failed to create balance. Status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to create balance. Status code: ${response.statusCode}');
       }
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return json.decode(response.body);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'POST',
+        url: '${AppConfig.baseUrl}/balances',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error creating balance: $e');
       rethrow;
     }
   }
 
   static Future<void> deleteBalance(String balanceId) async {
-    final session = await Amplify.Auth.fetchAuthSession();
-    if (!session.isSignedIn) throw Exception('User is not signed in');
-    final cognitoSession = session as CognitoAuthSession;
-    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+    final stopwatch = Stopwatch()..start();
+    const operation = 'deleteBalance';
 
-    final url = Uri.parse('${AppConfig.baseUrl}/balances/$balanceId');
-    final headers = {
-      'Authorization': 'Bearer $token',
-    };
+    try {
+      ApiLogger.logOperationStart(operation, {'balanceId': balanceId});
 
-    final response = await http.delete(url, headers: headers);
-    if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete balance. Status code:  [31m${response.statusCode} [0m');
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) throw Exception('User is not signed in');
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse('${AppConfig.baseUrl}/balances/$balanceId');
+      final headers = {
+        'Authorization': 'Bearer $token',
+      };
+
+      ApiLogger.logRequest(
+        method: 'DELETE',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
+
+      final response = await http.delete(url, headers: headers);
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'DELETE',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception(
+            'Failed to delete balance. Status code: ${response.statusCode}');
+      }
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'DELETE',
+        url: '${AppConfig.baseUrl}/balances/$balanceId',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      rethrow;
     }
   }
 
-  static Future<Map<String, dynamic>> getTransactionById(String transactionId) async {
+  static Future<Map<String, dynamic>> getTransactionById(
+      String transactionId) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'getTransactionById';
+
     try {
+      ApiLogger.logOperationStart(operation, {'transactionId': transactionId});
+
       final session = await Amplify.Auth.fetchAuthSession();
       if (!session.isSignedIn) {
         throw Exception('User is not signed in');
@@ -443,77 +652,185 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'accept': 'application/json',
       };
-      // debugPrint('GET Transaction by ID URL: $url');
-      // debugPrint('GET Transaction by ID Headers: $headers');
+
+      ApiLogger.logRequest(
+        method: 'GET',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
+
       final response = await http.get(url, headers: headers);
-      //debugPrint('GET Transaction by ID Status Code: ${response.statusCode}');
-      //debugPrint('GET Transaction by ID Body: ${response.body}');
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'GET',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
       if (response.statusCode != 200) {
-        throw Exception('Failed to get transaction. Status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to get transaction. Status code: ${response.statusCode}');
       }
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return json.decode(response.body);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'GET',
+        url: '${AppConfig.transactionsUrl}/$transactionId',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
       debugPrint('Error getting transaction by id: $e');
       rethrow;
     }
   }
 
   static Future<List<Merchant>> getMerchants() async {
-    final session = await Amplify.Auth.fetchAuthSession();
-    if (!session.isSignedIn) {
-      throw Exception('User is not signed in');
-    }
-    final userId = await AuthService.getUserId();
-    final cognitoSession = session as CognitoAuthSession;
-    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+    final stopwatch = Stopwatch()..start();
+    const operation = 'getMerchants';
 
-    final url = Uri.parse('${AppConfig.baseUrl}/merchants?userId=$userId');
-    final headers = {
-      'Authorization': 'Bearer $token',
-    };
-    //debugPrint('[ApiService.getMerchants] URL: $url');
-    //debugPrint('[ApiService.getMerchants] HEADERS: $headers');
-    final response = await http.get(url, headers: headers);
-    //debugPrint('[ApiService.getMerchants] RESPONSE STATUS: ${response.statusCode}');
-    //debugPrint('[ApiService.getMerchants] RESPONSE BODY: ${response.body}');
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      final List merchantsJson = data['items'] ?? [];
-      return merchantsJson.map<Merchant>((e) => Merchant.fromJson(e)).toList();
-    } else {
-      throw Exception('Failed to load merchants: \\${response.statusCode}');
+    try {
+      ApiLogger.logOperationStart(operation);
+
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+      final userId = await AuthService.getUserId();
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse('${AppConfig.baseUrl}/merchants?userId=$userId');
+      final headers = {
+        'Authorization': 'Bearer $token',
+      };
+
+      ApiLogger.logRequest(
+        method: 'GET',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
+
+      final response = await http.get(url, headers: headers);
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'GET',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List merchantsJson = data['items'] ?? [];
+        final result =
+            merchantsJson.map<Merchant>((e) => Merchant.fromJson(e)).toList();
+
+        ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+        return result;
+      } else {
+        throw Exception('Failed to load merchants: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'GET',
+        url: '${AppConfig.baseUrl}/merchants?userId={userId}',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      rethrow;
     }
   }
 
-  static Future<Merchant> postMerchant({required String name, required String userId}) async {
-    final session = await Amplify.Auth.fetchAuthSession();
-    if (!session.isSignedIn) {
-      throw Exception('User is not signed in');
-    }
-    final cognitoSession = session as CognitoAuthSession;
-    final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+  static Future<Merchant> postMerchant(
+      {required String name, required String userId}) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'postMerchant';
 
-    final url = Uri.parse('${AppConfig.baseUrl}/merchants');
-    final body = jsonEncode({'name': name, 'userId': userId});
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-    //debugPrint('[ApiService.postMerchant] URL: $url');
-    //debugPrint('[ApiService.postMerchant] BODY: $body');
-    // debugPrint('[ApiService.postMerchant] HEADERS: $headers');
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: body,
-    );
-    //debugPrint('[ApiService.postMerchant] RESPONSE STATUS: ${response.statusCode}');
-    //debugPrint('[ApiService.postMerchant] RESPONSE BODY: ${response.body}');
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Merchant.fromJson(data);
-    } else {
-      throw Exception('Failed to create merchant: \\${response.statusCode}');
+    try {
+      ApiLogger.logOperationStart(operation, {
+        'name': name,
+        'userId': userId,
+      });
+
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+      final cognitoSession = session as CognitoAuthSession;
+      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
+
+      final url = Uri.parse('${AppConfig.baseUrl}/merchants');
+      final bodyMap = {'name': name, 'userId': userId};
+      final body = jsonEncode(bodyMap);
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      ApiLogger.logRequest(
+        method: 'POST',
+        url: url.toString(),
+        headers: headers,
+        body: bodyMap,
+        operation: operation,
+      );
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'POST',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final result = Merchant.fromJson(data);
+
+        ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+        return result;
+      } else {
+        throw Exception('Failed to create merchant: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'POST',
+        url: '${AppConfig.baseUrl}/merchants',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      rethrow;
     }
   }
-} 
+}
