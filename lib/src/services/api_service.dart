@@ -17,6 +17,21 @@ import '../models/categories_response.dart';
 import '../models/merchant.dart';
 
 class ApiService {
+  // Centralized auth headers builder
+  static Future<Map<String, String>> _buildAuthHeaders({bool includeJson = false, String? requestId}) async {
+    final session = await Amplify.Auth.fetchAuthSession();
+    if (!session.isSignedIn) {
+      throw Exception('User is not signed in');
+    }
+    final token = (session as CognitoAuthSession).userPoolTokensResult.value.idToken.raw;
+    return {
+      if (includeJson) 'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+      if (requestId != null) 'X-Request-Id': requestId,
+    };
+  }
+
   static Future<void> postTransaction({
     required TransactionType type,
     double? amount,
@@ -48,15 +63,9 @@ class ApiService {
       }
 
       final userId = await AuthService.getUserId();
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
       final url = Uri.parse(AppConfig.transactionsUrl);
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+      final operationId = generateOperationId();
+      final headers = await _buildAuthHeaders(includeJson: true, requestId: operationId);
 
       // Form transactionEntries from passed data or create single element
       final entries = transactionEntriesParam ??
@@ -72,7 +81,7 @@ class ApiService {
         'userId': userId,
         'groupId': '',
         'type': type.name,
-        'operationId': generateOperationId(),
+        'operationId': operationId,
         'approvedAt': date.toUtc().toIso8601String(),
         'transactedAt': date.toUtc().toIso8601String(),
       };
@@ -96,11 +105,13 @@ class ApiService {
         operation: operation,
       );
 
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 
@@ -162,15 +173,9 @@ class ApiService {
       }
 
       final userId = await AuthService.getUserId();
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
       final url = Uri.parse(AppConfig.transactionsUrl);
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+      final requestId = generateOperationId();
+      final headers = await _buildAuthHeaders(includeJson: true, requestId: requestId);
 
       // Create two transactions: move_out and move_in
       final moveOutTransaction = {
@@ -215,11 +220,13 @@ class ApiService {
         operation: operation,
       );
 
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 
@@ -267,14 +274,9 @@ class ApiService {
       }
 
       final userId = await AuthService.getUserId();
-
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
-      final url = Uri.parse('${AppConfig.transactionsUrl}?userId=$userId');
-      final headers = {
-        'Authorization': 'Bearer $token',
-      };
+      final base = Uri.parse(AppConfig.transactionsUrl);
+      final url = base.replace(queryParameters: {'userId': userId});
+      final headers = await _buildAuthHeaders();
 
       ApiLogger.logRequest(
         method: 'GET',
@@ -286,7 +288,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: headers,
-      );
+      ).timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 
@@ -375,9 +377,7 @@ class ApiService {
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
 
       final url = Uri.parse(AppConfig.categoriesUrl);
-      final headers = {
-        'Authorization': 'Bearer $token',
-      };
+      final headers = await _buildAuthHeaders();
 
       ApiLogger.logRequest(
         method: 'GET',
@@ -389,7 +389,7 @@ class ApiService {
       final response = await http.get(
         url,
         headers: headers,
-      );
+      ).timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 
@@ -437,13 +437,9 @@ class ApiService {
         throw Exception('User is not signed in');
       }
       final userId = await AuthService.getUserId();
-      final cognitoSession = session as CognitoAuthSession;
-      final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
-
-      final url = Uri.parse('${AppConfig.baseUrl}/balances?userId=$userId');
-      final headers = {
-        'Authorization': 'Bearer $token',
-      };
+      final base = Uri.parse(AppConfig.balancesUrl);
+      final url = base.replace(queryParameters: {'userId': userId});
+      final headers = await _buildAuthHeaders();
 
       ApiLogger.logRequest(
         method: 'GET',
@@ -452,7 +448,7 @@ class ApiService {
         operation: operation,
       );
 
-      final response = await http.get(url, headers: headers);
+      final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 
@@ -518,30 +514,31 @@ class ApiService {
       final token = cognitoSession.userPoolTokensResult.value.idToken.raw;
 
       final url = Uri.parse('${AppConfig.baseUrl}/balances');
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-
-      final bodyMap = {
+      final headers = await _buildAuthHeaders(includeJson: true);
+      final body = json.encode({
         'userId': userId,
         'groupId': groupId,
         'currency': currency,
         'title': title,
         if (description != null && description.isNotEmpty)
           'description': description,
-      };
-      final body = json.encode(bodyMap);
+      });
 
       ApiLogger.logRequest(
         method: 'POST',
         url: url.toString(),
         headers: headers,
-        body: bodyMap,
+        body: body,
         operation: operation,
       );
 
-      final response = await http.post(url, headers: headers, body: body);
+      final response = await http
+          .post(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 

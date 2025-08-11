@@ -87,7 +87,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
         value: cat,
         label: cat,
         icon: Category.getCategoryIcon(cat),
-        count: _countBy((d) => d.category == cat),
+        // Считаем количество агрегированных транзакций, содержащих категорию
+        count: _countBucketsWhereCategory(cat),
       ));
     }
     return options;
@@ -95,28 +96,45 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
   // Apply filters and group
   Map<String, List<TransactionDisplayData>> get groupedTransactions {
-    final display = _entries.map(_mapEntry).toList();
+    // Строим агрегированные транзакции и применяем фильтры
+    final buckets = _buildBuckets();
+    final List<TransactionDisplayData> result = [];
 
-    final dateFiltered = display.where((tx) {
-      if (!hasActiveDateFilters) return true;
-      if (dateFilterType == DateFilterType.month) {
-        if (selectedYear != null && tx.date.year != selectedYear) return false;
-        if (selectedMonth != null && tx.date.month != selectedMonth) return false;
-      } else if (dateFilterType == DateFilterType.period) {
-        if (startDate != null && tx.date.isBefore(startDate!)) return false;
-        if (endDate != null && tx.date.isAfter(endDate!)) return false;
+    buckets.forEach((_, entries) {
+      if (entries.isEmpty) return;
+      final first = entries.first;
+
+      // Агрегируем для отображения
+      final aggregated = _aggregateEntriesToDisplay(entries);
+
+      // Фильтры по дате (используем approvedAt)
+      if (hasActiveDateFilters) {
+        if (dateFilterType == DateFilterType.month) {
+          if (selectedYear != null && aggregated.date.year != selectedYear) return;
+          if (selectedMonth != null && aggregated.date.month != selectedMonth) return;
+        } else if (dateFilterType == DateFilterType.period) {
+          if (startDate != null && aggregated.date.isBefore(startDate!)) return;
+          if (endDate != null && aggregated.date.isAfter(endDate!)) return;
+        }
       }
-      return true;
-    }).toList();
 
-    final filtered = dateFiltered.where((t) {
-      if (selectedTypes.isNotEmpty && !selectedTypes.contains(t.type)) return false;
-      if (selectedAccounts.isNotEmpty && !selectedAccounts.contains(t.account)) return false;
-      if (selectedCategories.isNotEmpty && !selectedCategories.contains(t.category)) return false;
-      return true;
-    }).toList();
+      // Фильтры по типу/аккаунту по агрегированным полям
+      if (selectedTypes.isNotEmpty) {
+        final entryTypes = entries.map((e) => e.type).toSet();
+        if (entryTypes.intersection(selectedTypes).isEmpty) return;
+      }
+      if (selectedAccounts.isNotEmpty && !selectedAccounts.contains(aggregated.account)) return;
 
-    return _group(filtered);
+      // Фильтр по категории должен проверять категории на уровне записей
+      if (selectedCategories.isNotEmpty) {
+        final entryCategories = entries.map((e) => e.categoryName).toSet();
+        if (entryCategories.intersection(selectedCategories).isEmpty) return;
+      }
+
+      result.add(aggregated);
+    });
+
+    return _group(result);
   }
 
   // Mutators
@@ -226,31 +244,84 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
   // Internals
   void _rebuildAvailableFilters() {
-    final display = _entries.map(_mapEntry).toList();
+    final display = _buildAggregatedDisplay();
+    // Даты, аккаунты и типы считаем по агрегированным транзакциям
     availableYears = display.map((t) => t.date.year).toSet();
     availableMonths = display.map((t) => t.date.month).toSet();
     availableAccounts = display.map((t) => t.account).toSet();
     availableTypes = display.map((t) => t.type).toSet();
-    availableCategories = display.map((t) => t.category).toSet();
+    // Категории считаем по исходным записям, чтобы не предлагать "Multiple categories"
+    availableCategories = _entries.map((e) => e.categoryName).toSet();
   }
 
   int _countBy(bool Function(TransactionDisplayData) predicate) {
-    final display = _entries.map(_mapEntry).toList();
+    final display = _buildAggregatedDisplay();
     return display.where(predicate).length;
   }
 
-  TransactionDisplayData _mapEntry(TransactionEntryData entry) {
+  int _countBucketsWhereCategory(String categoryName) {
+    final buckets = _buildBuckets();
+    int count = 0;
+    for (final entries in buckets.values) {
+      final cats = entries.map((e) => e.categoryName).toSet();
+      if (cats.contains(categoryName)) count++;
+    }
+    return count;
+  }
+
+  // Преобразует входные записи в агрегированные транзакции по transactionId.
+  // Правила:
+  // - amount: сумма по всем записям с одинаковым transactionId
+  // - date: approvedAt (как источник даты для фильтров/группировок)
+  // - category: если разные категории внутри транзакции -> "Multiple categories"
+  // - categoryIcon: иконка категории или общая, если категорий несколько
+  // - account и currency: из записей (если различаются, берём из первой)
+  Map<String, List<TransactionEntryData>> _buildBuckets() {
+    // Ключ агрегации: transactionId + approvedAt + balanceTitle + balanceCurrency
+    final Map<String, List<TransactionEntryData>> buckets = {};
+    for (final entry in _entries) {
+      final String key = [
+        entry.transactionId,
+        entry.approvedAt.toIso8601String(),
+        entry.balanceTitle,
+        entry.balanceCurrency,
+      ].join('||');
+      buckets.putIfAbsent(key, () => <TransactionEntryData>[]).add(entry);
+    }
+    return buckets;
+  }
+
+  TransactionDisplayData _aggregateEntriesToDisplay(List<TransactionEntryData> entries) {
+    final first = entries.first;
+    final double totalAmount = entries.fold<double>(0.0, (sum, e) => sum + e.amount);
+
+    final Set<String> categories = entries.map((e) => e.categoryName).toSet();
+    final String categoryLabel = categories.length == 1 ? first.categoryName : 'Multiple categories';
+    final IconData categoryIcon = categories.length == 1
+        ? Category.getCategoryIcon(first.categoryName)
+        : Icons.category;
+
     return TransactionDisplayData(
-      id: entry.transactionId,
-      type: entry.type,
-      amount: entry.amount,
-      category: entry.categoryName,
-      categoryIcon: Category.getCategoryIcon(entry.categoryName),
-      account: entry.balanceTitle,
-      merchantName: entry.merchantName,
-      date: entry.transactedAt,
-      currency: entry.balanceCurrency,
+      id: first.transactionId,
+      type: first.type,
+      amount: totalAmount,
+      category: categoryLabel,
+      categoryIcon: categoryIcon,
+      account: first.balanceTitle,
+      merchantName: first.merchantName,
+      date: first.approvedAt,
+      currency: first.balanceCurrency,
     );
+  }
+
+  List<TransactionDisplayData> _buildAggregatedDisplay() {
+    final buckets = _buildBuckets();
+    final List<TransactionDisplayData> aggregated = [];
+    for (final entries in buckets.values) {
+      if (entries.isEmpty) continue;
+      aggregated.add(_aggregateEntriesToDisplay(entries));
+    }
+    return aggregated;
   }
 
   Map<String, List<TransactionDisplayData>> _group(List<TransactionDisplayData> txs) {
