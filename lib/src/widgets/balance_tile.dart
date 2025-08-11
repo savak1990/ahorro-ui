@@ -46,7 +46,7 @@ class BalanceTile extends StatelessWidget {
         ],
       ),
       subtitle: Text(balance.currency, style: Theme.of(context).textTheme.bodyMedium),
-      trailing: isDeleted
+      trailing: (isDeleted || onDelete == null)
           ? null
           : IconButton(
               icon: Icon(Icons.delete, color: scheme.error),

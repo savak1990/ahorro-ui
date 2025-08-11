@@ -83,6 +83,7 @@ class BalancesScreen extends StatelessWidget {
   // Extracted list builder
   Widget _buildList(BuildContext context, List<Balance> balances) {
     final provider = Provider.of<BalancesProvider>(context, listen: false);
+    final int activeCount = balances.where((b) => b.deletedAt == null).length;
     return ListView(
       padding: EdgeInsets.zero,
       children: [
@@ -97,7 +98,7 @@ class BalancesScreen extends StatelessWidget {
                 BalanceTile(
                   balance: balance,
                   useCardBackground: false,
-                  onDelete: balance.deletedAt != null
+                  onDelete: (balance.deletedAt != null || activeCount <= 1)
                       ? null
                       : () async {
                           final confirm = await showDialog<bool>(

@@ -137,6 +137,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   String? _pendingTransactionType;
+  bool _didCheckBalancesForDefaultCurrency = false;
 
   void _showTransactionsTab([String? type]) {
     setState(() {
@@ -168,6 +169,22 @@ class _MainScreenState extends State<MainScreen> {
         label: 'Transactions',
       ),
     ];
+
+    // Проверка на отсутствие активных балансов и редирект на выбор валюты по умолчанию
+    final balancesProvider = context.watch<BalancesProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_didCheckBalancesForDefaultCurrency) return;
+      if (balancesProvider.isLoading || balancesProvider.errorMessage != null) return;
+      if (!balancesProvider.hasData) return; // Ждём, пока балансы будут загружены хотя бы один раз
+      final int activeCount = balancesProvider.balances.where((b) => b.deletedAt == null).length;
+      if (activeCount == 0) {
+        _didCheckBalancesForDefaultCurrency = true;
+        Navigator.of(context).pushReplacementNamed('/default-balance-currency');
+      } else {
+        _didCheckBalancesForDefaultCurrency = true;
+      }
+    });
 
     return AdaptiveNavigation(
       selectedIndex: _selectedIndex,
