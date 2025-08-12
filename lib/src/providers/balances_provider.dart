@@ -9,7 +9,12 @@ class BalancesProvider extends BaseProvider {
   List<Balance> _balances = [];
   static const Duration _cacheDuration = Duration(minutes: 60);
 
-  List<Balance> get balances => _balances;
+  /// Возвращает только активные балансы (без deletedAt)
+  List<Balance> get balances => _balances.where((balance) => balance.deletedAt == null).toList();
+  
+  /// Возвращает все балансы (включая удаленные) - для отладки
+  List<Balance> get allBalances => _balances;
+  
   String? get error => errorMessage;
 
   Future<void> loadBalances({bool forceRefresh = false}) async {
@@ -18,7 +23,8 @@ class BalancesProvider extends BaseProvider {
     }
     await execute(() async {
       _balances = await ApiService.getBalances();
-      debugPrint('[BalancesProvider]: Loaded ${_balances.length} balances');
+      final activeBalances = _balances.where((balance) => balance.deletedAt == null).length;
+      debugPrint('[BalancesProvider]: Loaded ${_balances.length} balances total, $activeBalances active');
     });
   }
 
