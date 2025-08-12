@@ -15,6 +15,7 @@ import '../models/transactions_response.dart';
 import '../models/transaction_entry_data.dart';
 import '../models/categories_response.dart';
 import '../models/merchant.dart';
+import '../models/transaction_update_payload.dart';
 
 class ApiService {
   // Centralized auth headers builder
@@ -688,6 +689,160 @@ class ApiService {
         operation: operation,
       );
       debugPrint('Error getting transaction by id: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateTransaction({
+    required String transactionId,
+    required TransactionUpdatePayload payload,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'updateTransaction';
+
+    try {
+      ApiLogger.logOperationStart(operation, {
+        'transactionId': transactionId,
+        'payload': payload.toJson(),
+      });
+
+      final url = Uri.parse('${AppConfig.transactionsUrl}/$transactionId');
+      final requestId = generateOperationId(); // Still generate for X-Request-Id header
+      final headers = await _buildAuthHeaders(includeJson: true, requestId: requestId);
+
+      final bodyMap = payload.toJson();
+      // Use operationId from payload (original transaction operationId)
+      final body = json.encode(bodyMap);
+      
+      // Detailed logging for debugging
+      debugPrint('[API_SERVICE] updateTransaction body details:');
+      debugPrint('[API_SERVICE] - transactionId: $transactionId');
+      debugPrint('[API_SERVICE] - requestId (for header): $requestId');
+      debugPrint('[API_SERVICE] - operationId (from payload): ${bodyMap['operationId']}');
+      debugPrint('[API_SERVICE] - bodyMap keys: ${bodyMap.keys.toList()}');
+      debugPrint('[API_SERVICE] - bodyMap values: $bodyMap');
+      debugPrint('[API_SERVICE] - JSON body: $body');
+
+      ApiLogger.logRequest(
+        method: 'PUT',
+        url: url.toString(),
+        headers: headers,
+        body: bodyMap,
+        operation: operation,
+      );
+
+      final response = await http
+          .put(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'PUT',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to update transaction. Status code: ${response.statusCode}');
+      }
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+      return response.body.isNotEmpty ? json.decode(response.body) : <String, dynamic>{};
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'PUT',
+        url: '${AppConfig.transactionsUrl}/$transactionId',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      debugPrint('Error updating transaction: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateTransactionRaw({
+    required String transactionId,
+    required Map<String, dynamic> bodyMap,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'updateTransactionRaw';
+
+    try {
+      ApiLogger.logOperationStart(operation, {
+        'transactionId': transactionId,
+        'payload': bodyMap,
+      });
+
+      final url = Uri.parse('${AppConfig.transactionsUrl}/$transactionId');
+      final requestId = generateOperationId();
+      final headers = await _buildAuthHeaders(includeJson: true, requestId: requestId);
+      bodyMap.putIfAbsent('OperationId', () => requestId);
+
+      final body = json.encode(bodyMap);
+      
+      // Detailed logging for debugging  
+      debugPrint('[API_SERVICE] updateTransactionRaw body details:');
+      debugPrint('[API_SERVICE] - transactionId: $transactionId');
+      debugPrint('[API_SERVICE] - requestId: $requestId');
+      debugPrint('[API_SERVICE] - bodyMap keys: ${bodyMap.keys.toList()}');
+      debugPrint('[API_SERVICE] - bodyMap values: $bodyMap');
+      debugPrint('[API_SERVICE] - JSON body: $body');
+
+      ApiLogger.logRequest(
+        method: 'PUT',
+        url: url.toString(),
+        headers: headers,
+        body: bodyMap,
+        operation: operation,
+      );
+
+      final response = await http
+          .put(
+            url,
+            headers: headers,
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'PUT',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to update transaction. Status code: ${response.statusCode}');
+      }
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+      return response.body.isNotEmpty ? json.decode(response.body) : <String, dynamic>{};
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'PUT',
+        url: '${AppConfig.transactionsUrl}/$transactionId',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      debugPrint('Error updating transaction (raw): $e');
       rethrow;
     }
   }

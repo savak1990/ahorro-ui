@@ -60,4 +60,10 @@ class TransactionEntriesProvider extends BaseProvider {
       return null;
     }
   }
+
+  /// Refresh entries data after transaction update
+  Future<void> refreshAfterTransactionUpdate() async {
+    debugPrint('[TransactionEntriesProvider] Refreshing entries after transaction update');
+    await loadEntries(forceRefresh: true);
+  }
 } 

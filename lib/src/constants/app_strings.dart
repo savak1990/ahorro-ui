@@ -42,4 +42,20 @@ class AppStrings {
   static const String transactionDetailsInformationTitle = 'Information';
   static const String transactionDetailsPeriodTitle = 'Period';
   static const String transactionDetailsEntriesTitle = 'Entries';
+  static const String transactionDetailsWalletTitle = 'Wallet';
+  static const String transactionDetailsWalletUnknown = 'unknown';
+  static const String transactionDetailsWalletChangeNotAllowed = 'Changing wallet is available only for income and expense';
+  static const String transactionDetailsWalletCreateMoreInfo = 'Only one wallet is available. Create another one to change';
+  static const String transactionDetailsSelectWalletTitle = 'Select wallet';
+  static const String transactionDetailsConfirm = 'Confirm';
+  static const String transactionDetailsCancel = 'Cancel';
+  static const String transactionDetailsUpdated = 'Wallet updated';
+  static const String transactionDetailsUpdateFailedPrefix = 'Update failed:';
+  static const String transactionDetailsEdit = 'Edit';
+  static const String transactionDetailsDelete = 'Delete';
+  static const String transactionDetailsDeleteConfirmTitle = 'Delete Entry';
+  static const String transactionDetailsDeleteConfirmMessage = 'Are you sure you want to delete this entry?';
+  static const String transactionDetailsDeleteConfirmButton = 'Delete';
+  static const String transactionDetailsEntryDeleted = 'Entry deleted successfully';
+  static const String transactionDetailsCannotDeleteLastEntry = 'Cannot delete the last remaining entry';
 }
