@@ -269,23 +269,43 @@ class TransactionsFilterProvider extends ChangeNotifier {
     return count;
   }
 
-  // Преобразует входные записи в агрегированные транзакции по transactionId.
-  // Правила:
-  // - amount: сумма по всем записям с одинаковым transactionId
-  // - date: approvedAt (как источник даты для фильтров/группировок)
-  // - category: если разные категории внутри транзакции -> "Multiple categories"
-  // - categoryIcon: иконка категории или общая, если категорий несколько
-  // - account и currency: из записей (если различаются, берём из первой)
+  // Преобразует входные записи в агрегированные транзакции.
+  // Правила агрегации зависят от типа группировки:
+  // 
+  // BY DATE:
+  // - группируем по: transactionId + approvedAt + balanceTitle + balanceCurrency
+  // - amount: сумма по всем записям
+  // - category: если разные категории -> "Multiple categories", иначе - название категории
+  // 
+  // BY CATEGORY:
+  // - группируем по: categoryName + transactionId + balanceTitle + balanceCurrency + approvedAt
+  // - amount: сумма по всем записям
+  // - category: categoryName (всегда одинаковая в группе)
   Map<String, List<TransactionEntryData>> _buildBuckets() {
-    // Ключ агрегации: transactionId + approvedAt + balanceTitle + balanceCurrency
     final Map<String, List<TransactionEntryData>> buckets = {};
+    
     for (final entry in _entries) {
-      final String key = [
-        entry.transactionId,
-        entry.approvedAt.toIso8601String(),
-        entry.balanceTitle,
-        entry.balanceCurrency,
-      ].join('||');
+      final String key;
+      
+      if (groupingType == GroupingType.category) {
+        // Для группировки по категориям включаем categoryName в ключ
+        key = [
+          entry.categoryName,
+          entry.transactionId,
+          entry.balanceTitle,
+          entry.balanceCurrency,
+          entry.approvedAt.toIso8601String(),
+        ].join('||');
+      } else {
+        // Для группировки по дате - стандартная агрегация по транзакции
+        key = [
+          entry.transactionId,
+          entry.approvedAt.toIso8601String(),
+          entry.balanceTitle,
+          entry.balanceCurrency,
+        ].join('||');
+      }
+      
       buckets.putIfAbsent(key, () => <TransactionEntryData>[]).add(entry);
     }
     return buckets;
@@ -296,10 +316,20 @@ class TransactionsFilterProvider extends ChangeNotifier {
     final double totalAmount = entries.fold<double>(0.0, (sum, e) => sum + e.amount);
 
     final Set<String> categories = entries.map((e) => e.categoryName).toSet();
-    final String categoryLabel = categories.length == 1 ? first.categoryName : 'Multiple categories';
-    final IconData categoryIcon = categories.length == 1
-        ? Category.getCategoryIcon(first.categoryName)
-        : Icons.category;
+    final String categoryLabel;
+    final IconData categoryIcon;
+    
+    if (groupingType == GroupingType.category) {
+      // При группировке по категориям все записи в группе имеют одинаковую категорию
+      categoryLabel = first.categoryName;
+      categoryIcon = Category.getCategoryIcon(first.categoryName);
+    } else {
+      // При группировке по дате проверяем количество уникальных категорий
+      categoryLabel = categories.length == 1 ? first.categoryName : 'Multiple categories';
+      categoryIcon = categories.length == 1
+          ? Category.getCategoryIcon(first.categoryName)
+          : Icons.category;
+    }
 
     return TransactionDisplayData(
       id: first.transactionId,
@@ -340,10 +370,12 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
     final weekAgo = today.subtract(const Duration(days: 7));
 
     final Map<String, List<TransactionDisplayData>> grouped = {
       AppStrings.groupToday: [],
+      AppStrings.groupYesterday: [],
       AppStrings.groupPrevious7Days: [],
       AppStrings.groupEarlier: [],
     };
@@ -352,6 +384,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
       final d = DateTime(t.date.year, t.date.month, t.date.day);
       if (d == today) {
         grouped[AppStrings.groupToday]!.add(t);
+      } else if (d == yesterday) {
+        grouped[AppStrings.groupYesterday]!.add(t);
       } else if (d.isAfter(weekAgo) && d.isBefore(today)) {
         grouped[AppStrings.groupPrevious7Days]!.add(t);
       } else {

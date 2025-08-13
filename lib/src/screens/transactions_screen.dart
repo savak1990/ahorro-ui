@@ -175,9 +175,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               title: Text('Date'),
               trailing: Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType == GroupingType.date ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
               onTap: () {
-                setState(() {
-                  Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType = GroupingType.date;
-                });
+                Provider.of<TransactionsFilterProvider>(context, listen: false).setGroupingType(GroupingType.date);
                 Navigator.pop(context);
               },
             ),
@@ -186,9 +184,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               title: Text('Category'),
               trailing: Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType == GroupingType.category ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
               onTap: () {
-                setState(() {
-                  Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType = GroupingType.category;
-                });
+                Provider.of<TransactionsFilterProvider>(context, listen: false).setGroupingType(GroupingType.category);
                 Navigator.pop(context);
               },
             ),

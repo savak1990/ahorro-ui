@@ -35,6 +35,7 @@ class AppStrings {
   // Transactions page
   static const String transactionsTitle = 'Transactions';
   static const String groupToday = 'Today';
+  static const String groupYesterday = 'Yesterday';
   static const String groupPrevious7Days = 'Previous 7 Days';
   static const String groupEarlier = 'Earlier';
 
