@@ -996,8 +996,8 @@ class ApiService {
 
     try {
       ApiLogger.logOperationStart(operation, {
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
+        'startTime': startDate.toIso8601String(),
+        'endTime': endDate.toIso8601String(),
       });
 
       final session = await Amplify.Auth.fetchAuthSession();
@@ -1009,8 +1009,8 @@ class ApiService {
       final base = Uri.parse(AppConfig.transactionsStatsUrl);
       final url = base.replace(queryParameters: {
         'userId': userId,
-        'startDate': startDate.toUtc().toIso8601String(),
-        'endDate': endDate.toUtc().toIso8601String(),
+        'startTime': startDate.toUtc().toIso8601String(),
+        'endTime': endDate.toUtc().toIso8601String(),
       });
       final headers = await _buildAuthHeaders();
 
