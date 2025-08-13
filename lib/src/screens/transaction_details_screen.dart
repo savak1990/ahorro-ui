@@ -124,9 +124,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final currency = tx.balanceCurrency ?? tx.balance?.currency ?? 'EUR';
     final parsedDate = date;
     final formattedDate = parsedDate != null ? DateFormat('dd.MM.yyyy HH:mm').format(parsedDate) : '-';
-    final approvedAt = tx.approvedAt;
-    final formattedApprovedAt = approvedAt != null
-        ? DateFormat('dd.MM.yyyy').format(approvedAt)
+    final transactedAt = tx.transactedAt;
+    final formattedTransactedAt = transactedAt != null
+        ? DateFormat('dd.MM.yyyy').format(transactedAt)
         : '-';
 
     Color valueColor = theme.colorScheme.onSurfaceVariant;
@@ -192,14 +192,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               padding: EdgeInsets.zero,
               children: [
                 ListItemTile(
-                  title: 'Approved at',
+                  title: 'Transacted at',
                   icon: Icons.calendar_today,
                   iconColor: theme.colorScheme.primary,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        (formattedApprovedAt.isEmpty || formattedApprovedAt == '-') ? 'unknown' : formattedApprovedAt,
+                        (formattedTransactedAt.isEmpty || formattedTransactedAt == '-') ? 'unknown' : formattedTransactedAt,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -480,14 +480,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final tx = transactionDetails;
     if (tx == null) return;
 
-    final currentDate = tx.approvedAt ?? tx.transactedAt ?? tx.createdAt ?? DateTime.now();
+    final currentDate = tx.transactedAt ?? tx.approvedAt ?? tx.createdAt ?? DateTime.now();
     
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: currentDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: 'Select approved date',
+      helpText: 'Select transacted date',
     );
 
     if (pickedDate == null) return;
@@ -497,7 +497,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(currentDate),
-      helpText: 'Select approved time',
+      helpText: 'Select transacted time',
     );
 
     if (pickedTime == null) return;
@@ -511,14 +511,15 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       pickedTime.minute,
     );
 
-    // Update transaction with new approved date
-    await _updateApprovedDate(newDateTime);
+    // Update transaction with new transacted date
+    await _updateTransactedDate(newDateTime);
   }
 
   /// Create a complete payload for transaction update with all fields populated
   TransactionUpdatePayload _createCompletePayload({
     String? newBalanceId,
     DateTime? newApprovedAt,
+    DateTime? newTransactedAt,
   }) {
     final tx = transactionDetails!;
     
@@ -543,10 +544,66 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       type: tx.type,
       operationId: tx.operationId, // Use original operationId from transaction details
       approvedAt: newApprovedAt ?? tx.approvedAt,
-      transactedAt: tx.transactedAt ?? tx.approvedAt ?? tx.createdAt,
+      transactedAt: newTransactedAt ?? tx.transactedAt ?? tx.approvedAt ?? tx.createdAt,
       transactionEntries: entriesPayload.isNotEmpty ? entriesPayload : null,
       merchantId: tx.merchantId,
     );
+  }
+
+  Future<void> _updateTransactedDate(DateTime newTransactedAt) async {
+    final tx = transactionDetails;
+    if (tx == null) return;
+
+    try {
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Create complete payload with the new transacted date (also update approved date to the same value)
+      final payload = _createCompletePayload(
+        newTransactedAt: newTransactedAt,
+        newApprovedAt: newTransactedAt, // Set approved date to the same value as transacted date
+      );
+
+      debugPrint('[TX_DETAILS] === UPDATE TRANSACTED DATE ===');
+      debugPrint('[TX_DETAILS] Current transactedAt: ${tx.transactedAt?.toIso8601String()}');
+      debugPrint('[TX_DETAILS] Current approvedAt: ${tx.approvedAt?.toIso8601String()}');
+      debugPrint('[TX_DETAILS] New transactedAt: ${newTransactedAt.toIso8601String()}');
+      debugPrint('[TX_DETAILS] New approvedAt: ${newTransactedAt.toIso8601String()}');
+      debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
+
+      await ApiService.updateTransaction(
+        transactionId: widget.transactionId,
+        payload: payload,
+      );
+
+      // Update transaction entries provider to reflect changes
+      if (mounted) {
+        final entriesProvider = context.read<TransactionEntriesProvider>();
+        await entriesProvider.refreshAfterTransactionUpdate();
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Date is changed')),
+        );
+        await fetchTransactionDetails(); // Refresh transaction data
+      }
+    } catch (e) {
+      debugPrint('[TX_DETAILS] Failed to update transacted date: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating date: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _updateApprovedDate(DateTime newApprovedAt) async {
@@ -585,7 +642,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Дата успешно обновлена')),
+          const SnackBar(content: Text('Date is changed')),
         );
         await fetchTransactionDetails(); // Refresh transaction data
       }
@@ -594,7 +651,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка обновления даты: $e')),
+          SnackBar(content: Text('Error updating date: $e')),
         );
       }
     }
