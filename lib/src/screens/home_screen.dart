@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:async';
 import 'package:provider/provider.dart';
 
 import '../widgets/add_transaction_bottom_sheet.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../providers/amplify_provider.dart';
-import '../widgets/monthly_overview_card.dart';
+
 import '../widgets/platform_loading_indicator.dart';
 import '../widgets/error_state_widget.dart';
 import '../widgets/platform_app_bar.dart';
+import '../widgets/month_selector.dart';
+import '../widgets/transaction_stats_card.dart';
 import '../constants/app_constants.dart';
 import '../constants/app_strings.dart';
 import '../widgets/typography.dart';
+import '../services/api_service.dart';
+import '../models/transaction_stats.dart';
+import 'transactions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function(String type)? onShowTransactions;
@@ -23,62 +27,112 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Timer? _tooltipTimer;
-  bool _showTooltip = false;
+  DateTime _selectedMonth = DateTime.now();
+  TransactionStatsResponse? _transactionStats;
+  bool _isLoadingStats = false;
+  String? _statsError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactionStats();
+  }
 
   @override
   void dispose() {
-    _tooltipTimer?.cancel();
     super.dispose();
-  }
-
-  void _startTooltipTimer() {
-    _tooltipTimer?.cancel();
-    _tooltipTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() {
-          _showTooltip = true;
-        });
-      }
-    });
-  }
-
-  void _resetTooltipTimer() {
-    if (_showTooltip) {
-      setState(() {
-        _showTooltip = false;
-      });
-    }
-    _startTooltipTimer();
   }
 
   void _refreshTransactions() {
     Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
   }
 
-  Map<String, double> _calculateMonthlyTotals(List entries) {
-    final currentMonth = DateTime.now();
-    final Map<String, double> monthlyTotals = {
-      'expense': 0.0,
-      'income': 0.0,
-    };
-    for (final entry in entries) {
-      final entryDate = entry.transactedAt;
-      if (entryDate.year == currentMonth.year && entryDate.month == currentMonth.month) {
-        final type = entry.type.toLowerCase();
-        if (monthlyTotals.containsKey(type)) {
-          monthlyTotals[type] = monthlyTotals[type]! + entry.amount;
-        }
-      }
+  Future<void> _loadTransactionStats() async {
+    setState(() {
+      _isLoadingStats = true;
+      _statsError = null;
+    });
+
+    try {
+      final startDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+      final endDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59);
+      print('DEBUG: Loading stats for period $startDate - $endDate');
+      
+      final stats = await ApiService.getTransactionStats(
+        startDate: startDate,
+        endDate: endDate,
+      );
+      
+      print('DEBUG: Received stats - expense: ${stats.expense?.currencies.length ?? 0} currencies, income: ${stats.income?.currencies.length ?? 0} currencies');
+      
+      setState(() {
+        _transactionStats = stats;
+        _isLoadingStats = false;
+      });
+    } catch (e) {
+      setState(() {
+        _statsError = e.toString();
+        _isLoadingStats = false;
+      });
     }
-    return monthlyTotals;
+  }
+
+  void _onMonthChanged(DateTime newMonth) {
+    print('DEBUG: Month changed to ${newMonth.year}-${newMonth.month}');
+    setState(() {
+      _selectedMonth = newMonth;
+    });
+    _loadTransactionStats();
+  }
+
+  void _navigateToTransactionsWithFilters(String currency, String type) {
+    // Создаем даты периода для выбранного месяца
+    final startDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+    final endDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59);
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TransactionsScreen(
+          initialType: type,
+          initialCurrency: currency,
+          initialStartDate: startDate,
+          initialEndDate: endDate,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsContent() {
+    if (_isLoadingStats) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: PlatformLoadingIndicator(),
+        ),
+      );
+    }
+
+    if (_statsError != null) {
+      return ErrorStateWidget(
+        message: 'Error loading statistics: $_statsError',
+        onRetry: _loadTransactionStats,
+      );
+    }
+
+    if (_transactionStats == null) {
+      return const SizedBox.shrink();
+    }
+
+    return TransactionStatsCard(
+      stats: _transactionStats!,
+      onTapCurrency: _navigateToTransactionsWithFilters,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
     final currentDate = DateTime.now();
     final monthYear = DateFormat(AppStrings.monthYearDatePattern).format(currentDate);
 
@@ -111,8 +165,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onRetry: _refreshTransactions,
             );
           }
-          final entries = provider.entries;
-          final monthlyTotals = _calculateMonthlyTotals(entries);
           return CustomScrollView(
             slivers: [
               // Header section (Headline + Label)
@@ -138,31 +190,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              // Financial Overview Section (Title)
+              // Financial Overview Section (Title + Month Selector)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.horizontalPadding,
                     vertical: 0,
                   ),
-                  child: TitleEmphasizedLarge(text: AppStrings.financialOverviewTitle),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const TitleEmphasizedLarge(text: AppStrings.financialOverviewTitle),
+                      MonthSelector(
+                        selectedMonth: _selectedMonth,
+                        onMonthChanged: _onMonthChanged,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              // Monthly Overview Card
+              // Transaction Stats Card
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.horizontalPadding,
-                    vertical: 0,
+                    vertical: 16,
                   ),
-                  child: MonthlyOverviewCard(
-                    entries: entries,
-                    onTap: (type) {
-                      if (widget.onShowTransactions != null) {
-                        widget.onShowTransactions!(type);
-                      }
-                    },
-                  ),
+                  child: _buildStatsContent(),
                 ),
               ),
               // Bottom padding for FAB

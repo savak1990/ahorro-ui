@@ -25,6 +25,8 @@ class AppStrings {
 
   // Home page
   static const String financialOverviewTitle = 'Financial Overview';
+  static const String expenseTitle = 'Expense';
+  static const String incomeTitle = 'Income';
   static const String monthYearDatePattern = 'MMMM, yyyy';
   static String helloUser(String name) => 'Hello, $name!';
 
