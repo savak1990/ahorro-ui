@@ -39,12 +39,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data when returning to this screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshDataOnReturn();
+    });
+  }
+
+  @override
   void dispose() {
     super.dispose();
   }
 
   void _refreshTransactions() {
     Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
+  }
+
+  void _refreshDataOnReturn() {
+    // Only refresh if the screen is currently visible and mounted
+    if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+      _refreshTransactions();
+      _loadTransactionStats();
+    }
   }
 
   Future<void> _loadTransactionStats() async {
@@ -85,12 +102,18 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadTransactionStats();
   }
 
-  void _navigateToTransactionsWithFilters(String currency, String type) {
+  void _navigateToTransactionsWithFilters(String currency, String type) async {
     // Создаем даты периода для выбранного месяца
     final startDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
     final endDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59);
     
-    Navigator.of(context).push(
+    debugPrint('[HOME] Navigating to transactions with filters:');
+    debugPrint('[HOME] - currency: $currency');
+    debugPrint('[HOME] - type: $type');
+    debugPrint('[HOME] - startDate: $startDate');
+    debugPrint('[HOME] - endDate: $endDate');
+    
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => TransactionsScreen(
           initialType: type,
@@ -100,6 +123,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+    
+    // Refresh data when returning from transactions screen
+    if (mounted) {
+      _refreshTransactions();
+      _loadTransactionStats();
+    }
   }
 
   Widget _buildStatsContent() {
@@ -232,6 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           showAddTransactionBottomSheet(context).then((_) {
             _refreshTransactions();
+            _loadTransactionStats();
           });
         },
         shape: const CircleBorder(),

@@ -95,6 +95,13 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () => _showDeleteTransactionConfirmation(context),
+            tooltip: AppStrings.transactionDeleteButton,
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1263,6 +1270,73 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error deleting entry: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDeleteTransactionConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(AppStrings.transactionDeleteConfirmTitle),
+        content: const Text(AppStrings.transactionDeleteConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(AppStrings.transactionDetailsCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text(AppStrings.transactionDeleteConfirmButton),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteTransaction();
+    }
+  }
+
+  Future<void> _deleteTransaction() async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      debugPrint('[TX_DETAILS] === DELETE TRANSACTION ===');
+      debugPrint('[TX_DETAILS] Deleting transaction: ${widget.transactionId}');
+
+      await ApiService.deleteTransaction(widget.transactionId);
+
+      // Update transaction entries provider to reflect changes
+      if (mounted) {
+        final entriesProvider = context.read<TransactionEntriesProvider>();
+        await entriesProvider.refreshAfterTransactionUpdate();
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop(); // Go back to transactions screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppStrings.transactionDeleted)),
+        );
+      }
+    } catch (e) {
+      debugPrint('[TX_DETAILS] Failed to delete transaction: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting transaction: $e')),
         );
       }
     }
