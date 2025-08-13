@@ -80,13 +80,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DateFilterBottomSheet(
-        initialFilterType: filter.dateFilterType.name,
-        initialYear: filter.selectedYear,
-        initialMonth: filter.selectedMonth,
-        initialStartDate: filter.startDate,
-        initialEndDate: filter.endDate,
-        availableYears: filter.availableYears,
+      useSafeArea: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (context, scrollController) => DateFilterBottomSheet(
+          initialFilterType: filter.dateFilterType.name,
+          initialYear: filter.selectedYear,
+          initialMonth: filter.selectedMonth,
+          initialStartDate: filter.startDate,
+          initialEndDate: filter.endDate,
+          availableYears: filter.availableYears,
+        ),
       ),
     );
 
@@ -136,13 +143,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final result = await showModalBottomSheet<Map<String, Set<String>>>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => FiltersBottomSheet(
-        typeOptions: _getTypeFilterOptions(),
-        accountOptions: _getAccountFilterOptions(),
-        categoryOptions: _getCategoryFilterOptions(),
-        initialSelectedTypes: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedTypes,
-        initialSelectedAccounts: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedAccounts,
-        initialSelectedCategories: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedCategories,
+      useSafeArea: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => FiltersBottomSheet(
+          typeOptions: _getTypeFilterOptions(),
+          accountOptions: _getAccountFilterOptions(),
+          categoryOptions: _getCategoryFilterOptions(),
+          initialSelectedTypes: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedTypes,
+          initialSelectedAccounts: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedAccounts,
+          initialSelectedCategories: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedCategories,
+        ),
       ),
     );
 
