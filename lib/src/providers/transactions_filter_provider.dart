@@ -107,7 +107,7 @@ class TransactionsFilterProvider extends ChangeNotifier {
       // Агрегируем для отображения
       final aggregated = _aggregateEntriesToDisplay(entries);
 
-      // Фильтры по дате (используем approvedAt)
+      // Фильтры по дате (используем transactedAt)
       if (hasActiveDateFilters) {
         if (dateFilterType == DateFilterType.month) {
           if (selectedYear != null && aggregated.date.year != selectedYear) return;
@@ -245,7 +245,7 @@ class TransactionsFilterProvider extends ChangeNotifier {
   // Internals
   void _rebuildAvailableFilters() {
     final display = _buildAggregatedDisplay();
-    // Даты, аккаунты и типы считаем по агрегированным транзакциям
+    // Даты, аккаунты и типы считаем по агрегированным транзакциям (теперь используем transactedAt)
     availableYears = display.map((t) => t.date.year).toSet();
     availableMonths = display.map((t) => t.date.month).toSet();
     availableAccounts = display.map((t) => t.account).toSet();
@@ -273,12 +273,12 @@ class TransactionsFilterProvider extends ChangeNotifier {
   // Правила агрегации зависят от типа группировки:
   // 
   // BY DATE:
-  // - группируем по: transactionId + approvedAt + balanceTitle + balanceCurrency
+  // - группируем по: transactionId + transactedAt + balanceTitle + balanceCurrency
   // - amount: сумма по всем записям
   // - category: если разные категории -> "Multiple categories", иначе - название категории
   // 
   // BY CATEGORY:
-  // - группируем по: categoryName + transactionId + balanceTitle + balanceCurrency + approvedAt
+  // - группируем по: categoryName + transactionId + balanceTitle + balanceCurrency + transactedAt
   // - amount: сумма по всем записям
   // - category: categoryName (всегда одинаковая в группе)
   Map<String, List<TransactionEntryData>> _buildBuckets() {
@@ -294,13 +294,13 @@ class TransactionsFilterProvider extends ChangeNotifier {
           entry.transactionId,
           entry.balanceTitle,
           entry.balanceCurrency,
-          entry.approvedAt.toIso8601String(),
+          entry.transactedAt.toIso8601String(),
         ].join('||');
       } else {
         // Для группировки по дате - стандартная агрегация по транзакции
         key = [
           entry.transactionId,
-          entry.approvedAt.toIso8601String(),
+          entry.transactedAt.toIso8601String(),
           entry.balanceTitle,
           entry.balanceCurrency,
         ].join('||');
@@ -339,7 +339,7 @@ class TransactionsFilterProvider extends ChangeNotifier {
       categoryIcon: categoryIcon,
       account: first.balanceTitle,
       merchantName: first.merchantName,
-      date: first.approvedAt,
+      date: first.transactedAt,
       currency: first.balanceCurrency,
     );
   }
@@ -363,7 +363,9 @@ class TransactionsFilterProvider extends ChangeNotifier {
       final sortedKeys = grouped.keys.toList()..sort();
       final Map<String, List<TransactionDisplayData>> sorted = {};
       for (final k in sortedKeys) {
-        sorted[k] = grouped[k]!;
+        // Сортируем транзакции внутри категории по transactedAt (убывание - новые сверху)
+        final sortedTxs = grouped[k]!..sort((a, b) => b.date.compareTo(a.date));
+        sorted[k] = sortedTxs;
       }
       return sorted;
     }
@@ -391,6 +393,11 @@ class TransactionsFilterProvider extends ChangeNotifier {
       } else {
         grouped[AppStrings.groupEarlier]!.add(t);
       }
+    }
+
+    // Сортируем транзакции внутри каждой группы по transactedAt (убывание - новые сверху)
+    for (final key in grouped.keys) {
+      grouped[key]!.sort((a, b) => b.date.compareTo(a.date));
     }
 
     grouped.removeWhere((key, value) => value.isEmpty);

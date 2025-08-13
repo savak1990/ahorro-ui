@@ -42,110 +42,132 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    
+    // Получаем безопасную область и высоту экрана
+    final mediaQuery = MediaQuery.of(context);
+    final safeAreaTop = mediaQuery.padding.top;
+    final screenHeight = mediaQuery.size.height;
+    
+    // Рассчитываем максимальную высоту: экран минус safe area сверху минус отступ
+    final maxHeight = screenHeight - safeAreaTop - 20;
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Filters',
-                style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedTypes.clear();
-                    _selectedAccounts.clear();
-                    _selectedCategories.clear();
-                  });
-                },
-                child: const Text('Reset All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionTitle('Type'),
-                  FilterChips(
-                    options: widget.typeOptions,
-                    selectedValues: _selectedTypes,
-                    onSelectionChanged: (value, selected) {
-                      setState(() {
-                        if (value == 'all') {
-                          _selectedTypes.clear();
-                        } else if (selected) {
-                          _selectedTypes.add(value);
-                        } else {
-                          _selectedTypes.remove(value);
+    return SafeArea(
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: maxHeight,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Фиксированный заголовок
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Filters',
+                  style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedTypes.clear();
+                      _selectedAccounts.clear();
+                      _selectedCategories.clear();
+                    });
+                  },
+                  child: const Text('Reset All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Скроллируемый контент - занимает всё доступное место
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionTitle('Type'),
+                    FilterChips(
+                      options: widget.typeOptions,
+                      selectedValues: _selectedTypes,
+                      onSelectionChanged: (value, selected) {
+                        setState(() {
+                          if (value == 'all') {
+                            _selectedTypes.clear();
+                          } else if (selected) {
+                            _selectedTypes.add(value);
+                          } else {
+                            _selectedTypes.remove(value);
                         }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSectionTitle('Balance'),
-                  FilterChips(
-                    options: widget.accountOptions,
-                    selectedValues: _selectedAccounts,
-                    onSelectionChanged: (value, selected) {
-                      setState(() {
-                        if (value == 'all') {
-                          _selectedAccounts.clear();
-                        } else if (selected) {
-                          _selectedAccounts.add(value);
-                        } else {
-                          _selectedAccounts.remove(value);
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSectionTitle('Category'),
-                  FilterChips(
-                    options: widget.categoryOptions,
-                    selectedValues: _selectedCategories,
-                    onSelectionChanged: (value, selected) {
-                      setState(() {
-                        if (value == 'all') {
-                          _selectedCategories.clear();
-                        } else if (selected) {
-                          _selectedCategories.add(value);
-                        } else {
-                          _selectedCategories.remove(value);
-                        }
-                      });
-                    },
-                  ),
-                ],
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSectionTitle('Balance'),
+                    FilterChips(
+                      options: widget.accountOptions,
+                      selectedValues: _selectedAccounts,
+                      onSelectionChanged: (value, selected) {
+                        setState(() {
+                          if (value == 'all') {
+                            _selectedAccounts.clear();
+                          } else if (selected) {
+                            _selectedAccounts.add(value);
+                          } else {
+                            _selectedAccounts.remove(value);
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSectionTitle('Category'),
+                    FilterChips(
+                      options: widget.categoryOptions,
+                      selectedValues: _selectedCategories,
+                      onSelectionChanged: (value, selected) {
+                        setState(() {
+                          if (value == 'all') {
+                            _selectedCategories.clear();
+                          } else if (selected) {
+                            _selectedCategories.add(value);
+                          } else {
+                            _selectedCategories.remove(value);
+                          }
+                        });
+                      },
+                    ),
+                    // Добавляем дополнительный отступ снизу для скролла
+                    const SizedBox(height: 100),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context, {
-                'types': _selectedTypes,
-                'accounts': _selectedAccounts,
-                'categories': _selectedCategories,
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
+            
+            // Фиксированная кнопка Apply внизу
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, {
+                  'types': _selectedTypes,
+                  'accounts': _selectedAccounts,
+                  'categories': _selectedCategories,
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+              ),
+              child: const Text('Apply'),
             ),
-            child: const Text('Apply'),
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
       ),
     );
   }
