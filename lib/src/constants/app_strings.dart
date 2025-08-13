@@ -61,4 +61,11 @@ class AppStrings {
   static const String transactionDetailsDeleteConfirmButton = 'Delete';
   static const String transactionDetailsEntryDeleted = 'Entry deleted successfully';
   static const String transactionDetailsCannotDeleteLastEntry = 'Cannot delete the last remaining entry';
+  
+  // Transaction deletion
+  static const String transactionDeleteButton = 'Delete';
+  static const String transactionDeleteConfirmTitle = 'Delete Transaction';
+  static const String transactionDeleteConfirmMessage = 'Are you sure you want to delete this transaction? This action cannot be undone.';
+  static const String transactionDeleteConfirmButton = 'Delete';
+  static const String transactionDeleted = 'Transaction deleted successfully';
 }

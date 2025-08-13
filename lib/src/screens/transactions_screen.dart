@@ -47,28 +47,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     // Данные транзакций загружаются при старте приложения через AppStateProvider.initializeApp()
     // Если заданы начальные фильтры, выставляем их через провайдер после первой сборки
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
-      
-      // Сначала очищаем все фильтры
-      filter.clearAllFilters();
-      
-      // Фильтр по типу транзакции
-      if (widget.initialType != null && widget.initialType!.isNotEmpty) {
-        filter.toggleType(widget.initialType!, true);
-      }
-      
-      // Фильтр по периоду дат
-      if (widget.initialStartDate != null && widget.initialEndDate != null) {
-        filter.setDateFilterType(DateFilterType.period);
-        filter.setStartDate(widget.initialStartDate);
-        filter.setEndDate(widget.initialEndDate);
-      }
-      
-      // Фильтр по валюте (через фильтр аккаунтов, поскольку валюта связана с балансом)
-      if (widget.initialCurrency != null && widget.initialCurrency!.isNotEmpty) {
-        // Найдем все аккаунты с данной валютой
-        _filterAccountsByCurrency(filter, widget.initialCurrency!);
-      }
+      _applyInitialFilters();
     });
     
     // Добавляем слушатель скролла
@@ -96,20 +75,86 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
   }
 
+  void _applyInitialFilters() {
+    final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
+    final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+    
+    // Сначала очищаем все фильтры
+    filter.clearAllFilters();
+    
+    // Фильтр по типу транзакции
+    if (widget.initialType != null && widget.initialType!.isNotEmpty) {
+      filter.toggleType(widget.initialType!, true);
+    }
+    
+    // Фильтр по периоду дат
+    if (widget.initialStartDate != null && widget.initialEndDate != null) {
+      filter.setDateFilterType(DateFilterType.period);
+      filter.setStartDate(widget.initialStartDate);
+      filter.setEndDate(widget.initialEndDate);
+    }
+    
+    // Фильтр по валюте (через фильтр аккаунтов, поскольку валюта связана с балансом)
+    if (widget.initialCurrency != null && widget.initialCurrency!.isNotEmpty) {
+      // Если entries уже загружены, применяем фильтр сразу
+      if (entriesProvider.entries.isNotEmpty) {
+        _filterAccountsByCurrency(filter, widget.initialCurrency!);
+      } else {
+        // Если entries еще не загружены, ждем их загрузки
+        _waitForEntriesAndApplyCurrencyFilter(filter, widget.initialCurrency!);
+      }
+    }
+  }
+
   void _filterAccountsByCurrency(TransactionsFilterProvider filter, String currency) {
     // Получаем все доступные аккаунты и находим те, которые связаны с указанной валютой
     final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
     if (entriesProvider.entries.isNotEmpty) {
+      // Собираем все уникальные комбинации кошелек-валюта
+      final walletCurrencyMap = <String, String>{};
+      for (final entry in entriesProvider.entries) {
+        walletCurrencyMap[entry.balanceTitle] = entry.balanceCurrency;
+      }
+      
+      debugPrint('[TRANSACTIONS] All wallets and currencies:');
+      walletCurrencyMap.forEach((wallet, curr) {
+        debugPrint('[TRANSACTIONS] - $wallet: $curr');
+      });
+      
       final accountsWithCurrency = entriesProvider.entries
           .where((entry) => entry.balanceCurrency == currency)
           .map((entry) => entry.balanceTitle)
           .toSet();
+      
+      debugPrint('[TRANSACTIONS] Filtering for currency $currency, found accounts: $accountsWithCurrency');
       
       // Применяем фильтр по найденным аккаунтам
       for (final account in accountsWithCurrency) {
         filter.toggleAccount(account, true);
       }
     }
+  }
+
+  void _waitForEntriesAndApplyCurrencyFilter(TransactionsFilterProvider filter, String currency) {
+    // Используем addPostFrameCallback для повторной попытки после следующего кадра
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+      if (entriesProvider.entries.isNotEmpty) {
+        _filterAccountsByCurrency(filter, currency);
+      } else if (!entriesProvider.isLoading) {
+        // Если entries все еще пусты и загрузка не происходит, попробуем загрузить
+        entriesProvider.loadEntries().then((_) {
+          _filterAccountsByCurrency(filter, currency);
+        });
+      } else {
+        // Попробуем еще раз через небольшую задержку
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            _waitForEntriesAndApplyCurrencyFilter(filter, currency);
+          }
+        });
+      }
+    });
   }
 
   // moved to provider
@@ -359,6 +404,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           // Передаём entries провайдеру фильтров после кадра, чтобы избежать notify во время build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             filterProvider.setEntries(entriesProvider.entries);
+            
+            // Если у нас есть фильтр по валюте, который еще не был применен, применяем его сейчас
+            if (widget.initialCurrency != null && 
+                widget.initialCurrency!.isNotEmpty && 
+                filterProvider.selectedAccounts.isEmpty) {
+              _filterAccountsByCurrency(filterProvider, widget.initialCurrency!);
+            }
           });
 
           // Получаем сгруппированные данные из провайдера

@@ -1059,4 +1059,66 @@ class ApiService {
       rethrow;
     }
   }
+
+  static Future<void> deleteTransaction(String transactionId) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'deleteTransaction';
+
+    try {
+      ApiLogger.logOperationStart(operation, {'transactionId': transactionId});
+
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+
+      final url = Uri.parse('${AppConfig.transactionsUrl}/$transactionId');
+      final requestId = generateOperationId();
+      final headers = await _buildAuthHeaders(requestId: requestId);
+
+      ApiLogger.logRequest(
+        method: 'DELETE',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
+
+      final response = await http
+          .delete(
+            url,
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 25));
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'DELETE',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception(
+            'Failed to delete transaction. Status code: ${response.statusCode}');
+      }
+
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'DELETE',
+        url: '${AppConfig.transactionsUrl}/$transactionId',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      debugPrint('Error deleting transaction: $e');
+      rethrow;
+    }
+  }
 }
