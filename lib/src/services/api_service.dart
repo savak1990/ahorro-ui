@@ -16,6 +16,7 @@ import '../models/transaction_entry_data.dart';
 import '../models/categories_response.dart';
 import '../models/merchant.dart';
 import '../models/transaction_update_payload.dart';
+import '../models/transaction_stats.dart';
 
 class ApiService {
   // Centralized auth headers builder
@@ -982,6 +983,79 @@ class ApiService {
         stackTrace: stackTrace,
         operation: operation,
       );
+      rethrow;
+    }
+  }
+
+  static Future<TransactionStatsResponse> getTransactionStats({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    const operation = 'getTransactionStats';
+
+    try {
+      ApiLogger.logOperationStart(operation, {
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+      });
+
+      final session = await Amplify.Auth.fetchAuthSession();
+      if (!session.isSignedIn) {
+        throw Exception('User is not signed in');
+      }
+
+      final userId = await AuthService.getUserId();
+      final base = Uri.parse(AppConfig.transactionsStatsUrl);
+      final url = base.replace(queryParameters: {
+        'userId': userId,
+        'startDate': startDate.toUtc().toIso8601String(),
+        'endDate': endDate.toUtc().toIso8601String(),
+      });
+      final headers = await _buildAuthHeaders();
+
+      ApiLogger.logRequest(
+        method: 'GET',
+        url: url.toString(),
+        headers: headers,
+        operation: operation,
+      );
+
+      final response = await http.get(
+        url,
+        headers: headers,
+      ).timeout(const Duration(seconds: 25));
+
+      stopwatch.stop();
+
+      ApiLogger.logResponse(
+        method: 'GET',
+        url: url.toString(),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
+        operation: operation,
+        duration: stopwatch.elapsed,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to get transaction stats. Status code: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
+      return TransactionStatsResponse.fromJson(data);
+    } on Exception catch (e, stackTrace) {
+      stopwatch.stop();
+      ApiLogger.logError(
+        method: 'GET',
+        url: '${AppConfig.transactionsStatsUrl}?userId={userId}&startDate={startDate}&endDate={endDate}',
+        error: e,
+        stackTrace: stackTrace,
+        operation: operation,
+      );
+      debugPrint('Error getting transaction stats: $e');
       rethrow;
     }
   }

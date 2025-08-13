@@ -21,7 +21,17 @@ import '../widgets/typography.dart';
 
 class TransactionsScreen extends StatefulWidget {
   final String? initialType;
-  const TransactionsScreen({super.key, this.initialType});
+  final String? initialCurrency;
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
+  
+  const TransactionsScreen({
+    super.key, 
+    this.initialType,
+    this.initialCurrency,
+    this.initialStartDate,
+    this.initialEndDate,
+  });
 
   @override
   State<TransactionsScreen> createState() => _TransactionsScreenState();
@@ -35,14 +45,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   void initState() {
     super.initState();
     // Данные транзакций загружаются при старте приложения через AppStateProvider.initializeApp()
-    // Если initialType задан, выставляем фильтр по типу
-    if (widget.initialType != null && widget.initialType!.isNotEmpty) {
-      // Установим стартовый фильтр через провайдер после первой сборки
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
+    // Если заданы начальные фильтры, выставляем их через провайдер после первой сборки
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
+      
+      // Сначала очищаем все фильтры
+      filter.clearAllFilters();
+      
+      // Фильтр по типу транзакции
+      if (widget.initialType != null && widget.initialType!.isNotEmpty) {
         filter.toggleType(widget.initialType!, true);
-      });
-    }
+      }
+      
+      // Фильтр по периоду дат
+      if (widget.initialStartDate != null && widget.initialEndDate != null) {
+        filter.setDateFilterType(DateFilterType.period);
+        filter.setStartDate(widget.initialStartDate);
+        filter.setEndDate(widget.initialEndDate);
+      }
+      
+      // Фильтр по валюте (через фильтр аккаунтов, поскольку валюта связана с балансом)
+      if (widget.initialCurrency != null && widget.initialCurrency!.isNotEmpty) {
+        // Найдем все аккаунты с данной валютой
+        _filterAccountsByCurrency(filter, widget.initialCurrency!);
+      }
+    });
     
     // Добавляем слушатель скролла
     _scrollController.addListener(_onScroll);
@@ -67,6 +94,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   void _refreshTransactions() {
     Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
+  }
+
+  void _filterAccountsByCurrency(TransactionsFilterProvider filter, String currency) {
+    // Получаем все доступные аккаунты и находим те, которые связаны с указанной валютой
+    final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+    if (entriesProvider.entries.isNotEmpty) {
+      final accountsWithCurrency = entriesProvider.entries
+          .where((entry) => entry.balanceCurrency == currency)
+          .map((entry) => entry.balanceTitle)
+          .toSet();
+      
+      // Применяем фильтр по найденным аккаунтам
+      for (final account in accountsWithCurrency) {
+        filter.toggleAccount(account, true);
+      }
+    }
   }
 
   // moved to provider
@@ -234,8 +277,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
             ? PreferredSize(
                 preferredSize: Size.fromHeight(
-                  (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters ? 40 : 0) +
-                      (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters ? 40 : 0),
+                  (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters ? 56 : 0) +
+                      (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters ? 56 : 0) +
+                      (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters && 
+                       Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters ? 4 : 0),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -249,6 +294,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         endDate: Provider.of<TransactionsFilterProvider>(context).endDate,
                         onClear: () => Provider.of<TransactionsFilterProvider>(context, listen: false).clearDateFilters(),
                       ),
+                    if (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters && 
+                        Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
+                      const SizedBox(height: 4),
                     if (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
                       ActiveFiltersSummary(
                         selectedTypes: Provider.of<TransactionsFilterProvider>(context).selectedTypes,
