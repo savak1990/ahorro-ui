@@ -7,8 +7,13 @@ allprojects {
     resolutionStrategy.eachDependency { details ->
       if (details.requested.group == "org.jetbrains.kotlin" &&
           details.requested.name.startsWith("kotlin-stdlib")) {
-        details.useVersion "2.0.20"
+        details.useVersion "2.0.21"
         details.because "Align Kotlin stdlib with Kotlin Gradle plugin"
+      }
+      if (details.requested.group == "org.jetbrains.kotlinx" &&
+          details.requested.name.startsWith("kotlinx-coroutines")) {
+        details.useVersion "1.9.0"
+        details.because "Use compatible kotlinx-coroutines version"
       }
     }
   }

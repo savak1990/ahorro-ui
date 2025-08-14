@@ -41,8 +41,15 @@ class TransactionsFilterProvider extends ChangeNotifier {
   }
 
   // Public getters
-  bool get hasActiveDateFilters => selectedYear != null || selectedMonth != null || startDate != null || endDate != null;
-  bool get hasActiveNonDateFilters => selectedTypes.isNotEmpty || selectedAccounts.isNotEmpty || selectedCategories.isNotEmpty;
+  bool get hasActiveDateFilters =>
+      selectedYear != null ||
+      selectedMonth != null ||
+      startDate != null ||
+      endDate != null;
+  bool get hasActiveNonDateFilters =>
+      selectedTypes.isNotEmpty ||
+      selectedAccounts.isNotEmpty ||
+      selectedCategories.isNotEmpty;
 
   // Filter options for sheets
   List<FilterOption> getTypeFilterOptions() {
@@ -50,8 +57,16 @@ class TransactionsFilterProvider extends ChangeNotifier {
       const FilterOption(value: 'all', label: 'All Types', isAllOption: true),
     ];
     for (final type in availableTypes) {
-      final icon = type == 'income' ? Icons.trending_up : type == 'expense' ? Icons.trending_down : Icons.swap_horiz;
-      final color = type == 'income' ? Colors.green : type == 'expense' ? Colors.red : Colors.blue;
+      final icon = type == 'income'
+          ? Icons.trending_up
+          : type == 'expense'
+              ? Icons.trending_down
+              : Icons.swap_horiz;
+      final color = type == 'income'
+          ? Colors.green
+          : type == 'expense'
+              ? Colors.red
+              : Colors.blue;
       options.add(FilterOption(
         value: type,
         label: _capitalize(type),
@@ -65,7 +80,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
   List<FilterOption> getAccountFilterOptions() {
     final options = <FilterOption>[
-      const FilterOption(value: 'all', label: 'All Accounts', isAllOption: true),
+      const FilterOption(
+          value: 'all', label: 'All Accounts', isAllOption: true),
     ];
     for (final acc in availableAccounts) {
       options.add(FilterOption(
@@ -80,7 +96,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
   List<FilterOption> getCategoryFilterOptions() {
     final options = <FilterOption>[
-      const FilterOption(value: 'all', label: 'All Categories', isAllOption: true),
+      const FilterOption(
+          value: 'all', label: 'All Categories', isAllOption: true),
     ];
     for (final cat in availableCategories) {
       options.add(FilterOption(
@@ -102,7 +119,6 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
     buckets.forEach((_, entries) {
       if (entries.isEmpty) return;
-      final first = entries.first;
 
       // Агрегируем для отображения
       final aggregated = _aggregateEntriesToDisplay(entries);
@@ -110,11 +126,19 @@ class TransactionsFilterProvider extends ChangeNotifier {
       // Фильтры по дате (используем transactedAt)
       if (hasActiveDateFilters) {
         if (dateFilterType == DateFilterType.month) {
-          if (selectedYear != null && aggregated.date.year != selectedYear) return;
-          if (selectedMonth != null && aggregated.date.month != selectedMonth) return;
+          if (selectedYear != null && aggregated.date.year != selectedYear) {
+            return;
+          }
+          if (selectedMonth != null && aggregated.date.month != selectedMonth) {
+            return;
+          }
         } else if (dateFilterType == DateFilterType.period) {
-          if (startDate != null && aggregated.date.isBefore(startDate!)) return;
-          if (endDate != null && aggregated.date.isAfter(endDate!)) return;
+          if (startDate != null && aggregated.date.isBefore(startDate!)) {
+            return;
+          }
+          if (endDate != null && aggregated.date.isAfter(endDate!)) {
+            return;
+          }
         }
       }
 
@@ -123,7 +147,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
         final entryTypes = entries.map((e) => e.type).toSet();
         if (entryTypes.intersection(selectedTypes).isEmpty) return;
       }
-      if (selectedAccounts.isNotEmpty && !selectedAccounts.contains(aggregated.account)) return;
+      if (selectedAccounts.isNotEmpty &&
+          !selectedAccounts.contains(aggregated.account)) return;
 
       // Фильтр по категории должен проверять категории на уровне записей
       if (selectedCategories.isNotEmpty) {
@@ -223,7 +248,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateSelections({Set<String>? types, Set<String>? accounts, Set<String>? categories}) {
+  void updateSelections(
+      {Set<String>? types, Set<String>? accounts, Set<String>? categories}) {
     if (types != null) {
       selectedTypes
         ..clear()
@@ -271,22 +297,22 @@ class TransactionsFilterProvider extends ChangeNotifier {
 
   // Преобразует входные записи в агрегированные транзакции.
   // Правила агрегации зависят от типа группировки:
-  // 
+  //
   // BY DATE:
   // - группируем по: transactionId + transactedAt + balanceTitle + balanceCurrency
   // - amount: сумма по всем записям
   // - category: если разные категории -> "Multiple categories", иначе - название категории
-  // 
+  //
   // BY CATEGORY:
   // - группируем по: categoryName + transactionId + balanceTitle + balanceCurrency + transactedAt
   // - amount: сумма по всем записям
   // - category: categoryName (всегда одинаковая в группе)
   Map<String, List<TransactionEntryData>> _buildBuckets() {
     final Map<String, List<TransactionEntryData>> buckets = {};
-    
+
     for (final entry in _entries) {
       final String key;
-      
+
       if (groupingType == GroupingType.category) {
         // Для группировки по категориям включаем categoryName в ключ
         key = [
@@ -305,27 +331,30 @@ class TransactionsFilterProvider extends ChangeNotifier {
           entry.balanceCurrency,
         ].join('||');
       }
-      
+
       buckets.putIfAbsent(key, () => <TransactionEntryData>[]).add(entry);
     }
     return buckets;
   }
 
-  TransactionDisplayData _aggregateEntriesToDisplay(List<TransactionEntryData> entries) {
+  TransactionDisplayData _aggregateEntriesToDisplay(
+      List<TransactionEntryData> entries) {
     final first = entries.first;
-    final double totalAmount = entries.fold<double>(0.0, (sum, e) => sum + e.amount);
+    final double totalAmount =
+        entries.fold<double>(0.0, (sum, e) => sum + e.amount);
 
     final Set<String> categories = entries.map((e) => e.categoryName).toSet();
     final String categoryLabel;
     final IconData categoryIcon;
-    
+
     if (groupingType == GroupingType.category) {
       // При группировке по категориям все записи в группе имеют одинаковую категорию
       categoryLabel = first.categoryName;
       categoryIcon = Category.getCategoryIcon(first.categoryName);
     } else {
       // При группировке по дате проверяем количество уникальных категорий
-      categoryLabel = categories.length == 1 ? first.categoryName : 'Multiple categories';
+      categoryLabel =
+          categories.length == 1 ? first.categoryName : 'Multiple categories';
       categoryIcon = categories.length == 1
           ? Category.getCategoryIcon(first.categoryName)
           : Icons.category;
@@ -354,7 +383,8 @@ class TransactionsFilterProvider extends ChangeNotifier {
     return aggregated;
   }
 
-  Map<String, List<TransactionDisplayData>> _group(List<TransactionDisplayData> txs) {
+  Map<String, List<TransactionDisplayData>> _group(
+      List<TransactionDisplayData> txs) {
     if (groupingType == GroupingType.category) {
       final Map<String, List<TransactionDisplayData>> grouped = {};
       for (final t in txs) {
@@ -404,6 +434,6 @@ class TransactionsFilterProvider extends ChangeNotifier {
     return grouped;
   }
 
-  String _capitalize(String value) => value.isEmpty ? value : value[0].toUpperCase() + value.substring(1);
+  String _capitalize(String value) =>
+      value.isEmpty ? value : value[0].toUpperCase() + value.substring(1);
 }
-

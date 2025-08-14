@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.ahorro_ui"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = flutter.ndkVersion // 27.0.12077973 to fix build issue
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

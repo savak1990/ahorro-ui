@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission required for network requests -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    
     <application
         android:label="ahorro_ui"
         android:name="${applicationName}"
