@@ -47,7 +47,7 @@ class AmplifyProvider extends BaseProvider {
   }
 
   Future<void> loadCurrentUserName() async {
-    if (!isConfigured || _isFetchingUserName || _currentUserName != null) return;
+    if (!isConfigured || _isFetchingUserName) return;
     _isFetchingUserName = true;
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
@@ -65,5 +65,10 @@ class AmplifyProvider extends BaseProvider {
     } finally {
       _isFetchingUserName = false;
     }
+  }
+
+  void clearUserData() {
+    _currentUserName = null;
+    notifyListeners();
   }
 }

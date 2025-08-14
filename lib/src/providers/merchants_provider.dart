@@ -13,7 +13,9 @@ class MerchantsProvider extends BaseProvider {
   String? get error => errorMessage;
 
   Future<void> loadMerchants({bool forceRefresh = false}) async {
-    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _merchants.isNotEmpty) {
+    if (!forceRefresh &&
+        !shouldRefresh(_cacheDuration) &&
+        _merchants.isNotEmpty) {
       return;
     }
     await execute(() async {
@@ -22,9 +24,11 @@ class MerchantsProvider extends BaseProvider {
     });
   }
 
-  Future<Merchant?> createMerchant({required String name, required String userId}) async {
+  Future<Merchant?> createMerchant(
+      {required String name, required String userId}) async {
     try {
-      final merchant = await ApiService.postMerchant(name: name, userId: userId);
+      final merchant =
+          await ApiService.postMerchant(name: name, userId: userId);
       _merchants.insert(0, merchant);
       debugPrint('[MerchantsProvider]: Created new merchant: ${merchant.name}');
       notifyListeners();
@@ -35,4 +39,9 @@ class MerchantsProvider extends BaseProvider {
       return null;
     }
   }
-} 
+
+  void clearData() {
+    _merchants = [];
+    notifyListeners();
+  }
+}

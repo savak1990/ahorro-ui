@@ -10,22 +10,32 @@ class BalancesProvider extends BaseProvider {
   static const Duration _cacheDuration = Duration(minutes: 60);
 
   /// Возвращает только активные балансы (без deletedAt)
-  List<Balance> get balances => _balances.where((balance) => balance.deletedAt == null).toList();
-  
+  List<Balance> get balances =>
+      _balances.where((balance) => balance.deletedAt == null).toList();
+
   /// Возвращает все балансы (включая удаленные) - для отладки
   List<Balance> get allBalances => _balances;
-  
+
   String? get error => errorMessage;
 
   Future<void> loadBalances({bool forceRefresh = false}) async {
-    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _balances.isNotEmpty) {
+    if (!forceRefresh &&
+        !shouldRefresh(_cacheDuration) &&
+        _balances.isNotEmpty) {
       return;
     }
     await execute(() async {
       _balances = await ApiService.getBalances();
-      final activeBalances = _balances.where((balance) => balance.deletedAt == null).length;
-      debugPrint('[BalancesProvider]: Loaded ${_balances.length} balances total, $activeBalances active');
+      final activeBalances =
+          _balances.where((balance) => balance.deletedAt == null).length;
+      debugPrint(
+          '[BalancesProvider]: Loaded ${_balances.length} balances total, $activeBalances active');
     });
+  }
+
+  void clearData() {
+    _balances = [];
+    notifyListeners();
   }
 
   Future<void> createBalance({
@@ -43,11 +53,12 @@ class BalancesProvider extends BaseProvider {
         title: title,
         description: description,
       );
-      
+
       if (response != null) {
         final newBalance = Balance.fromJson(response);
         _balances.add(newBalance);
-        debugPrint('[BalancesProvider]: Added new balance: ${newBalance.title}');
+        debugPrint(
+            '[BalancesProvider]: Added new balance: ${newBalance.title}');
       }
     });
   }
@@ -64,4 +75,4 @@ class BalancesProvider extends BaseProvider {
       debugPrint('[BalancesProvider]: Deleted balance: $balanceId');
     });
   }
-} 
+}

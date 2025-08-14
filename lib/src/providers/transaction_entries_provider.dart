@@ -15,13 +15,16 @@ class TransactionEntriesProvider extends BaseProvider {
   String? get error => errorMessage;
 
   Future<void> loadEntries({bool forceRefresh = false}) async {
-    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _entries.isNotEmpty) {
+    if (!forceRefresh &&
+        !shouldRefresh(_cacheDuration) &&
+        _entries.isNotEmpty) {
       return;
     }
     await execute(() async {
       final response = await ApiService.getTransactions();
       _entries = response.transactionEntries;
-      debugPrint('[TransactionEntriesProvider] loaded ${_entries.length} entries');
+      debugPrint(
+          '[TransactionEntriesProvider] loaded ${_entries.length} entries');
     });
   }
 
@@ -63,7 +66,13 @@ class TransactionEntriesProvider extends BaseProvider {
 
   /// Refresh entries data after transaction update
   Future<void> refreshAfterTransactionUpdate() async {
-    debugPrint('[TransactionEntriesProvider] Refreshing entries after transaction update');
+    debugPrint(
+        '[TransactionEntriesProvider] Refreshing entries after transaction update');
     await loadEntries(forceRefresh: true);
   }
-} 
+
+  void clearData() {
+    _entries = [];
+    notifyListeners();
+  }
+}

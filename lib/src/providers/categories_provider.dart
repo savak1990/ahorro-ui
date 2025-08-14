@@ -8,7 +8,7 @@ class CategoriesProvider extends BaseProvider {
 
   List<Category> _categories = [];
   static const Duration _cacheDuration = Duration(minutes: 360);
-  
+
   List<Category> get categories => _categories;
   String? get error => errorMessage;
 
@@ -18,14 +18,22 @@ class CategoriesProvider extends BaseProvider {
   }
 
   Future<void> loadCategories({bool forceRefresh = false}) async {
-    if (!forceRefresh && !shouldRefresh(_cacheDuration) && _categories.isNotEmpty) {
+    if (!forceRefresh &&
+        !shouldRefresh(_cacheDuration) &&
+        _categories.isNotEmpty) {
       return;
     }
 
     await execute(() async {
       final response = await ApiService.getCategories();
       _categories = response.categories;
-      debugPrint('[CategoriesProvider]: Loaded ${_categories.length} categories');
+      debugPrint(
+          '[CategoriesProvider]: Loaded ${_categories.length} categories');
     });
+  }
+
+  void clearData() {
+    _categories = [];
+    notifyListeners();
   }
 }

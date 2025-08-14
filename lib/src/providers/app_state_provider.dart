@@ -12,7 +12,7 @@ class AppStateProvider extends ChangeNotifier {
   final MerchantsProvider _merchants;
   final BalancesProvider _balances;
 
-    AppStateProvider()
+  AppStateProvider()
       : _amplify = AmplifyProvider(),
         _transactions = TransactionEntriesProvider(),
         _categories = CategoriesProvider(),
@@ -44,20 +44,29 @@ class AppStateProvider extends ChangeNotifier {
       _transactions.loadEntries(forceRefresh: true),
     ]);
   }
-    
-  bool get isAnyLoading => 
-    _transactions.isLoading || 
-    _categories.isLoading || 
-    _merchants.isLoading || 
-    _balances.isLoading ||
-    _amplify.isLoading;
 
-  String? get firstError => 
-    _amplify.errorMessage ??
-    _transactions.errorMessage ?? 
-    _categories.errorMessage ?? 
-    _merchants.errorMessage ?? 
-    _balances.errorMessage;
+  void clearAllUserData() {
+    // Clear user data from all providers
+    _amplify.clearUserData();
+    _transactions.clearData();
+    _categories.clearData();
+    _merchants.clearData();
+    _balances.clearData();
+  }
+
+  bool get isAnyLoading =>
+      _transactions.isLoading ||
+      _categories.isLoading ||
+      _merchants.isLoading ||
+      _balances.isLoading ||
+      _amplify.isLoading;
+
+  String? get firstError =>
+      _amplify.errorMessage ??
+      _transactions.errorMessage ??
+      _categories.errorMessage ??
+      _merchants.errorMessage ??
+      _balances.errorMessage;
 
   @override
   void dispose() {

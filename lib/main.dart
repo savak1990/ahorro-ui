@@ -58,7 +58,8 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     const env = String.fromEnvironment('ENV', defaultValue: 'stable');
-    amplifyconfig = env == 'prod' ? prod_config.amplifyconfig : stable_config.amplifyconfig;
+    amplifyconfig =
+        env == 'prod' ? prod_config.amplifyconfig : stable_config.amplifyconfig;
     // Конфигурируем Amplify один раз до появления Authenticator UI
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final appState = context.read<AppStateProvider>();
@@ -80,7 +81,8 @@ class _MyAppState extends State<MyApp> {
               break;
             case AuthHubEventType.signedOut:
             case AuthHubEventType.sessionExpired:
-              // Можно очистить кэш, если потребуется
+              // Clear ALL cached user data when user signs out
+              appState.clearAllUserData();
               break;
             default:
               break;
@@ -99,11 +101,16 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AmplifyProvider>.value(value: appState.amplify),
-        ChangeNotifierProvider<BalancesProvider>.value(value: appState.balances),
-        ChangeNotifierProvider<CategoriesProvider>.value(value: appState.categories),
-        ChangeNotifierProvider<MerchantsProvider>.value(value: appState.merchants),
-        ChangeNotifierProvider<TransactionEntriesProvider>.value(value: appState.transactions),
-        ChangeNotifierProvider<TransactionsFilterProvider>(create: (_) => TransactionsFilterProvider()),
+        ChangeNotifierProvider<BalancesProvider>.value(
+            value: appState.balances),
+        ChangeNotifierProvider<CategoriesProvider>.value(
+            value: appState.categories),
+        ChangeNotifierProvider<MerchantsProvider>.value(
+            value: appState.merchants),
+        ChangeNotifierProvider<TransactionEntriesProvider>.value(
+            value: appState.transactions),
+        ChangeNotifierProvider<TransactionsFilterProvider>(
+            create: (_) => TransactionsFilterProvider()),
       ],
       child: Authenticator(
         child: MaterialApp(
@@ -118,7 +125,8 @@ class _MyAppState extends State<MyApp> {
             '/': (context) => _AuthGate(amplifyconfig: amplifyconfig),
             '/account': (context) => const AccountScreen(),
             '/transactions': (context) => const TransactionsScreen(),
-            '/default-balance-currency': (context) => const DefaultBalanceCurrencyScreen(),
+            '/default-balance-currency': (context) =>
+                const DefaultBalanceCurrencyScreen(),
             '/merchant_search': (context) => const MerchantSearchScreen(),
           },
         ),
@@ -175,9 +183,12 @@ class _MainScreenState extends State<MainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_didCheckBalancesForDefaultCurrency) return;
-      if (balancesProvider.isLoading || balancesProvider.errorMessage != null) return;
-      if (!balancesProvider.hasData) return; // Ждём, пока балансы будут загружены хотя бы один раз
-      final int activeCount = balancesProvider.balances.where((b) => b.deletedAt == null).length;
+      if (balancesProvider.isLoading || balancesProvider.errorMessage != null)
+        return;
+      if (!balancesProvider.hasData)
+        return; // Ждём, пока балансы будут загружены хотя бы один раз
+      final int activeCount =
+          balancesProvider.balances.where((b) => b.deletedAt == null).length;
       if (activeCount == 0) {
         _didCheckBalancesForDefaultCurrency = true;
         Navigator.of(context).pushReplacementNamed('/default-balance-currency');
