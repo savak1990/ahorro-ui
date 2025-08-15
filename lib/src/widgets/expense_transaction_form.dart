@@ -4,10 +4,8 @@ import 'package:formz/formz.dart';
 import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import '../providers/balances_provider.dart';
 import '../providers/categories_provider.dart';
-import '../providers/merchants_provider.dart';
 import '../models/transaction_entry.dart';
 import '../models/category.dart';
-import '../models/merchant.dart';
 import '../services/api_service.dart';
 import '../constants/app_typography.dart';
 import '../models/transaction_type.dart';
@@ -53,12 +51,10 @@ class BalanceIdInput extends FormzInput<String, String> {
 
 class ExpenseTransactionFormData {
   final List<TransactionEntry> entries;
-  final String merchant;
   final String balanceId;
   final DateTime date;
   ExpenseTransactionFormData({
     required this.entries,
-    required this.merchant,
     required this.balanceId,
     required this.date,
   });
@@ -85,7 +81,6 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   bool _isLoading = false;
   List<_TransactionItem> _items = [];
   String? _fromAccountId;
-  Merchant? _selectedMerchant;
 
   // formz state
   late List<AmountInput> _amountInputs;
@@ -96,12 +91,13 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      final categoriesProvider = Provider.of<CategoriesProvider>(
+        context,
+        listen: false,
+      );
       final defaultCategory = categoriesProvider.defaultCategory;
       setState(() {
-        _items = [
-          _TransactionItem(defaultCategory: defaultCategory),
-        ];
+        _items = [_TransactionItem(defaultCategory: defaultCategory)];
         _amountInputs = [const AmountInput.pure()];
         _descInputs = [const DescriptionInput.pure()];
         _balanceInput = const BalanceIdInput.pure();
@@ -116,7 +112,9 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
       ..._descInputs,
       _balanceInput,
     ]);
-    widget.formStatus.value = isValid ? FormzSubmissionStatus.success : FormzSubmissionStatus.initial;
+    widget.formStatus.value = isValid
+        ? FormzSubmissionStatus.success
+        : FormzSubmissionStatus.initial;
   }
 
   // Метод для автоматического выбора первого баланса
@@ -140,7 +138,10 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
 
   void _addItem() {
     setState(() {
-      final categoriesProvider = Provider.of<CategoriesProvider>(context, listen: false);
+      final categoriesProvider = Provider.of<CategoriesProvider>(
+        context,
+        listen: false,
+      );
       final defaultCategory = categoriesProvider.defaultCategory;
       _items.add(_TransactionItem(defaultCategory: defaultCategory));
       _amountInputs.add(const AmountInput.pure());
@@ -182,7 +183,8 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
     _updateFormzState();
     if (widget.formStatus.value != FormzSubmissionStatus.success) return;
     final transactionEntries = List.generate(_items.length, (i) {
-      final parsedAmount = double.tryParse(_amountInputs[i].value.replaceAll(',', '.')) ?? 0.0;
+      final parsedAmount =
+          double.tryParse(_amountInputs[i].value.replaceAll(',', '.')) ?? 0.0;
       return TransactionEntry(
         description: _descInputs[i].value,
         amount: (parsedAmount * 100).round(),
@@ -191,7 +193,6 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
     });
     final data = ExpenseTransactionFormData(
       entries: transactionEntries,
-      merchant: _selectedMerchant?.name ?? '',
       balanceId: _balanceInput.value,
       date: _selectedDate,
     );
@@ -205,15 +206,17 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   @override
   Widget build(BuildContext context) {
     final categoriesProvider = Provider.of<CategoriesProvider>(context);
-    if (categoriesProvider.isLoading || categoriesProvider.categories.isEmpty || _items.isEmpty) {
+    if (categoriesProvider.isLoading ||
+        categoriesProvider.categories.isEmpty ||
+        _items.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     final balancesProvider = Provider.of<BalancesProvider>(context);
     final balances = balancesProvider.balances;
-    
+
     // Автоматически выбираем первый баланс если не выбран
     _selectFirstBalanceIfNeeded(balances);
-    
+
     return SingleChildScrollView(
       padding: EdgeInsets.only(
         left: 16,
@@ -253,8 +256,11 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
                   _updateFormzState();
                   setState(() {});
                 },
-                descriptionErrorText: _descInputs[i].isNotValid ? _descInputs[i].error : null,
-                hasAmountError: (_amountInputs[i].isNotValid && !_amountInputs[i].isPure),
+                descriptionErrorText: _descInputs[i].isNotValid
+                    ? _descInputs[i].error
+                    : null,
+                hasAmountError:
+                    (_amountInputs[i].isNotValid && !_amountInputs[i].isPure),
                 canRemove: _items.length > 1,
                 onRemove: () => _removeItem(i),
               );
@@ -270,7 +276,9 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
           ),
           const SizedBox(height: 24),
           BalanceChips(
-            selectedBalanceId: _balanceInput.value.isEmpty ? null : _balanceInput.value,
+            selectedBalanceId: _balanceInput.value.isEmpty
+                ? null
+                : _balanceInput.value,
             onBalanceSelected: (balanceId) {
               setState(() {
                 _balanceInput = BalanceIdInput.dirty(balanceId ?? '');
@@ -283,7 +291,13 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
           if (_balanceInput.isNotValid)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 4),
-              child: Text(_balanceInput.error ?? '', style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
+              child: Text(
+                _balanceInput.error ?? '',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
             ),
           const SizedBox(height: 24),
           // Text('Merchant', style: Theme.of(context).textTheme.titleMedium),
@@ -305,7 +319,9 @@ class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
                 border: OutlineInputBorder(),
                 suffixIcon: Icon(Icons.calendar_today),
               ),
-              child: Text('${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}'),
+              child: Text(
+                '${_selectedDate.day}.${_selectedDate.month}.${_selectedDate.year}',
+              ),
             ),
           ),
           //const SizedBox(height: 24),
@@ -333,67 +349,3 @@ class _TransactionItem {
     amountController.dispose();
   }
 }
-
-class _MerchantChips extends StatelessWidget {
-  final Merchant? selectedMerchant;
-  final ValueChanged<Merchant?> onMerchantSelected;
-  const _MerchantChips({required this.selectedMerchant, required this.onMerchantSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    final merchantsProvider = Provider.of<MerchantsProvider>(context);
-    final merchants = List<Merchant>.from(merchantsProvider.merchants);
-    merchants.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final topMerchants = merchants.take(3).toList();
-
-    if (merchantsProvider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (topMerchants.isEmpty) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: () {
-            Navigator.of(context).pushNamed('/merchant_search').then((result) {
-              if (result is Merchant) {
-                onMerchantSelected(result);
-              }
-            });
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Add merchant'),
-        ),
-      );
-    }
-
-    return Wrap(
-      spacing: 8.0,
-      children: [
-        ...topMerchants.map((merchant) => ChoiceChip(
-          label: Text(merchant.name),
-          avatar: merchant.imageUrl.isNotEmpty ? CircleAvatar(backgroundImage: NetworkImage(merchant.imageUrl)) : null,
-          selected: selectedMerchant?.merchantId == merchant.merchantId,
-          onSelected: (selected) {
-            if (selected) {
-              onMerchantSelected(merchant);
-            } else if (selectedMerchant?.merchantId == merchant.merchantId) {
-              onMerchantSelected(null);
-            }
-          },
-        )),
-        TextButton.icon(
-          onPressed: () {
-            Navigator.of(context).pushNamed('/merchant_search').then((result) {
-              if (result is Merchant) {
-                onMerchantSelected(result);
-              }
-            });
-          },
-          icon: const Icon(Icons.search),
-          label: const Text('Find merchant'),
-        ),
-      ],
-    );
-  }
-} 

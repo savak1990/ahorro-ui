@@ -48,7 +48,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         date: data.date,
         categoryId: '',
         description: '',
-        merchant: data.merchant,
         transactionEntriesParam: data.entries,
         balanceId: data.balanceId,
       );
@@ -96,7 +95,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         date: data.date,
         categoryId: '',
         description: '',
-        merchant: data.source, // source сохраняем в merchant
         transactionEntriesParam: data.entries,
         balanceId: data.balanceId,
       );
