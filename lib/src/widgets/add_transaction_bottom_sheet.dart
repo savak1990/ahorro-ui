@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ahorro_ui/src/screens/add_transaction_screen.dart';
 
-Future<T?> showAddTransactionBottomSheet<T>(BuildContext context) {
+Future<bool?> showAddTransactionBottomSheet(BuildContext context) {
   final cs = Theme.of(context).colorScheme;
-  return showModalBottomSheet<T>(
+  return showModalBottomSheet<bool?>(
     context: context,
     isScrollControlled: true,
     backgroundColor: cs.surfaceContainerHigh,

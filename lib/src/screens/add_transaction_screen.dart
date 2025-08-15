@@ -1,20 +1,16 @@
 import 'package:ahorro_ui/src/models/transaction_type.dart';
 import 'package:ahorro_ui/src/services/api_service.dart';
-import 'package:ahorro_ui/src/widgets/category_picker_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/balances_provider.dart';
-import '../providers/categories_provider.dart';
-import '../models/transaction_entry.dart';
-import '../models/category.dart';
-import '../widgets/add_balance_form.dart';
-import '../constants/app_typography.dart';
-import '../widgets/expense_transaction_form.dart';
 import 'package:formz/formz.dart';
+import 'package:provider/provider.dart';
+
+import '../config/theme.dart';
+import '../constants/app_typography.dart';
+import '../models/category.dart';
 import '../providers/transaction_entries_provider.dart';
+import '../widgets/expense_transaction_form.dart';
 import '../widgets/income_transaction_form.dart';
 import '../widgets/movement_transaction_form.dart';
-import '../config/theme.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -25,8 +21,9 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TransactionType _selectedType = TransactionType.expense;
-  final ValueNotifier<FormzSubmissionStatus> _formStatus =
-      ValueNotifier(FormzSubmissionStatus.initial);
+  final ValueNotifier<FormzSubmissionStatus> _formStatus = ValueNotifier(
+    FormzSubmissionStatus.initial,
+  );
   bool _isLoading = false;
   final GlobalKey<ExpenseTransactionFormState> _formKey =
       GlobalKey<ExpenseTransactionFormState>();
@@ -41,8 +38,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _isLoading = true;
     });
     try {
-      final provider =
-          Provider.of<TransactionEntriesProvider>(context, listen: false);
+      final provider = Provider.of<TransactionEntriesProvider>(
+        context,
+        listen: false,
+      );
       await provider.createTransaction(
         type: TransactionType.expense,
         amount: null,
@@ -65,7 +64,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -74,8 +73,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error),
+            content: Text('Error: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     }
@@ -86,8 +86,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _isLoading = true;
     });
     try {
-      final provider =
-          Provider.of<TransactionEntriesProvider>(context, listen: false);
+      final provider = Provider.of<TransactionEntriesProvider>(
+        context,
+        listen: false,
+      );
       await provider.createTransaction(
         type: TransactionType.income,
         amount: null,
@@ -110,7 +112,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -119,8 +121,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error),
+            content: Text('Error: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     }
@@ -152,7 +155,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -161,8 +164,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error),
+            content: Text('Error: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     }
@@ -170,7 +174,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.of(context).size.height * 0.95;
+    final maxHeight = MediaQuery.of(context).size.height * 0.9;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -190,7 +194,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.close),
-                    tooltip: 'Закрыть',
+                    tooltip: 'Close',
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   ValueListenableBuilder<FormzSubmissionStatus>(
@@ -204,7 +208,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        onPressed: _isLoading ||
+                        onPressed:
+                            _isLoading ||
                                 status != FormzSubmissionStatus.success
                             ? null
                             : () {
@@ -223,8 +228,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
                                   strokeWidth: 2,
                                 ),
                               )
@@ -241,8 +247,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: Text(
                         'New transaction',
                         style: AppTypography.headlineLarge,
@@ -255,17 +261,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       child: SegmentedButton<TransactionType>(
                         segments: const [
                           ButtonSegment<TransactionType>(
-                              value: TransactionType.income,
-                              label: Text('Income'),
-                              icon: Icon(Icons.arrow_upward)),
+                            value: TransactionType.income,
+                            label: Text('Income'),
+                            icon: Icon(Icons.arrow_upward),
+                          ),
                           ButtonSegment<TransactionType>(
-                              value: TransactionType.expense,
-                              label: Text('Expense'),
-                              icon: Icon(Icons.arrow_downward)),
+                            value: TransactionType.expense,
+                            label: Text('Expense'),
+                            icon: Icon(Icons.arrow_downward),
+                          ),
                           ButtonSegment<TransactionType>(
-                              value: TransactionType.movement,
-                              label: Text('Movement'),
-                              icon: Icon(Icons.swap_horiz)),
+                            value: TransactionType.movement,
+                            label: Text('Movement'),
+                            icon: Icon(Icons.swap_horiz),
+                          ),
                         ],
                         selected: {_selectedType},
                         onSelectionChanged: (Set<TransactionType> selected) {
@@ -318,9 +327,7 @@ class _TransactionItem {
   String defaultCategoryName = '';
   IconData? categoryIcon;
 
-  _TransactionItem({
-    Category? defaultCategory,
-  }) {
+  _TransactionItem({Category? defaultCategory}) {
     if (defaultCategory != null) {
       defaultCategoryId = defaultCategory.id;
       defaultCategoryName = defaultCategory.name;
@@ -334,93 +341,5 @@ class _TransactionItem {
     nameController.dispose();
     amountController.dispose();
     categoryController.dispose();
-  }
-}
-
-// Новый виджет для выбора мерчанта чипами
-class _MerchantChips extends StatefulWidget {
-  final String selectedMerchant;
-  final ValueChanged<String> onMerchantSelected;
-  const _MerchantChips(
-      {required this.selectedMerchant, required this.onMerchantSelected});
-
-  @override
-  State<_MerchantChips> createState() => _MerchantChipsState();
-}
-
-class _MerchantChipsState extends State<_MerchantChips> {
-  List<String> _merchants = [];
-  @override
-  void initState() {
-    super.initState();
-    _loadMerchants();
-  }
-
-  void _loadMerchants() async {
-    // TODO: Заменить на реальный источник (например, из транзакций)
-    // Здесь просто пример
-    setState(() {
-      _merchants = ['Mercadona', 'Amazon', 'Lidl', 'Carrefour'];
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8.0,
-      children: [
-        ..._merchants.map((merchant) => ChoiceChip(
-              label: Text(merchant),
-              selected: widget.selectedMerchant == merchant,
-              onSelected: (selected) {
-                if (selected) widget.onMerchantSelected(merchant);
-              },
-            )),
-        TextButton.icon(
-          style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.primary,
-            textStyle: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          icon: const Icon(Icons.search),
-          label: const Text('Find merchant'),
-          onPressed: () async {
-            final newMerchant = await showDialog<String>(
-              context: context,
-              builder: (context) {
-                final controller = TextEditingController();
-                return AlertDialog(
-                  title: const Text('Find merchant'),
-                  content: TextField(
-                    controller: controller,
-                    decoration:
-                        const InputDecoration(hintText: 'Merchant name'),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () =>
-                          Navigator.pop(context, controller.text.trim()),
-                      child: const Text('Add'),
-                    ),
-                  ],
-                );
-              },
-            );
-            if (newMerchant != null && newMerchant.isNotEmpty) {
-              setState(() {
-                _merchants.add(newMerchant);
-              });
-              widget.onMerchantSelected(newMerchant);
-            }
-          },
-        ),
-      ],
-    );
   }
 }

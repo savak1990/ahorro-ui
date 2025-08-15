@@ -53,7 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _refreshTransactions() {
-    Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
+    Provider.of<TransactionEntriesProvider>(
+      context,
+      listen: false,
+    ).loadEntries();
   }
 
   void _refreshDataOnReturn() {
@@ -72,16 +75,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final startDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-      final endDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59);
+      final endDate = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + 1,
+        0,
+        23,
+        59,
+        59,
+      );
       print('DEBUG: Loading stats for period $startDate - $endDate');
-      
+
       final stats = await ApiService.getTransactionStats(
         startDate: startDate,
         endDate: endDate,
       );
-      
-      print('DEBUG: Received stats - expense: ${stats.expense?.currencies.length ?? 0} currencies, income: ${stats.income?.currencies.length ?? 0} currencies');
-      
+
+      print(
+        'DEBUG: Received stats - expense: ${stats.expense?.currencies.length ?? 0} currencies, income: ${stats.income?.currencies.length ?? 0} currencies',
+      );
+
       setState(() {
         _transactionStats = stats;
         _isLoadingStats = false;
@@ -105,14 +117,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToTransactionsWithFilters(String currency, String type) async {
     // Создаем даты периода для выбранного месяца
     final startDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-    final endDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59);
-    
+    final endDate = DateTime(
+      _selectedMonth.year,
+      _selectedMonth.month + 1,
+      0,
+      23,
+      59,
+      59,
+    );
+
     debugPrint('[HOME] Navigating to transactions with filters:');
     debugPrint('[HOME] - currency: $currency');
     debugPrint('[HOME] - type: $type');
     debugPrint('[HOME] - startDate: $startDate');
     debugPrint('[HOME] - endDate: $endDate');
-    
+
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => TransactionsScreen(
@@ -123,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-    
+
     // Refresh data when returning from transactions screen
     if (mounted) {
       _refreshTransactions();
@@ -163,7 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final currentDate = DateTime.now();
-    final monthYear = DateFormat(AppStrings.monthYearDatePattern).format(currentDate);
+    final monthYear = DateFormat(
+      AppStrings.monthYearDatePattern,
+    ).format(currentDate);
 
     final amplify = context.watch<AmplifyProvider>();
     final displayUserName = amplify.currentUserName ?? 'User';
@@ -173,10 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: colorScheme.surface,
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.person,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            icon: Icon(Icons.person, color: colorScheme.onSurfaceVariant),
             onPressed: () {
               Navigator.pushNamed(context, '/account');
             },
@@ -200,10 +218,10 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppConstants.horizontalPadding, 
+                    AppConstants.horizontalPadding,
                     8,
-                    AppConstants.horizontalPadding, 
-                    8
+                    AppConstants.horizontalPadding,
+                    8,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,9 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         text: AppStrings.helloUser(displayUserName),
                       ),
                       const SizedBox(height: 8),
-                      LabelEmphasizedMedium(
-                        text: monthYear,
-                      ),
+                      LabelEmphasizedMedium(text: monthYear),
                     ],
                   ),
                 ),
@@ -230,7 +246,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const TitleEmphasizedLarge(text: AppStrings.financialOverviewTitle),
+                      const TitleEmphasizedLarge(
+                        text: AppStrings.financialOverviewTitle,
+                      ),
                       MonthSelector(
                         selectedMonth: _selectedMonth,
                         onMonthChanged: _onMonthChanged,
@@ -250,19 +268,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               // Bottom padding for FAB
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 80),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showAddTransactionBottomSheet(context).then((_) {
-            _refreshTransactions();
-            _loadTransactionStats();
-          });
+          showAddTransactionBottomSheet(context);
         },
         shape: const CircleBorder(),
         child: const Icon(Icons.add),
