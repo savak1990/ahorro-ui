@@ -130,7 +130,10 @@ class _AppShellState extends State<AppShell> {
   Widget _buildMobileAppShell(BuildContext context) {
     return PlatformScaffold(
       body: SafeArea(
-        child: widget.tabData[widget.selectedIndex].builder(context),
+        child: IndexedStack(
+          index: widget.selectedIndex,
+          children: widget.tabData.map((tab) => tab.builder(context)).toList(),
+        ),
       ),
       bottomNavBar: PlatformNavBar(
         currentIndex: widget.selectedIndex,

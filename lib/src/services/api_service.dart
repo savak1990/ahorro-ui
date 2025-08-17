@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:ahorro_ui/src/models/currencies.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // For debugPrint
@@ -865,6 +866,14 @@ class ApiService {
   static Future<TransactionStatsResponse> getTransactionStats({
     required DateTime startDate,
     required DateTime endDate,
+    required TransactionStatsGrouping grouping,
+    required TransactionStatsType type,
+    required CurrencyCode currency,
+    String? categoryId,
+    String? balanceId,
+    String? merchantId,
+    String? groupId,
+    int maxItems = 10,
   }) async {
     final stopwatch = Stopwatch()..start();
     const operation = 'getTransactionStats';
@@ -884,9 +893,17 @@ class ApiService {
       final base = Uri.parse(AppConfig.transactionsStatsUrl);
       final url = base.replace(
         queryParameters: {
+          'groupId': groupId,
           'userId': userId,
+          'categoryId': categoryId,
+          'balanceId': balanceId,
+          'merchantId': merchantId,
           'startTime': startDate.toUtc().toIso8601String(),
           'endTime': endDate.toUtc().toIso8601String(),
+          'grouping': grouping.name,
+          'type': type.name,
+          'currency': currency.name,
+          'maxItems': maxItems.toString(),
         },
       );
       final headers = await _buildAuthHeaders();
@@ -898,29 +915,46 @@ class ApiService {
         operation: operation,
       );
 
-      final response = await http
-          .get(url, headers: headers)
-          .timeout(const Duration(seconds: 25));
+      // Simulate network delay for testing purposes
+      // Remove this in production code
+      await Future.delayed(const Duration(milliseconds: 900));
+
+      final mockData = {
+        'items': [
+          {'label': 'Food', 'amount': 1500, 'currency': 'eur'},
+          {'label': 'Transport', 'amount': 800, 'currency': 'eur'},
+          {'label': 'Entertainment', 'amount': 500, 'currency': 'eur'},
+          {'label': 'Utilities', 'amount': 300, 'currency': 'eur'},
+          {'label': 'Health', 'amount': 200, 'currency': 'eur'},
+          {'label': 'Shopping', 'amount': 400, 'currency': 'eur'},
+          {'label': 'Other', 'amount': 100, 'currency': 'eur'},
+        ],
+      };
+
+      // TODO Uncomment this line to use the actual API call
+      // final response = await http
+      //     .get(url, headers: headers)
+      //     .timeout(const Duration(seconds: 25));
 
       stopwatch.stop();
 
       ApiLogger.logResponse(
         method: 'GET',
         url: url.toString(),
-        statusCode: response.statusCode,
-        headers: response.headers,
-        body: response.body,
+        statusCode: 200, // Mocking a successful response
+        headers: headers,
+        body: json.encode(mockData),
         operation: operation,
         duration: stopwatch.elapsed,
       );
 
-      if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to get transaction stats. Status code: ${response.statusCode}',
-        );
-      }
+      // if (response.statusCode != 200) {
+      //   throw Exception(
+      //     'Failed to get transaction stats. Status code: ${response.statusCode}',
+      //   );
+      // }
 
-      final data = json.decode(response.body);
+      final data = mockData; // json.decode(response.body);
       ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return TransactionStatsResponse.fromJson(data);
     } on Exception catch (e, stackTrace) {

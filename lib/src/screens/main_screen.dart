@@ -1,10 +1,9 @@
 import 'package:ahorro_ui/src/providers/balances_provider.dart';
 import 'package:ahorro_ui/src/screens/add_transaction_screen.dart';
 import 'package:ahorro_ui/src/screens/tabs/account_tab.dart';
-import 'package:ahorro_ui/src/screens/tabs/home_tab.dart';
+import 'package:ahorro_ui/src/screens/tabs/home_tab_new.dart';
 import 'package:ahorro_ui/src/screens/templates/app_shell.dart';
 import 'package:ahorro_ui/src/screens/tabs/transactions_tab.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,13 +21,6 @@ class _MainScreenState extends State<MainScreen> {
   String? _pendingTransactionType;
   bool _didCheckBalancesForDefaultCurrency = false;
 
-  void _showTransactionsTab([String? type]) {
-    setState(() {
-      _selectedIndex = 1; // Transactions tab
-      _pendingTransactionType = type;
-    });
-  }
-
   Future<bool?> _showAddTransactionBottomSheet() {
     final cs = Theme.of(context).colorScheme;
     return showModalBottomSheet<bool?>(
@@ -45,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
-      HomeTab(onShowTransactions: (type) => _showTransactionsTab(type)),
+      const HomeTabNew(),
       TransactionsTab(initialType: _pendingTransactionType),
       const AccountTab(),
     ];
