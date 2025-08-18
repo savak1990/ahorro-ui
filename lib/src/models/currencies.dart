@@ -2,14 +2,43 @@ enum CurrencyCode { usd, eur, gbp, jpy, aud, uah, byn }
 
 CurrencyCode toCurrencyCode(String input) {
   final code = input.toUpperCase().trim();
-  return CurrencyCode.values.firstWhere(
-    (e) => e.toString().split('.').last == code,
-    orElse: () => CurrencyCode.usd, // Default to USD if not found
-  );
+  switch (code) {
+    case 'USD':
+      return CurrencyCode.usd;
+    case 'EUR':
+      return CurrencyCode.eur;
+    case 'GBP':
+      return CurrencyCode.gbp;
+    case 'JPY':
+      return CurrencyCode.jpy;
+    case 'AUD':
+      return CurrencyCode.aud;
+    case 'UAH':
+      return CurrencyCode.uah;
+    case 'BYN':
+      return CurrencyCode.byn;
+    default:
+      throw ArgumentError('Unknown currency code: $input');
+  }
 }
 
 String fromCurrencyCode(CurrencyCode code) {
-  return code.toString().split('.').last.toUpperCase();
+  switch (code) {
+    case CurrencyCode.usd:
+      return 'USD';
+    case CurrencyCode.eur:
+      return 'EUR';
+    case CurrencyCode.gbp:
+      return 'GBP';
+    case CurrencyCode.jpy:
+      return 'JPY';
+    case CurrencyCode.aud:
+      return 'AUD';
+    case CurrencyCode.uah:
+      return 'UAH';
+    case CurrencyCode.byn:
+      return 'BYN';
+  }
 }
 
 String getCurrencySymbol(CurrencyCode currency) {

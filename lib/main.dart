@@ -2,6 +2,7 @@ import 'package:ahorro_ui/src/screens/balances_screen.dart';
 import 'package:ahorro_ui/src/screens/main_screen.dart';
 import 'package:ahorro_ui/src/screens/tabs/transactions_tab.dart';
 import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';
+import 'package:ahorro_ui/src/screens/transaction_stats_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
@@ -134,6 +135,8 @@ class _MyAppState extends State<MyApp> {
               routes: {
                 '/': (context) => const MainScreen(),
                 '/transactions': (context) => const TransactionsTab(),
+                '/transactions/stats': (context) =>
+                    const TransactionStatsScreen(),
                 '/balances': (context) => const BalancesScreen(),
                 '/default-balance-currency': (context) =>
                     const DefaultBalanceCurrencyScreen(),

@@ -9,28 +9,31 @@ class TransactionStatsTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Selector<TransactionStatsProvider, TransactionStatsType>(
-        selector: (_, provider) => provider.selectedType,
-        builder: (_, selectedType, _) {
-          return AdaptiveSegmentedSingleChoiceButton<TransactionStatsType>(
-            items: TransactionStatsType.values,
-            selectedItem: selectedType,
-            onChanged: (value) {
-              context.read<TransactionStatsProvider>().selectedType = value;
-            },
-            itemWidgetBuilder: (item) {
-              switch (item) {
-                case TransactionStatsType.expense:
-                  return const Icon(Icons.trending_down);
-                case TransactionStatsType.income:
-                  return const Icon(Icons.trending_up);
-              }
-            },
-          );
-        },
-      ),
+    return Selector<TransactionStatsProvider, TransactionStatsType>(
+      selector: (_, provider) => provider.selectedType,
+      builder: (_, selectedType, _) {
+        return AdaptiveSegmentedSingleChoiceButton<TransactionStatsType>(
+          items: TransactionStatsType.values,
+          selectedItem: selectedType,
+          onChanged: (value) {
+            context.read<TransactionStatsProvider>().selectedType = value;
+          },
+          itemWidgetBuilder: (item) {
+            switch (item) {
+              case TransactionStatsType.expense:
+                return Text(
+                  "Expense",
+                  style: Theme.of(context).textTheme.titleMedium,
+                );
+              case TransactionStatsType.income:
+                return Text(
+                  "Income",
+                  style: Theme.of(context).textTheme.titleMedium,
+                );
+            }
+          },
+        );
+      },
     );
   }
 }

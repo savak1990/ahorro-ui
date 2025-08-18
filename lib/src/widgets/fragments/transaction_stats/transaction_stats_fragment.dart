@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class TransactionStatsFragment extends StatelessWidget {
-  const TransactionStatsFragment({super.key});
+  final bool showFullscreenButton;
+  final bool showListView;
+
+  const TransactionStatsFragment({
+    super.key,
+    this.showFullscreenButton = true,
+    this.showListView = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +22,10 @@ class TransactionStatsFragment extends StatelessWidget {
         Future.microtask(model.refresh);
         return model;
       },
-      child: const TransactionStatsFragmentLayout(),
+      child: TransactionStatsFragmentLayout(
+        showFullscreenButton: showFullscreenButton,
+        showListView: showListView,
+      ),
     );
   }
 }

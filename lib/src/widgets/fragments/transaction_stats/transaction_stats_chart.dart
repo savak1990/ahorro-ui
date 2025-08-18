@@ -21,7 +21,9 @@ class TransactionStatsChart extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(
+        8.0,
+      ), // Reduced padding to give more chart space
       child: _buildChartContent(isLoading, data, provider.selectedTypeLabel),
     );
   }
@@ -71,7 +73,7 @@ class TransactionStatsChart extends StatelessWidget {
           text:
               'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
           textStyle: const TextStyle(
-            fontSize: 18,
+            fontSize: 16, // Reduced from 18
             fontWeight: FontWeight.bold,
             color: Colors.black87,
           ),
@@ -93,9 +95,9 @@ class TransactionStatsChart extends StatelessWidget {
           isVisible: true,
           position: LegendPosition.bottom,
           overflowMode: LegendItemOverflowMode.wrap, // Enable multiline legend
-          textStyle: TextStyle(fontSize: 12),
-          height: '25%', // Fixed height for predictable layout
-          itemPadding: 8, // Spacing between legend items
+          textStyle: TextStyle(fontSize: 10), // Smaller font for more space
+          itemPadding: 4, // Reduced padding for more space
+          padding: 8, // Padding around the legend
         ),
         series: <CircularSeries>[
           PieSeries<_ChartData, String>(
@@ -103,11 +105,19 @@ class TransactionStatsChart extends StatelessWidget {
             xValueMapper: (_ChartData data, _) => data.label,
             yValueMapper: (_ChartData data, _) => data.amount,
             dataLabelMapper: (_ChartData data, _) =>
-                '${data.formattedAmount}: ${data.label}',
+                data.formattedAmount, // Show only amount, not category
             dataLabelSettings: const DataLabelSettings(
               isVisible: true,
               labelPosition: ChartDataLabelPosition.outside,
-              textStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              textStyle: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ), // Smaller font
+              connectorLineSettings: ConnectorLineSettings(
+                type: ConnectorType.curve,
+                length: '10%', // Shorter connector lines
+              ),
+              margin: EdgeInsets.all(2), // Reduce margin around labels
             ),
             enableTooltip: true,
             animationDuration: 1000,
@@ -115,8 +125,10 @@ class TransactionStatsChart extends StatelessWidget {
         ],
         tooltipBehavior: TooltipBehavior(
           enable: true,
-          format: 'point.x: point.y',
+          format: 'point.x: point.y', // Shows "Category: Amount"
           textStyle: const TextStyle(fontSize: 12),
+          canShowMarker: true,
+          header: '', // Remove header to save space
         ),
       );
     } catch (e) {
