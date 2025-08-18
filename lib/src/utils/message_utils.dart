@@ -13,7 +13,9 @@ class MessageUtils {
   }) async {
     // Check if context is still mounted and valid
     if (!context.mounted) {
-      debugPrint('[MessageUtils] Context not mounted, skipping message: $message');
+      debugPrint(
+        '[MessageUtils] Context not mounted, skipping message: $message',
+      );
       return false;
     }
 
@@ -67,7 +69,9 @@ class MessageUtils {
             return true;
           }
         } catch (e) {
-          debugPrint('[MessageUtils] ScaffoldMessenger error: $e, falling back to dialog');
+          debugPrint(
+            '[MessageUtils] ScaffoldMessenger error: $e, falling back to dialog',
+          );
           // Fallback to dialog if ScaffoldMessenger throws an error
           await showPlatformDialog(
             context: context,
@@ -92,12 +96,20 @@ class MessageUtils {
   }
 
   /// Shows a success message
-  static Future<bool> showSuccess(BuildContext context, String message, {String? title}) {
+  static Future<bool> showSuccess(
+    BuildContext context,
+    String message, {
+    String? title,
+  }) {
     return showMessage(context, message, isSuccess: true, title: title);
   }
 
   /// Shows an error message
-  static Future<bool> showError(BuildContext context, String message, {String? title}) {
+  static Future<bool> showError(
+    BuildContext context,
+    String message, {
+    String? title,
+  }) {
     return showMessage(context, message, isSuccess: false, title: title);
   }
 

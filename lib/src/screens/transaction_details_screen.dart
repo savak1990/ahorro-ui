@@ -23,7 +23,8 @@ class TransactionDetailsScreen extends StatefulWidget {
   const TransactionDetailsScreen({super.key, required this.transactionId});
 
   @override
-  State<TransactionDetailsScreen> createState() => _TransactionDetailsScreenState();
+  State<TransactionDetailsScreen> createState() =>
+      _TransactionDetailsScreenState();
 }
 
 class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
@@ -47,7 +48,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       final parsed = TransactionDetails.fromJson(data);
       if (kDebugMode) {
         try {
-          debugPrint('[TX_DETAILS] Loaded transaction ${widget.transactionId}: type=${parsed.type}, entries=${parsed.entries.length}');
+          debugPrint(
+            '[TX_DETAILS] Loaded transaction ${widget.transactionId}: type=${parsed.type}, entries=${parsed.entries.length}',
+          );
         } catch (logErr) {
           debugPrint('[TX_DETAILS] Logging error: $logErr');
         }
@@ -88,7 +91,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final type = transactionDetails?.type ?? '-';
-    final displayType = type.isNotEmpty ? type[0].toUpperCase() + type.substring(1) : '-';
+    final displayType = type.isNotEmpty
+        ? type[0].toUpperCase() + type.substring(1)
+        : '-';
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
@@ -107,31 +112,44 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-              ? Center(child: Text(error!))
-              : transactionDetails == null
-                  ? const Center(child: Text('Нет данных'))
-                  : _buildDetails(context, theme, textTheme),
+          ? Center(child: Text(error!))
+          : transactionDetails == null
+          ? const Center(child: Text('Нет данных'))
+          : _buildDetails(context, theme, textTheme),
     );
   }
 
-  Widget _buildDetails(BuildContext context, ThemeData theme, TextTheme textTheme) {
+  Widget _buildDetails(
+    BuildContext context,
+    ThemeData theme,
+    TextTheme textTheme,
+  ) {
     final tx = transactionDetails!;
     final String typeStr = tx.type.toString();
     final String displayType = typeStr.isNotEmpty
         ? typeStr[0].toUpperCase() + typeStr.substring(1)
         : '-';
     final allEntries = tx.entries;
-    final entries = allEntries.where((e) => e.deletedAt == null).toList(); // Исключаем удаленные entries
-    final double totalAmount = entries.fold<double>(0.0, (acc, e) => acc + (e.amount / 100));
+    final entries = allEntries
+        .where((e) => e.deletedAt == null)
+        .toList(); // Исключаем удаленные entries
+    final double totalAmount = entries.fold<double>(
+      0.0,
+      (acc, e) => acc + (e.amount / 100),
+    );
     if (kDebugMode) {
-      debugPrint('[TX_DETAILS] Building UI: type=$typeStr, entries=${entries.length}');
+      debugPrint(
+        '[TX_DETAILS] Building UI: type=$typeStr, entries=${entries.length}',
+      );
     }
     final mainEntry = entries.isNotEmpty ? entries[0] : null;
     final date = tx.transactedAt ?? tx.approvedAt ?? tx.createdAt;
     final balanceTitle = tx.balanceTitle ?? tx.balance?.title ?? '-';
     final currency = tx.balanceCurrency ?? tx.balance?.currency ?? 'EUR';
     final parsedDate = date;
-    final formattedDate = parsedDate != null ? DateFormat('dd.MM.yyyy HH:mm').format(parsedDate) : '-';
+    final formattedDate = parsedDate != null
+        ? DateFormat('dd.MM.yyyy HH:mm').format(parsedDate)
+        : '-';
     final transactedAt = tx.transactedAt;
     final formattedTransactedAt = transactedAt != null
         ? DateFormat('dd.MM.yyyy').format(transactedAt)
@@ -152,9 +170,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      HeadlineEmphasizedLarge(
-                        text: displayType,
-                      ),
+                      HeadlineEmphasizedLarge(text: displayType),
                       const SizedBox(height: 4),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -182,18 +198,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             ),
             const SizedBox(height: 32),
             // INFORMATION
-            const TitleEmphasizedLarge(text: AppStrings.transactionDetailsInformationTitle),
+            const TitleEmphasizedLarge(
+              text: AppStrings.transactionDetailsInformationTitle,
+            ),
             const SizedBox(height: 8),
             SettingsSectionCard(
               margin: EdgeInsets.zero,
               padding: EdgeInsets.zero,
-              children: [
-                _walletTile(context, theme, balanceTitle),
-              ],
+              children: [_walletTile(context, theme, balanceTitle)],
             ),
             const SizedBox(height: 24),
             // PERIOD
-            const TitleEmphasizedLarge(text: AppStrings.transactionDetailsPeriodTitle),
+            const TitleEmphasizedLarge(
+              text: AppStrings.transactionDetailsPeriodTitle,
+            ),
             const SizedBox(height: 8),
             SettingsSectionCard(
               margin: EdgeInsets.zero,
@@ -207,12 +225,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        (formattedTransactedAt.isEmpty || formattedTransactedAt == '-') ? 'unknown' : formattedTransactedAt,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        (formattedTransactedAt.isEmpty ||
+                                formattedTransactedAt == '-')
+                            ? 'unknown'
+                            : formattedTransactedAt,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ],
                   ),
                   onTap: () => _showDatePicker(context),
@@ -225,8 +251,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const TitleEmphasizedLarge(text: AppStrings.transactionDetailsEntriesTitle),
-                  if (!['move_in', 'move_out'].contains(typeStr.toLowerCase())) // Запретить добавление для move_in/move_out
+                  const TitleEmphasizedLarge(
+                    text: AppStrings.transactionDetailsEntriesTitle,
+                  ),
+                  if (!['move_in', 'move_out'].contains(
+                    typeStr.toLowerCase(),
+                  )) // Запретить добавление для move_in/move_out
                     IconButton(
                       onPressed: () => _showAddEntrySheet(context),
                       icon: Icon(
@@ -244,76 +274,115 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 padding: EdgeInsets.zero,
                 children: [
                   for (int i = 0; i < entries.length; i++)
-                    Builder(builder: (context) {
-                      final e = entries[i];
-                      final cat = (e.categoryName ?? e.category?.name ?? e.name ?? e.category?.categoryNameLegacy ?? '-').toString();
-                      final amt = e.amount / 100;
-                      final desc = e.description ?? '';
-                      final iconData = getCategoryIcon(cat);
-                      final isEditingAllowed = !['move_in', 'move_out'].contains(tx.type.toLowerCase());
-                      if (kDebugMode) {
-                        debugPrint('[TX_DETAILS] Render Entry[$i]: Name="${e.name}", catResolved="$cat", iconCode=${iconData.codePoint}, family=${iconData.fontFamily}, desc="$desc"');
-                      }
-                      return ListItemTile(
-                        title: cat,
-                        subtitle: desc.toString().isNotEmpty ? desc.toString() : null,
-                        icon: iconData,
-                        iconColor: theme.colorScheme.primary,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              amt.toStringAsFixed(2),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(width: 8),
-                            if (isEditingAllowed)
-                              PopupMenuButton<String>(
-                                icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurfaceVariant),
-                                itemBuilder: (context) => [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit, size: 20, color: theme.colorScheme.onSurface),
-                                        const SizedBox(width: 8),
-                                        const Text(AppStrings.transactionDetailsEdit),
-                                      ],
+                    Builder(
+                      builder: (context) {
+                        final e = entries[i];
+                        final cat =
+                            (e.categoryName ??
+                                    e.category?.name ??
+                                    e.name ??
+                                    e.category?.categoryNameLegacy ??
+                                    '-')
+                                .toString();
+                        final amt = e.amount / 100;
+                        final desc = e.description ?? '';
+                        final iconData = getCategoryIcon(cat);
+                        final isEditingAllowed = ![
+                          'move_in',
+                          'move_out',
+                        ].contains(tx.type.toLowerCase());
+                        if (kDebugMode) {
+                          debugPrint(
+                            '[TX_DETAILS] Render Entry[$i]: Name="${e.name}", catResolved="$cat", iconCode=${iconData.codePoint}, family=${iconData.fontFamily}, desc="$desc"',
+                          );
+                        }
+                        return ListItemTile(
+                          title: cat,
+                          subtitle: desc.toString().isNotEmpty
+                              ? desc.toString()
+                              : null,
+                          icon: iconData,
+                          iconColor: theme.colorScheme.primary,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                amt.toStringAsFixed(2),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(width: 8),
+                              if (isEditingAllowed)
+                                PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: theme.colorScheme.onSurfaceVariant,
                                   ),
-                                  if (entries.length > 1) // Можно удалить только если entries больше 1
+                                  itemBuilder: (context) => [
                                     PopupMenuItem(
-                                      value: 'delete',
+                                      value: 'edit',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.delete, size: 20, color: theme.colorScheme.error),
+                                          Icon(
+                                            Icons.edit,
+                                            size: 20,
+                                            color: theme.colorScheme.onSurface,
+                                          ),
                                           const SizedBox(width: 8),
-                                          Text(
-                                            AppStrings.transactionDetailsDelete,
-                                            style: TextStyle(color: theme.colorScheme.error),
+                                          const Text(
+                                            AppStrings.transactionDetailsEdit,
                                           ),
                                         ],
                                       ),
                                     ),
-                                ],
-                                onSelected: (value) {
-                                  if (value == 'edit') {
-                                    _showEditEntrySheet(context, e, i);
-                                  } else if (value == 'delete') {
-                                    _showDeleteConfirmation(context, e, i);
-                                  }
-                                },
-                              )
-                            else
-                              Icon(Icons.lock, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
-                          ],
-                        ),
-                        onTap: isEditingAllowed ? () => _showEditEntrySheet(context, e, i) : null,
-                      );
-                    }),
+                                    if (entries.length >
+                                        1) // Можно удалить только если entries больше 1
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.delete,
+                                              size: 20,
+                                              color: theme.colorScheme.error,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              AppStrings
+                                                  .transactionDetailsDelete,
+                                              style: TextStyle(
+                                                color: theme.colorScheme.error,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      _showEditEntrySheet(context, e, i);
+                                    } else if (value == 'delete') {
+                                      _showDeleteConfirmation(context, e, i);
+                                    }
+                                  },
+                                )
+                              else
+                                Icon(
+                                  Icons.lock,
+                                  color: theme.colorScheme.onSurfaceVariant
+                                      .withOpacity(0.5),
+                                ),
+                            ],
+                          ),
+                          onTap: isEditingAllowed
+                              ? () => _showEditEntrySheet(context, e, i)
+                              : null,
+                        );
+                      },
+                    ),
                 ],
               ),
             ],
@@ -323,11 +392,19 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _walletTile(BuildContext context, ThemeData theme, String balanceTitle) {
+  Widget _walletTile(
+    BuildContext context,
+    ThemeData theme,
+    String balanceTitle,
+  ) {
     final tx = transactionDetails!;
-    final isChangeAllowed = tx.type.toLowerCase() == 'income' || tx.type.toLowerCase() == 'expense';
+    final isChangeAllowed =
+        tx.type.toLowerCase() == 'income' || tx.type.toLowerCase() == 'expense';
     final balancesProvider = context.watch<BalancesProvider>();
-    final canTap = isChangeAllowed && (balancesProvider.balances.where((b) => b.deletedAt == null).length > 1);
+    final canTap =
+        isChangeAllowed &&
+        (balancesProvider.balances.where((b) => b.deletedAt == null).length >
+            1);
     return ListItemTile(
       title: AppStrings.transactionDetailsWalletTitle,
       icon: Icons.account_balance_wallet,
@@ -336,20 +413,28 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            (balanceTitle.isEmpty || balanceTitle == '-') ? AppStrings.transactionDetailsWalletUnknown : balanceTitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            (balanceTitle.isEmpty || balanceTitle == '-')
+                ? AppStrings.transactionDetailsWalletUnknown
+                : balanceTitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
           if (canTap) ...[
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
-          ]
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
         ],
       ),
       onTap: canTap
           ? () async {
               // ensure balances are loaded
-              if (balancesProvider.balances.isEmpty && !balancesProvider.isLoading) {
+              if (balancesProvider.balances.isEmpty &&
+                  !balancesProvider.isLoading) {
                 await balancesProvider.loadBalances(forceRefresh: true);
               }
               _showSelectBalanceSheet(context);
@@ -365,8 +450,11 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
   Future<void> _showSelectBalanceSheet(BuildContext context) async {
     final balancesProvider = context.read<BalancesProvider>();
-    final balances = balancesProvider.balances.where((b) => b.deletedAt == null).toList();
-    final currentBalanceId = transactionDetails?.balanceId ?? transactionDetails?.balance?.balanceId;
+    final balances = balancesProvider.balances
+        .where((b) => b.deletedAt == null)
+        .toList();
+    final currentBalanceId =
+        transactionDetails?.balanceId ?? transactionDetails?.balance?.balanceId;
     final tx = transactionDetails!;
     String? selectedBalanceId = currentBalanceId;
     bool submitting = false;
@@ -386,7 +474,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(AppStrings.transactionDetailsSelectWalletTitle, style: Theme.of(ctx).textTheme.titleLarge),
+                    Text(
+                      AppStrings.transactionDetailsSelectWalletTitle,
+                      style: Theme.of(ctx).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 12),
                     Flexible(
                       child: ListView.builder(
@@ -396,7 +487,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           final b = balances[i];
                           final selected = selectedBalanceId == b.balanceId;
                           return ListTile(
-                            leading: Icon(Icons.account_balance_wallet, color: selected ? Theme.of(ctx).colorScheme.primary : null),
+                            leading: Icon(
+                              Icons.account_balance_wallet,
+                              color: selected
+                                  ? Theme.of(ctx).colorScheme.primary
+                                  : null,
+                            ),
                             title: Text(b.title),
                             subtitle: Text(b.currency),
                             trailing: selected ? const Icon(Icons.check) : null,
@@ -416,8 +512,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: submitting ? null : () => Navigator.of(ctx).pop(),
-                            child: const Text(AppStrings.transactionDetailsCancel),
+                            onPressed: submitting
+                                ? null
+                                : () => Navigator.of(ctx).pop(),
+                            child: const Text(
+                              AppStrings.transactionDetailsCancel,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -426,50 +526,77 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                             onPressed: submitting
                                 ? null
                                 : () async {
-                                    if (selectedBalanceId == null || selectedBalanceId == currentBalanceId) {
+                                    if (selectedBalanceId == null ||
+                                        selectedBalanceId == currentBalanceId) {
                                       Navigator.of(ctx).pop();
                                       return;
                                     }
-                                                                        setModalState(() => submitting = true);
+                                    setModalState(() => submitting = true);
                                     try {
                                       // Use complete payload helper method for consistency
-                                      final payload = _createCompletePayload(newBalanceId: selectedBalanceId);
-                                      
-                                      debugPrint('[TX_DETAILS] === UPDATE TRANSACTION BALANCE ===');
-                                      debugPrint('[TX_DETAILS] Changing balanceId: $currentBalanceId -> $selectedBalanceId');
-                                      debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
-                                      
+                                      final payload = _createCompletePayload(
+                                        newBalanceId: selectedBalanceId,
+                                      );
+
+                                      debugPrint(
+                                        '[TX_DETAILS] === UPDATE TRANSACTION BALANCE ===',
+                                      );
+                                      debugPrint(
+                                        '[TX_DETAILS] Changing balanceId: $currentBalanceId -> $selectedBalanceId',
+                                      );
+                                      debugPrint(
+                                        '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
+                                      );
+
                                       await ApiService.updateTransaction(
                                         transactionId: widget.transactionId,
                                         payload: payload,
                                       );
-                                      
+
                                       // Update transaction entries provider to reflect changes
                                       if (mounted) {
-                                        final entriesProvider = context.read<TransactionEntriesProvider>();
-                                        await entriesProvider.refreshAfterTransactionUpdate();
+                                        final entriesProvider = context
+                                            .read<TransactionEntriesProvider>();
+                                        await entriesProvider
+                                            .refreshAfterTransactionUpdate();
                                       }
                                     } catch (e) {
-                                      debugPrint('[TX_DETAILS] Failed to update transaction: $e');
+                                      debugPrint(
+                                        '[TX_DETAILS] Failed to update transaction: $e',
+                                      );
                                       if (mounted) {
-                                        await MessageUtils.showError(context, 'Ошибка обновления: $e');
+                                        await MessageUtils.showError(
+                                          context,
+                                          'Ошибка обновления: $e',
+                                        );
                                       }
                                       setModalState(() => submitting = false);
                                       return;
                                     }
                                     if (mounted) {
                                       Navigator.of(ctx).pop();
-                                      await MessageUtils.showSuccess(context, AppStrings.transactionDetailsUpdated);
+                                      await MessageUtils.showSuccess(
+                                        context,
+                                        AppStrings.transactionDetailsUpdated,
+                                      );
                                       await fetchTransactionDetails();
                                     }
                                   },
                             child: submitting
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text(AppStrings.transactionDetailsConfirm),
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    AppStrings.transactionDetailsConfirm,
+                                  ),
                           ),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -484,8 +611,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final tx = transactionDetails;
     if (tx == null) return;
 
-    final currentDate = tx.transactedAt ?? tx.approvedAt ?? tx.createdAt ?? DateTime.now();
-    
+    final currentDate =
+        tx.transactedAt ?? tx.approvedAt ?? tx.createdAt ?? DateTime.now();
+
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: currentDate,
@@ -526,18 +654,22 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     DateTime? newTransactedAt,
   }) {
     final tx = transactionDetails!;
-    
+
     // Create complete transaction entries (exclude deleted entries)
     final entriesPayload = <Map<String, dynamic>>[];
     for (final entry in tx.entries.where((e) => e.deletedAt == null)) {
       final categoryId = entry.categoryId ?? entry.category?.categoryId;
       if (categoryId != null && categoryId.isNotEmpty) {
-        entriesPayload.add(TransactionUpdatePayload.createTransactionEntry(
-          id: entry.transactionEntryId ?? entry.id, // Include ID for existing entries
-          description: entry.description,
-          amount: entry.amount,
-          categoryId: categoryId,
-        ));
+        entriesPayload.add(
+          TransactionUpdatePayload.createTransactionEntry(
+            id:
+                entry.transactionEntryId ??
+                entry.id, // Include ID for existing entries
+            description: entry.description,
+            amount: entry.amount,
+            categoryId: categoryId,
+          ),
+        );
       }
     }
 
@@ -546,9 +678,11 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       groupId: tx.groupId,
       balanceId: newBalanceId ?? tx.balanceId,
       type: tx.type,
-      operationId: tx.operationId, // Use original operationId from transaction details
+      operationId:
+          tx.operationId, // Use original operationId from transaction details
       approvedAt: newApprovedAt ?? tx.approvedAt,
-      transactedAt: newTransactedAt ?? tx.transactedAt ?? tx.approvedAt ?? tx.createdAt,
+      transactedAt:
+          newTransactedAt ?? tx.transactedAt ?? tx.approvedAt ?? tx.createdAt,
       transactionEntries: entriesPayload.isNotEmpty ? entriesPayload : null,
       merchantId: tx.merchantId,
     );
@@ -571,15 +705,26 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       // Create complete payload with the new transacted date (also update approved date to the same value)
       final payload = _createCompletePayload(
         newTransactedAt: newTransactedAt,
-        newApprovedAt: newTransactedAt, // Set approved date to the same value as transacted date
+        newApprovedAt:
+            newTransactedAt, // Set approved date to the same value as transacted date
       );
 
       debugPrint('[TX_DETAILS] === UPDATE TRANSACTED DATE ===');
-      debugPrint('[TX_DETAILS] Current transactedAt: ${tx.transactedAt?.toIso8601String()}');
-      debugPrint('[TX_DETAILS] Current approvedAt: ${tx.approvedAt?.toIso8601String()}');
-      debugPrint('[TX_DETAILS] New transactedAt: ${newTransactedAt.toIso8601String()}');
-      debugPrint('[TX_DETAILS] New approvedAt: ${newTransactedAt.toIso8601String()}');
-      debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
+      debugPrint(
+        '[TX_DETAILS] Current transactedAt: ${tx.transactedAt?.toIso8601String()}',
+      );
+      debugPrint(
+        '[TX_DETAILS] Current approvedAt: ${tx.approvedAt?.toIso8601String()}',
+      );
+      debugPrint(
+        '[TX_DETAILS] New transactedAt: ${newTransactedAt.toIso8601String()}',
+      );
+      debugPrint(
+        '[TX_DETAILS] New approvedAt: ${newTransactedAt.toIso8601String()}',
+      );
+      debugPrint(
+        '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
+      );
 
       await ApiService.updateTransaction(
         transactionId: widget.transactionId,
@@ -624,9 +769,15 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       final payload = _createCompletePayload(newApprovedAt: newApprovedAt);
 
       debugPrint('[TX_DETAILS] === UPDATE APPROVED DATE ===');
-      debugPrint('[TX_DETAILS] Current approvedAt: ${tx.approvedAt?.toIso8601String()}');
-      debugPrint('[TX_DETAILS] New approvedAt: ${newApprovedAt.toIso8601String()}');
-      debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
+      debugPrint(
+        '[TX_DETAILS] Current approvedAt: ${tx.approvedAt?.toIso8601String()}',
+      );
+      debugPrint(
+        '[TX_DETAILS] New approvedAt: ${newApprovedAt.toIso8601String()}',
+      );
+      debugPrint(
+        '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
+      );
 
       await ApiService.updateTransaction(
         transactionId: widget.transactionId,
@@ -655,9 +806,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
   Future<void> _showAddEntrySheet(BuildContext context) async {
     final categoriesProvider = context.read<CategoriesProvider>();
-    
+
     // Ensure categories are loaded
-    if (categoriesProvider.categories.isEmpty && !categoriesProvider.isLoading) {
+    if (categoriesProvider.categories.isEmpty &&
+        !categoriesProvider.isLoading) {
       await categoriesProvider.loadCategories(forceRefresh: true);
     }
 
@@ -679,10 +831,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             return SafeArea(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                  16, 
-                  12, 
-                  16, 
-                  MediaQuery.of(ctx).viewInsets.bottom + 24
+                  16,
+                  12,
+                  16,
+                  MediaQuery.of(ctx).viewInsets.bottom + 24,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -693,7 +845,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       style: Theme.of(ctx).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Category Picker
                     ListTile(
                       leading: Icon(
@@ -703,34 +855,56 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       title: const Text('Category'),
                       subtitle: Text(selectedCategoryName),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: submitting ? null : () async {
-                        final result = await Navigator.push<CategoryModel.Category>(
-                          ctx,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                CategoryPickerDialog(selectedCategoryId: selectedCategoryId),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return SlideTransition(
-                                position: animation.drive(
-                                  Tween(begin: const Offset(0.0, 1.0), end: Offset.zero)
-                                      .chain(CurveTween(curve: Curves.ease)),
-                                ),
-                                child: child,
-                              );
+                      onTap: submitting
+                          ? null
+                          : () async {
+                              final result =
+                                  await Navigator.push<CategoryModel.Category>(
+                                    ctx,
+                                    PageRouteBuilder(
+                                      pageBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                          ) => CategoryPickerDialog(
+                                            selectedCategoryId:
+                                                selectedCategoryId,
+                                          ),
+                                      transitionsBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                            child,
+                                          ) {
+                                            return SlideTransition(
+                                              position: animation.drive(
+                                                Tween(
+                                                  begin: const Offset(0.0, 1.0),
+                                                  end: Offset.zero,
+                                                ).chain(
+                                                  CurveTween(
+                                                    curve: Curves.ease,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: child,
+                                            );
+                                          },
+                                    ),
+                                  );
+                              if (result != null) {
+                                setModalState(() {
+                                  selectedCategoryId = result.id;
+                                  selectedCategoryName = result.name;
+                                });
+                              }
                             },
-                          ),
-                        );
-                        if (result != null) {
-                          setModalState(() {
-                            selectedCategoryId = result.id;
-                            selectedCategoryName = result.name;
-                          });
-                        }
-                      },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Description Field
                     TextField(
                       decoration: const InputDecoration(
@@ -740,9 +914,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       enabled: !submitting,
                       onChanged: (value) => description = value,
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Amount Field
                     TextField(
                       decoration: const InputDecoration(
@@ -750,64 +924,88 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         border: OutlineInputBorder(),
                       ),
                       enabled: !submitting,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       onChanged: (value) {
                         final parsed = double.tryParse(value);
                         if (parsed != null) amount = parsed;
                       },
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Action Buttons
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: submitting ? null : () => Navigator.of(ctx).pop(),
+                            onPressed: submitting
+                                ? null
+                                : () => Navigator.of(ctx).pop(),
                             child: const Text('Cancel'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: submitting ? null : () async {
-                              if (selectedCategoryId == null || selectedCategoryId!.isEmpty) {
-                                await MessageUtils.showError(context, 'Please select a category');
-                                return;
-                              }
-                              
-                              if (amount <= 0) {
-                                await MessageUtils.showError(context, 'Please enter a valid amount');
-                                return;
-                              }
-                              
-                              setModalState(() => submitting = true);
-                              
-                              try {
-                                await _addNewTransactionEntry(
-                                  categoryId: selectedCategoryId!,
-                                  description: description,
-                                  amount: (amount * 100).round(), // Convert to cents
-                                );
-                                
-                                if (mounted) {
-                                  Navigator.of(ctx).pop();
-                                  await MessageUtils.showSuccess(context, 'Entry added successfully');
-                                }
-                              } catch (e) {
-                                debugPrint('[TX_DETAILS] Failed to add entry: $e');
-                                if (mounted) {
-                                  await MessageUtils.showError(context, 'Error adding entry: $e');
-                                }
-                                setModalState(() => submitting = false);
-                              }
-                            },
+                            onPressed: submitting
+                                ? null
+                                : () async {
+                                    if (selectedCategoryId == null ||
+                                        selectedCategoryId!.isEmpty) {
+                                      await MessageUtils.showError(
+                                        context,
+                                        'Please select a category',
+                                      );
+                                      return;
+                                    }
+
+                                    if (amount <= 0) {
+                                      await MessageUtils.showError(
+                                        context,
+                                        'Please enter a valid amount',
+                                      );
+                                      return;
+                                    }
+
+                                    setModalState(() => submitting = true);
+
+                                    try {
+                                      await _addNewTransactionEntry(
+                                        categoryId: selectedCategoryId!,
+                                        description: description,
+                                        amount: (amount * 100)
+                                            .round(), // Convert to cents
+                                      );
+
+                                      if (mounted) {
+                                        Navigator.of(ctx).pop();
+                                        await MessageUtils.showSuccess(
+                                          context,
+                                          'Entry added successfully',
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint(
+                                        '[TX_DETAILS] Failed to add entry: $e',
+                                      );
+                                      if (mounted) {
+                                        await MessageUtils.showError(
+                                          context,
+                                          'Error adding entry: $e',
+                                        );
+                                      }
+                                      setModalState(() => submitting = false);
+                                    }
+                                  },
                             child: submitting
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('Add'),
                           ),
@@ -824,17 +1022,26 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Future<void> _showEditEntrySheet(BuildContext context, TransactionEntryDetails entry, int entryIndex) async {
+  Future<void> _showEditEntrySheet(
+    BuildContext context,
+    TransactionEntryDetails entry,
+    int entryIndex,
+  ) async {
     final categoriesProvider = context.read<CategoriesProvider>();
-    
+
     // Ensure categories are loaded
-    if (categoriesProvider.categories.isEmpty && !categoriesProvider.isLoading) {
+    if (categoriesProvider.categories.isEmpty &&
+        !categoriesProvider.isLoading) {
       await categoriesProvider.loadCategories(forceRefresh: true);
     }
 
     final tx = transactionDetails!;
     String? selectedCategoryId = entry.categoryId ?? entry.category?.categoryId;
-    String selectedCategoryName = entry.categoryName ?? entry.category?.name ?? entry.category?.categoryNameLegacy ?? 'Select Category';
+    String selectedCategoryName =
+        entry.categoryName ??
+        entry.category?.name ??
+        entry.category?.categoryNameLegacy ??
+        'Select Category';
     String description = entry.description ?? '';
     double amount = entry.amount / 100.0; // Convert from cents to display value
     bool submitting = false;
@@ -851,10 +1058,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             return SafeArea(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                  16, 
-                  12, 
-                  16, 
-                  MediaQuery.of(ctx).viewInsets.bottom + 24
+                  16,
+                  12,
+                  16,
+                  MediaQuery.of(ctx).viewInsets.bottom + 24,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -865,7 +1072,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       style: Theme.of(ctx).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Category Picker
                     ListTile(
                       leading: Icon(
@@ -875,34 +1082,56 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       title: const Text('Category'),
                       subtitle: Text(selectedCategoryName),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: submitting ? null : () async {
-                        final result = await Navigator.push<CategoryModel.Category>(
-                          ctx,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                CategoryPickerDialog(selectedCategoryId: selectedCategoryId),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return SlideTransition(
-                                position: animation.drive(
-                                  Tween(begin: const Offset(0.0, 1.0), end: Offset.zero)
-                                      .chain(CurveTween(curve: Curves.ease)),
-                                ),
-                                child: child,
-                              );
+                      onTap: submitting
+                          ? null
+                          : () async {
+                              final result =
+                                  await Navigator.push<CategoryModel.Category>(
+                                    ctx,
+                                    PageRouteBuilder(
+                                      pageBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                          ) => CategoryPickerDialog(
+                                            selectedCategoryId:
+                                                selectedCategoryId,
+                                          ),
+                                      transitionsBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                            child,
+                                          ) {
+                                            return SlideTransition(
+                                              position: animation.drive(
+                                                Tween(
+                                                  begin: const Offset(0.0, 1.0),
+                                                  end: Offset.zero,
+                                                ).chain(
+                                                  CurveTween(
+                                                    curve: Curves.ease,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: child,
+                                            );
+                                          },
+                                    ),
+                                  );
+                              if (result != null) {
+                                setModalState(() {
+                                  selectedCategoryId = result.id;
+                                  selectedCategoryName = result.name;
+                                });
+                              }
                             },
-                          ),
-                        );
-                        if (result != null) {
-                          setModalState(() {
-                            selectedCategoryId = result.id;
-                            selectedCategoryName = result.name;
-                          });
-                        }
-                      },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Description Field
                     TextField(
                       decoration: const InputDecoration(
@@ -913,71 +1142,94 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                       enabled: !submitting,
                       onChanged: (value) => description = value,
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Amount Field
                     TextField(
                       decoration: const InputDecoration(
                         labelText: 'Amount',
                         border: OutlineInputBorder(),
                       ),
-                      controller: TextEditingController(text: amount.toStringAsFixed(2)),
+                      controller: TextEditingController(
+                        text: amount.toStringAsFixed(2),
+                      ),
                       enabled: !submitting,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       onChanged: (value) {
                         final parsed = double.tryParse(value);
                         if (parsed != null) amount = parsed;
                       },
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Action Buttons
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: submitting ? null : () => Navigator.of(ctx).pop(),
+                            onPressed: submitting
+                                ? null
+                                : () => Navigator.of(ctx).pop(),
                             child: const Text('Cancel'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: submitting ? null : () async {
-                              if (selectedCategoryId == null || selectedCategoryId!.isEmpty) {
-                                await MessageUtils.showError(context, 'Please select a category');
-                                return;
-                              }
-                              
-                              setModalState(() => submitting = true);
-                              
-                              try {
-                                await _updateTransactionEntry(
-                                  entryIndex: entryIndex,
-                                  newCategoryId: selectedCategoryId!,
-                                  newDescription: description,
-                                  newAmount: (amount * 100).round(), // Convert to cents
-                                );
-                                
-                                if (mounted) {
-                                  Navigator.of(ctx).pop();
-                                  await MessageUtils.showSuccess(context, 'Entry updated successfully');
-                                }
-                              } catch (e) {
-                                debugPrint('[TX_DETAILS] Failed to update entry: $e');
-                                if (mounted) {
-                                  await MessageUtils.showError(context, 'Error updating entry: $e');
-                                }
-                                setModalState(() => submitting = false);
-                              }
-                            },
+                            onPressed: submitting
+                                ? null
+                                : () async {
+                                    if (selectedCategoryId == null ||
+                                        selectedCategoryId!.isEmpty) {
+                                      await MessageUtils.showError(
+                                        context,
+                                        'Please select a category',
+                                      );
+                                      return;
+                                    }
+
+                                    setModalState(() => submitting = true);
+
+                                    try {
+                                      await _updateTransactionEntry(
+                                        entryIndex: entryIndex,
+                                        newCategoryId: selectedCategoryId!,
+                                        newDescription: description,
+                                        newAmount: (amount * 100)
+                                            .round(), // Convert to cents
+                                      );
+
+                                      if (mounted) {
+                                        Navigator.of(ctx).pop();
+                                        await MessageUtils.showSuccess(
+                                          context,
+                                          'Entry updated successfully',
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint(
+                                        '[TX_DETAILS] Failed to update entry: $e',
+                                      );
+                                      if (mounted) {
+                                        await MessageUtils.showError(
+                                          context,
+                                          'Error updating entry: $e',
+                                        );
+                                      }
+                                      setModalState(() => submitting = false);
+                                    }
+                                  },
                             child: submitting
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('Save'),
                           ),
@@ -1014,23 +1266,25 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final activeEntries = tx.entries.where((e) => e.deletedAt == null).toList();
     for (int i = 0; i < activeEntries.length; i++) {
       final entry = activeEntries[i];
-      final categoryId = i == entryIndex 
-          ? newCategoryId 
+      final categoryId = i == entryIndex
+          ? newCategoryId
           : (entry.categoryId ?? entry.category?.categoryId);
-      final description = i == entryIndex 
-          ? newDescription 
+      final description = i == entryIndex
+          ? newDescription
           : (entry.description ?? '');
-      final amount = i == entryIndex 
-          ? newAmount 
-          : entry.amount;
+      final amount = i == entryIndex ? newAmount : entry.amount;
 
       if (categoryId != null && categoryId.isNotEmpty) {
-        updatedEntries.add(TransactionUpdatePayload.createTransactionEntry(
-          id: entry.transactionEntryId ?? entry.id, // Include ID for all existing entries
-          description: description.isNotEmpty ? description : null,
-          amount: amount,
-          categoryId: categoryId,
-        ));
+        updatedEntries.add(
+          TransactionUpdatePayload.createTransactionEntry(
+            id:
+                entry.transactionEntryId ??
+                entry.id, // Include ID for all existing entries
+            description: description.isNotEmpty ? description : null,
+            amount: amount,
+            categoryId: categoryId,
+          ),
+        );
       }
     }
 
@@ -1047,7 +1301,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       merchantId: tx.merchantId,
     );
 
-    debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
+    debugPrint(
+      '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
+    );
 
     await ApiService.updateTransaction(
       transactionId: widget.transactionId,
@@ -1079,26 +1335,32 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
     // Create updated entries list including the new entry
     final updatedEntries = <Map<String, dynamic>>[];
-    
+
     // Add existing entries with their IDs (exclude deleted entries)
     for (final entry in tx.entries.where((e) => e.deletedAt == null)) {
       final existingCategoryId = entry.categoryId ?? entry.category?.categoryId;
       if (existingCategoryId != null && existingCategoryId.isNotEmpty) {
-        updatedEntries.add(TransactionUpdatePayload.createTransactionEntry(
-          id: entry.transactionEntryId ?? entry.id, // Include ID for existing entries
-          description: entry.description,
-          amount: entry.amount,
-          categoryId: existingCategoryId,
-        ));
+        updatedEntries.add(
+          TransactionUpdatePayload.createTransactionEntry(
+            id:
+                entry.transactionEntryId ??
+                entry.id, // Include ID for existing entries
+            description: entry.description,
+            amount: entry.amount,
+            categoryId: existingCategoryId,
+          ),
+        );
       }
     }
 
     // Add new entry without ID
-    updatedEntries.add(TransactionUpdatePayload.createTransactionEntry(
-      description: description.isNotEmpty ? description : null,
-      amount: amount,
-      categoryId: categoryId,
-    ));
+    updatedEntries.add(
+      TransactionUpdatePayload.createTransactionEntry(
+        description: description.isNotEmpty ? description : null,
+        amount: amount,
+        categoryId: categoryId,
+      ),
+    );
 
     // Create complete payload with updated entries
     final payload = TransactionUpdatePayload(
@@ -1113,7 +1375,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       merchantId: tx.merchantId,
     );
 
-    debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
+    debugPrint(
+      '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
+    );
 
     await ApiService.updateTransaction(
       transactionId: widget.transactionId,
@@ -1130,13 +1394,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     await fetchTransactionDetails();
   }
 
-  Future<void> _showDeleteConfirmation(BuildContext context, TransactionEntryDetails entry, int entryIndex) async {
+  Future<void> _showDeleteConfirmation(
+    BuildContext context,
+    TransactionEntryDetails entry,
+    int entryIndex,
+  ) async {
     final tx = transactionDetails!;
     final activeEntries = tx.entries.where((e) => e.deletedAt == null).toList();
-    
+
     // Проверяем, что это не последний entry
     if (activeEntries.length <= 1) {
-      await MessageUtils.showError(context, AppStrings.transactionDetailsCannotDeleteLastEntry);
+      await MessageUtils.showError(
+        context,
+        AppStrings.transactionDetailsCannotDeleteLastEntry,
+      );
       return;
     }
 
@@ -1175,7 +1446,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
     debugPrint('[TX_DETAILS] === DELETE TRANSACTION ENTRY ===');
     debugPrint('[TX_DETAILS] Entry index: $entryIndex');
-    debugPrint('[TX_DETAILS] Deleting entry: ${activeEntries[entryIndex].transactionEntryId ?? activeEntries[entryIndex].id}');
+    debugPrint(
+      '[TX_DETAILS] Deleting entry: ${activeEntries[entryIndex].transactionEntryId ?? activeEntries[entryIndex].id}',
+    );
 
     try {
       // Show loading indicator
@@ -1190,16 +1463,19 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       // Create updated entries list excluding the deleted entry
       final updatedEntries = <Map<String, dynamic>>[];
       for (int i = 0; i < activeEntries.length; i++) {
-        if (i != entryIndex) { // Исключаем удаляемый entry
+        if (i != entryIndex) {
+          // Исключаем удаляемый entry
           final entry = activeEntries[i];
           final categoryId = entry.categoryId ?? entry.category?.categoryId;
           if (categoryId != null && categoryId.isNotEmpty) {
-            updatedEntries.add(TransactionUpdatePayload.createTransactionEntry(
-              id: entry.transactionEntryId ?? entry.id,
-              description: entry.description,
-              amount: entry.amount,
-              categoryId: categoryId,
-            ));
+            updatedEntries.add(
+              TransactionUpdatePayload.createTransactionEntry(
+                id: entry.transactionEntryId ?? entry.id,
+                description: entry.description,
+                amount: entry.amount,
+                categoryId: categoryId,
+              ),
+            );
           }
         }
       }
@@ -1217,7 +1493,9 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         merchantId: tx.merchantId,
       );
 
-      debugPrint('[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}');
+      debugPrint(
+        '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
+      );
 
       await ApiService.updateTransaction(
         transactionId: widget.transactionId,
@@ -1232,7 +1510,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        await MessageUtils.showSuccess(context, AppStrings.transactionDetailsEntryDeleted);
+        await MessageUtils.showSuccess(
+          context,
+          AppStrings.transactionDetailsEntryDeleted,
+        );
         await fetchTransactionDetails(); // Refresh transaction data
       }
     } catch (e) {
@@ -1306,4 +1587,4 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       }
     }
   }
-} 
+}

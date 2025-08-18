@@ -39,7 +39,11 @@ class _MainScreenState extends State<MainScreen> {
       final bool success = result['success'] ?? false;
       final String message = result['message'] ?? '';
 
-      await MessageUtils.showMessageSafely(context, message, isSuccess: success);
+      await MessageUtils.showMessageSafely(
+        context,
+        message,
+        isSuccess: success,
+      );
       return success;
     }
 
