@@ -2,19 +2,29 @@ import 'package:ahorro_ui/src/models/currencies.dart';
 
 enum TransactionStatsType { expense, income }
 
-enum TransactionStatsGrouping { categories, month, week, day, balance }
+enum TransactionStatsGrouping {
+  balance,
+  category,
+  currency,
+  quarter,
+  month,
+  week,
+  day,
+}
 
 class TransactionStatsItem {
   // The value of specific grouping, e.g., category name, month name
   final String label;
   final int amount;
   final CurrencyCode currency;
+  final int count;
   final String? icon;
 
   const TransactionStatsItem({
     required this.label,
     required this.amount,
     required this.currency,
+    required this.count,
     this.icon,
   });
 
@@ -24,6 +34,7 @@ class TransactionStatsItem {
       label: json['label'] as String,
       amount: json['amount'] as int,
       currency: toCurrencyCode(json['currency'] as String),
+      count: json['count'] as int,
     );
   }
 
@@ -33,6 +44,7 @@ class TransactionStatsItem {
       'label': label,
       'amount': amount,
       'currency': fromCurrencyCode(currency),
+      'count': count,
     };
   }
 

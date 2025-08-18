@@ -311,7 +311,7 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
                     ? '${_getBalanceById(_selectedFromBalanceId!)?.currency} '
                     : '',
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 16),
 
@@ -326,7 +326,7 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
                       ? '${_getBalanceById(_selectedToBalanceId!)?.currency} '
                       : '',
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 16),
               ],

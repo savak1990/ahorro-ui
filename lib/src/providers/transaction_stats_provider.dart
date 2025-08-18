@@ -24,9 +24,11 @@ class TransactionStatsProvider extends ChangeNotifier {
   DateTime? _startDate;
   DateTime? _endDate;
   TransactionStatsType _type = TransactionStatsType.expense;
-  TransactionStatsGrouping _grouping = TransactionStatsGrouping.categories;
+  TransactionStatsGrouping _grouping = TransactionStatsGrouping.category;
   CurrencyCode _currency = CurrencyCode.eur;
-  int _maxItems = 10;
+  int _limit = 10;
+  String _sort = 'amount';
+  String _order = 'desc';
 
   // Result state
   bool _loading = false;
@@ -57,7 +59,8 @@ class TransactionStatsProvider extends ChangeNotifier {
       'Fetching transaction stats: '
       'start=$_startDate, end=$_endDate, type=$_type, '
       'grouping=$_grouping, currency=$_currency, '
-      'categoryId=$_categoryId, balanceId=$_balanceId, maxItems=$_maxItems',
+      'categoryId=$_categoryId, balanceId=$_balanceId, '
+      'limit=$_limit, sort=$_sort, order=$_order',
     );
 
     _debounce?.cancel();
@@ -76,7 +79,9 @@ class TransactionStatsProvider extends ChangeNotifier {
         currency: _currency,
         categoryId: _categoryId,
         balanceId: _balanceId,
-        maxItems: _maxItems,
+        limit: _limit,
+        sort: _sort,
+        order: _order,
       );
 
       // Only accept the latest response
@@ -190,14 +195,32 @@ class TransactionStatsProvider extends ChangeNotifier {
 
   CurrencyCode get selectedCurrency => _currency;
 
-  set selectedMaxItems(int maxItems) {
-    if (_maxItems == maxItems) return;
-    _maxItems = maxItems;
+  set selectedLimit(int limit) {
+    if (_limit == limit) return;
+    _limit = limit;
     _scheduleFetch();
     notifyListeners();
   }
 
-  int get selectedMaxItems => _maxItems;
+  int get selectedLimit => _limit;
+
+  set selectedSort(String newSort) {
+    if (_sort == newSort) return;
+    _sort = newSort;
+    _scheduleFetch();
+    notifyListeners();
+  }
+
+  String get selectedSort => _sort;
+
+  set selectedOrder(String newOrder) {
+    if (_order == newOrder) return;
+    _order = newOrder;
+    _scheduleFetch();
+    notifyListeners();
+  }
+
+  String get selectedOrder => _order;
 
   @override
   void dispose() {

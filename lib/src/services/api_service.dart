@@ -873,7 +873,9 @@ class ApiService {
     String? balanceId,
     String? merchantId,
     String? groupId,
-    int maxItems = 10,
+    String sort = 'amount',
+    String order = 'desc',
+    int limit = 10,
   }) async {
     final stopwatch = Stopwatch()..start();
     const operation = 'getTransactionStats';
@@ -902,8 +904,10 @@ class ApiService {
           'endTime': endDate.toUtc().toIso8601String(),
           'grouping': grouping.name,
           'type': type.name,
-          'currency': currency.name,
-          'maxItems': maxItems.toString(),
+          'displayCurrency': currency.name,
+          'limit': limit.toString(),
+          'sort': sort,
+          'order': order,
         },
       );
       final headers = await _buildAuthHeaders();
@@ -915,69 +919,36 @@ class ApiService {
         operation: operation,
       );
 
-      // Simulate network delay for testing purposes
-      // Remove this in production code
-      await Future.delayed(const Duration(milliseconds: 900));
-
-      final categoryMockData = {
-        'items': [
-          {'label': 'Food', 'amount': 1500, 'currency': 'eur'},
-          {'label': 'Transport', 'amount': 800, 'currency': 'eur'},
-          {'label': 'Entertainment', 'amount': 500, 'currency': 'eur'},
-          {'label': 'Utilities', 'amount': 300, 'currency': 'eur'},
-          {'label': 'Health', 'amount': 200, 'currency': 'eur'},
-          {'label': 'Shopping', 'amount': 400, 'currency': 'eur'},
-          {'label': 'Other', 'amount': 100, 'currency': 'eur'},
-        ],
-      };
-
-      final monthMockData = {
-        'items': [
-          {'label': 'January', 'amount': 5000, 'currency': 'eur'},
-          {'label': 'February', 'amount': 4500, 'currency': 'eur'},
-          {'label': 'March', 'amount': 6000, 'currency': 'eur'},
-          {'label': 'April', 'amount': 5500, 'currency': 'eur'},
-          {'label': 'May', 'amount': 7000, 'currency': 'eur'},
-          {'label': 'June', 'amount': 6500, 'currency': 'eur'},
-        ],
-      };
-
-      var mockData = grouping == TransactionStatsGrouping.categories
-          ? categoryMockData
-          : monthMockData;
-
-      // TODO Uncomment this line to use the actual API call
-      // final response = await http
-      //     .get(url, headers: headers)
-      //     .timeout(const Duration(seconds: 25));
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 5));
 
       stopwatch.stop();
 
       ApiLogger.logResponse(
         method: 'GET',
         url: url.toString(),
-        statusCode: 200, // Mocking a successful response
-        headers: headers,
-        body: json.encode(mockData),
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body,
         operation: operation,
         duration: stopwatch.elapsed,
       );
 
-      // if (response.statusCode != 200) {
-      //   throw Exception(
-      //     'Failed to get transaction stats. Status code: ${response.statusCode}',
-      //   );
-      // }
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to get transaction stats. Status code: ${response.statusCode}',
+        );
+      }
 
-      final data = mockData; // json.decode(response.body);
+      final data = json.decode(response.body);
       ApiLogger.logOperationEnd(operation, stopwatch.elapsed);
       return TransactionStatsResponse.fromJson(data);
     } on Exception catch (e, stackTrace) {
       stopwatch.stop();
       ApiLogger.logError(
         method: 'GET',
-        url:
-            '${AppConfig.transactionsStatsUrl}?userId={userId}&startDate={startDate}&endDate={endDate}',
+        url: AppConfig.transactionsStatsUrl,
         error: e,
         stackTrace: stackTrace,
         operation: operation,

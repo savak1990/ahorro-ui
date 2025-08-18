@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
-import '../services/api_service.dart';
-import '../models/categories_response.dart';
 import '../models/category.dart';
 import '../constants/app_typography.dart';
 import '../providers/categories_provider.dart';

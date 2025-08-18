@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../utils/platform_utils.dart';
+import '../utils/message_utils.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,9 +22,9 @@ class _MainScreenState extends State<MainScreen> {
   String? _pendingTransactionType;
   bool _didCheckBalancesForDefaultCurrency = false;
 
-  Future<bool?> _showAddTransactionBottomSheet() {
+  Future<bool?> _showAddTransactionBottomSheet() async {
     final cs = Theme.of(context).colorScheme;
-    return showModalBottomSheet<bool?>(
+    final result = await showModalBottomSheet<Map<String, dynamic>?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: cs.surfaceContainerHigh,
@@ -32,6 +33,17 @@ class _MainScreenState extends State<MainScreen> {
       ),
       builder: (context) => const AddTransactionScreen(),
     );
+
+    // Handle the result and show appropriate message
+    if (result != null && mounted) {
+      final bool success = result['success'] ?? false;
+      final String message = result['message'] ?? '';
+
+      await MessageUtils.showMessageSafely(context, message, isSuccess: success);
+      return success;
+    }
+
+    return null;
   }
 
   @override

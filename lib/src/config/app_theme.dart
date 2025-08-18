@@ -148,7 +148,7 @@ class AppTheme {
       ),
 
       // Scaffold Background
-      scaffoldBackgroundColor: scheme.background,
+      scaffoldBackgroundColor: scheme.surface,
 
       // Platform-specific adjustments
       visualDensity: kIsWeb
@@ -264,7 +264,7 @@ class AppTheme {
       ),
 
       // Scaffold Background
-      scaffoldBackgroundColor: scheme.background,
+      scaffoldBackgroundColor: scheme.surface,
 
       // Platform-specific adjustments
       visualDensity: kIsWeb

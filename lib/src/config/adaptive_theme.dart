@@ -151,7 +151,7 @@ class AdaptiveTheme {
       ),
 
       // Фон
-      scaffoldBackgroundColor: scheme.background,
+      scaffoldBackgroundColor: scheme.surface,
 
       // Адаптивная плотность
       visualDensity: PlatformUtils.isIOS 
@@ -278,7 +278,7 @@ class AdaptiveTheme {
       ),
 
       // Фон
-      scaffoldBackgroundColor: scheme.background,
+      scaffoldBackgroundColor: scheme.surface,
 
       // Адаптивная плотность
       visualDensity: PlatformUtils.isIOS 
@@ -300,7 +300,7 @@ class AdaptiveTheme {
       'padding': PlatformUtils.adaptivePadding,
       'platform': PlatformUtils.platformName,
       'primaryColor': generated_theme.MaterialTheme.lightScheme().primary,
-      'backgroundColor': generated_theme.MaterialTheme.lightScheme().background,
+      'backgroundColor': generated_theme.MaterialTheme.lightScheme().surface,
     };
   }
 } 

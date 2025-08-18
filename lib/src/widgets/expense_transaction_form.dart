@@ -16,7 +16,7 @@ import '../widgets/transaction_item_row.dart';
 // Formz input models
 class AmountInput extends FormzInput<String, String> {
   const AmountInput.pure() : super.pure('');
-  const AmountInput.dirty([String value = '']) : super.dirty(value);
+  const AmountInput.dirty([super.value = '']) : super.dirty();
 
   @override
   String? validator(String value) {
@@ -29,7 +29,7 @@ class AmountInput extends FormzInput<String, String> {
 
 class DescriptionInput extends FormzInput<String, String> {
   const DescriptionInput.pure() : super.pure('');
-  const DescriptionInput.dirty([String value = '']) : super.dirty(value);
+  const DescriptionInput.dirty([super.value = '']) : super.dirty();
 
   @override
   String? validator(String value) {
@@ -40,7 +40,7 @@ class DescriptionInput extends FormzInput<String, String> {
 
 class BalanceIdInput extends FormzInput<String, String> {
   const BalanceIdInput.pure() : super.pure('');
-  const BalanceIdInput.dirty([String value = '']) : super.dirty(value);
+  const BalanceIdInput.dirty([super.value = '']) : super.dirty();
 
   @override
   String? validator(String value) {
@@ -78,7 +78,7 @@ class ExpenseTransactionForm extends StatefulWidget {
 class ExpenseTransactionFormState extends State<ExpenseTransactionForm> {
   final TextEditingController _descriptionController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
-  bool _isLoading = false;
+  final bool _isLoading = false;
   List<_TransactionItem> _items = [];
   String? _fromAccountId;
 

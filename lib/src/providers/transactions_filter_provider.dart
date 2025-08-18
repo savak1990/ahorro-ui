@@ -148,7 +148,9 @@ class TransactionsFilterProvider extends ChangeNotifier {
         if (entryTypes.intersection(selectedTypes).isEmpty) return;
       }
       if (selectedAccounts.isNotEmpty &&
-          !selectedAccounts.contains(aggregated.account)) return;
+          !selectedAccounts.contains(aggregated.account)) {
+        return;
+      }
 
       // Фильтр по категории должен проверять категории на уровне записей
       if (selectedCategories.isNotEmpty) {

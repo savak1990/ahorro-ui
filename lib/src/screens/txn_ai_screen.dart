@@ -27,7 +27,7 @@ class _TxnAiScreenState extends State<TxnAiScreen> {
   bool _categoriesLoading = false;
   String? _categoriesError;
   _DraftExpense? _draftExpense;
-  bool _awaitingExpenseConfirmation = false;
+  final bool _awaitingExpenseConfirmation = false;
   bool _creatingExpense = false;
 
   static const _expenseFunction = {

@@ -16,10 +16,11 @@ import '../providers/balances_provider.dart';
 import '../providers/categories_provider.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../models/category.dart' as CategoryModel;
+import '../utils/message_utils.dart';
 
 class TransactionDetailsScreen extends StatefulWidget {
   final String transactionId;
-  const TransactionDetailsScreen({Key? key, required this.transactionId}) : super(key: key);
+  const TransactionDetailsScreen({super.key, required this.transactionId});
 
   @override
   State<TransactionDetailsScreen> createState() => _TransactionDetailsScreenState();
@@ -115,15 +116,15 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
   Widget _buildDetails(BuildContext context, ThemeData theme, TextTheme textTheme) {
     final tx = transactionDetails!;
-    final String _typeStr = tx.type.toString();
-    final String displayType = _typeStr.isNotEmpty
-        ? _typeStr[0].toUpperCase() + _typeStr.substring(1)
+    final String typeStr = tx.type.toString();
+    final String displayType = typeStr.isNotEmpty
+        ? typeStr[0].toUpperCase() + typeStr.substring(1)
         : '-';
     final allEntries = tx.entries;
     final entries = allEntries.where((e) => e.deletedAt == null).toList(); // Исключаем удаленные entries
     final double totalAmount = entries.fold<double>(0.0, (acc, e) => acc + (e.amount / 100));
     if (kDebugMode) {
-      debugPrint('[TX_DETAILS] Building UI: type=$_typeStr, entries=${entries.length}');
+      debugPrint('[TX_DETAILS] Building UI: type=$typeStr, entries=${entries.length}');
     }
     final mainEntry = entries.isNotEmpty ? entries[0] : null;
     final date = tx.transactedAt ?? tx.approvedAt ?? tx.createdAt;
@@ -162,7 +163,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           Text(
                             '${totalAmount.toStringAsFixed(2)} ',
                             style: AppTypography.displayLarge.copyWith(
-                              color: _typeColor(_typeStr, theme),
+                              color: _typeColor(typeStr, theme),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -225,7 +226,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const TitleEmphasizedLarge(text: AppStrings.transactionDetailsEntriesTitle),
-                  if (!['move_in', 'move_out'].contains(_typeStr.toLowerCase())) // Запретить добавление для move_in/move_out
+                  if (!['move_in', 'move_out'].contains(typeStr.toLowerCase())) // Запретить добавление для move_in/move_out
                     IconButton(
                       onPressed: () => _showAddEntrySheet(context),
                       icon: Icon(
@@ -279,7 +280,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                       children: [
                                         Icon(Icons.edit, size: 20, color: theme.colorScheme.onSurface),
                                         const SizedBox(width: 8),
-                                        Text(AppStrings.transactionDetailsEdit),
+                                        const Text(AppStrings.transactionDetailsEdit),
                                       ],
                                     ),
                                   ),
@@ -357,7 +358,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
               final msg = !isChangeAllowed
                   ? AppStrings.transactionDetailsWalletChangeNotAllowed
                   : AppStrings.transactionDetailsWalletCreateMoreInfo;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+              MessageUtils.showMessage(context, msg, isSuccess: false);
             },
     );
   }
@@ -451,18 +452,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                     } catch (e) {
                                       debugPrint('[TX_DETAILS] Failed to update transaction: $e');
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Ошибка обновления: $e')),
-                                        );
+                                        await MessageUtils.showError(context, 'Ошибка обновления: $e');
                                       }
                                       setModalState(() => submitting = false);
                                       return;
                                     }
                                     if (mounted) {
                                       Navigator.of(ctx).pop();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text(AppStrings.transactionDetailsUpdated)),
-                                      );
+                                      await MessageUtils.showSuccess(context, AppStrings.transactionDetailsUpdated);
                                       await fetchTransactionDetails();
                                     }
                                   },
@@ -597,18 +594,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Date is changed')),
-        );
+        await MessageUtils.showSuccess(context, 'Date is changed');
         await fetchTransactionDetails(); // Refresh transaction data
       }
     } catch (e) {
       debugPrint('[TX_DETAILS] Failed to update transacted date: $e');
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating date: $e')),
-        );
+        await MessageUtils.showError(context, 'Error updating date: $e');
       }
     }
   }
@@ -648,18 +641,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Date is changed')),
-        );
+        await MessageUtils.showSuccess(context, 'Date is changed');
         await fetchTransactionDetails(); // Refresh transaction data
       }
     } catch (e) {
       debugPrint('[TX_DETAILS] Failed to update approved date: $e');
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating date: $e')),
-        );
+        await MessageUtils.showError(context, 'Error updating date: $e');
       }
     }
   }
@@ -784,16 +773,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           child: ElevatedButton(
                             onPressed: submitting ? null : () async {
                               if (selectedCategoryId == null || selectedCategoryId!.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please select a category')),
-                                );
+                                await MessageUtils.showError(context, 'Please select a category');
                                 return;
                               }
                               
                               if (amount <= 0) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter a valid amount')),
-                                );
+                                await MessageUtils.showError(context, 'Please enter a valid amount');
                                 return;
                               }
                               
@@ -808,16 +793,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                 
                                 if (mounted) {
                                   Navigator.of(ctx).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Entry added successfully')),
-                                  );
+                                  await MessageUtils.showSuccess(context, 'Entry added successfully');
                                 }
                               } catch (e) {
                                 debugPrint('[TX_DETAILS] Failed to add entry: $e');
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error adding entry: $e')),
-                                  );
+                                  await MessageUtils.showError(context, 'Error adding entry: $e');
                                 }
                                 setModalState(() => submitting = false);
                               }
@@ -966,9 +947,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                           child: ElevatedButton(
                             onPressed: submitting ? null : () async {
                               if (selectedCategoryId == null || selectedCategoryId!.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please select a category')),
-                                );
+                                await MessageUtils.showError(context, 'Please select a category');
                                 return;
                               }
                               
@@ -984,16 +963,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                                 
                                 if (mounted) {
                                   Navigator.of(ctx).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Entry updated successfully')),
-                                  );
+                                  await MessageUtils.showSuccess(context, 'Entry updated successfully');
                                 }
                               } catch (e) {
                                 debugPrint('[TX_DETAILS] Failed to update entry: $e');
                                 if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error updating entry: $e')),
-                                  );
+                                  await MessageUtils.showError(context, 'Error updating entry: $e');
                                 }
                                 setModalState(() => submitting = false);
                               }
@@ -1161,9 +1136,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     
     // Проверяем, что это не последний entry
     if (activeEntries.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.transactionDetailsCannotDeleteLastEntry)),
-      );
+      await MessageUtils.showError(context, AppStrings.transactionDetailsCannotDeleteLastEntry);
       return;
     }
 
@@ -1259,18 +1232,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.transactionDetailsEntryDeleted)),
-        );
+        await MessageUtils.showSuccess(context, AppStrings.transactionDetailsEntryDeleted);
         await fetchTransactionDetails(); // Refresh transaction data
       }
     } catch (e) {
       debugPrint('[TX_DETAILS] Failed to delete entry: $e');
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting entry: $e')),
-        );
+        await MessageUtils.showError(context, 'Error deleting entry: $e');
       }
     }
   }
@@ -1327,17 +1296,13 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         Navigator.of(context).pop(); // Go back to transactions screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(AppStrings.transactionDeleted)),
-        );
+        await MessageUtils.showSuccess(context, AppStrings.transactionDeleted);
       }
     } catch (e) {
       debugPrint('[TX_DETAILS] Failed to delete transaction: $e');
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting transaction: $e')),
-        );
+        await MessageUtils.showError(context, 'Error deleting transaction: $e');
       }
     }
   }

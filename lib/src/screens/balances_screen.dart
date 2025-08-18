@@ -66,15 +66,15 @@ class BalancesScreen extends StatelessWidget {
 
   // Extracted header widget
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 4),
-          const HeadlineEmphasizedLarge(text: AppStrings.balancesTitle),
-          const SizedBox(height: 8),
-          const LabelEmphasizedMedium(text: AppStrings.balancesSubtitle),
+          SizedBox(height: 4),
+          HeadlineEmphasizedLarge(text: AppStrings.balancesTitle),
+          SizedBox(height: 8),
+          LabelEmphasizedMedium(text: AppStrings.balancesSubtitle),
         ],
       ),
     );
@@ -150,7 +150,7 @@ class BalancesScreen extends StatelessWidget {
         debugPrint('BalancesScreen: isLoading=${provider.isLoading}, error=${provider.error}, balancesCount=${provider.balances.length}');
         return Scaffold(
           appBar: _buildAppBar(context),
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: () {
             if (provider.isLoading) {
               return _buildLoading(context);

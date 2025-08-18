@@ -28,7 +28,7 @@ class _DefaultBalanceCurrencyScreenState extends State<DefaultBalanceCurrencyScr
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'What is your default currency?',
                 style: AppTypography.titleLarge,
                 textAlign: TextAlign.center,
@@ -55,7 +55,7 @@ class _DefaultBalanceCurrencyScreenState extends State<DefaultBalanceCurrencyScr
                   setState(() { _isLoading = true; _error = null; });
                   try {
                     final userId = await AuthService.getUserId();
-                    final groupId = AuthService.groupId;
+                    const groupId = AuthService.groupId;
                     await provider.createBalance(
                       userId: userId,
                       groupId: groupId,

@@ -173,7 +173,7 @@ class TransactionTile extends StatelessWidget {
             ),
             // Разделитель между элементами (кроме последнего)
             if (!isLast)
-              Divider(
+              const Divider(
                 height: 1,
                 thickness: 1,
                 indent: 76, // 16 + 44 + 16 (отступ + иконка + отступ)

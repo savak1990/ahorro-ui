@@ -330,8 +330,8 @@ class _TransactionsTabState extends State<TransactionsTab> {
             Text('Group by', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             ListTile(
-              leading: Icon(Icons.calendar_today),
-              title: Text('Date'),
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Date'),
               trailing:
                   Provider.of<TransactionsFilterProvider>(
                         context,
@@ -352,8 +352,8 @@ class _TransactionsTabState extends State<TransactionsTab> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.category),
-              title: Text('Category'),
+              leading: const Icon(Icons.category),
+              title: const Text('Category'),
               trailing:
                   Provider.of<TransactionsFilterProvider>(
                         context,

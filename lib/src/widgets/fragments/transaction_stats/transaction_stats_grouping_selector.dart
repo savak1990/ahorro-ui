@@ -22,16 +22,20 @@ class TransactionStatsGroupingSelector extends StatelessWidget {
           },
           itemLabelBuilder: (item) {
             switch (item) {
-              case TransactionStatsGrouping.categories:
-                return 'Categories';
+              case TransactionStatsGrouping.category:
+                return 'By Category';
               case TransactionStatsGrouping.month:
-                return 'Month';
+                return 'By Month';
               case TransactionStatsGrouping.week:
-                return 'Week';
+                return 'By Week';
               case TransactionStatsGrouping.day:
-                return 'Day';
+                return 'By Day';
               case TransactionStatsGrouping.balance:
-                return 'Balance';
+                return 'By Balance';
+              case TransactionStatsGrouping.currency:
+                return 'By Currency';
+              case TransactionStatsGrouping.quarter:
+                return 'By Quarter';
             }
           },
         );
