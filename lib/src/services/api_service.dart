@@ -919,7 +919,7 @@ class ApiService {
       // Remove this in production code
       await Future.delayed(const Duration(milliseconds: 900));
 
-      final mockData = {
+      final categoryMockData = {
         'items': [
           {'label': 'Food', 'amount': 1500, 'currency': 'eur'},
           {'label': 'Transport', 'amount': 800, 'currency': 'eur'},
@@ -930,6 +930,21 @@ class ApiService {
           {'label': 'Other', 'amount': 100, 'currency': 'eur'},
         ],
       };
+
+      final monthMockData = {
+        'items': [
+          {'label': 'January', 'amount': 5000, 'currency': 'eur'},
+          {'label': 'February', 'amount': 4500, 'currency': 'eur'},
+          {'label': 'March', 'amount': 6000, 'currency': 'eur'},
+          {'label': 'April', 'amount': 5500, 'currency': 'eur'},
+          {'label': 'May', 'amount': 7000, 'currency': 'eur'},
+          {'label': 'June', 'amount': 6500, 'currency': 'eur'},
+        ],
+      };
+
+      var mockData = grouping == TransactionStatsGrouping.categories
+          ? categoryMockData
+          : monthMockData;
 
       // TODO Uncomment this line to use the actual API call
       // final response = await http

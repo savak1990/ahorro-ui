@@ -8,11 +8,18 @@ class TransactionStatsFragmentLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
-        TransactionStatsParamSelector(),
-        TransactionStatsChart(),
-        Expanded(child: TransactionStatsListView()),
+        const TransactionStatsParamSelector(),
+        Expanded(
+          flex: 5,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            child: const TransactionStatsChart(),
+          ),
+        ),
+        const Expanded(flex: 5, child: TransactionStatsListView()),
       ],
     );
   }

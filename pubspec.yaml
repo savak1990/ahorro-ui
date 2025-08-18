@@ -44,8 +44,9 @@ dependencies:
   flutter_dotenv: ^5.1.0
   material_symbols_icons: ^4.2815.1
   formz: ^0.8.0
+  syncfusion_flutter_charts: ^30.2.5
   
-  # Кросс-платформенные улучшения
+  # Cross platform
   responsive_framework: ^1.4.0
   flutter_staggered_animations: ^1.1.1
   shimmer: ^3.0.0

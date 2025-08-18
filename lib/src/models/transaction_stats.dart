@@ -1,3 +1,5 @@
+import 'package:ahorro_ui/src/models/currencies.dart';
+
 enum TransactionStatsType { expense, income }
 
 enum TransactionStatsGrouping { categories, month, week, day, balance }
@@ -6,8 +8,8 @@ class TransactionStatsItem {
   // The value of specific grouping, e.g., category name, month name
   final String label;
   final int amount;
-  final String currency;
-  final String? icon; // Make icon optional
+  final CurrencyCode currency;
+  final String? icon;
 
   const TransactionStatsItem({
     required this.label,
@@ -21,17 +23,21 @@ class TransactionStatsItem {
       icon: json['icon'] as String?, // Handle null values
       label: json['label'] as String,
       amount: json['amount'] as int,
-      currency: json['currency'] as String,
+      currency: toCurrencyCode(json['currency'] as String),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'icon': icon, // Include icon only if it's not null
+      'icon': icon,
       'label': label,
       'amount': amount,
-      'currency': currency,
+      'currency': fromCurrencyCode(currency),
     };
+  }
+
+  String get formattedAmount {
+    return formatAmountInt(amount, currency);
   }
 }
 

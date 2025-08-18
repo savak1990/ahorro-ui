@@ -23,9 +23,9 @@ class TransactionStatsTypeSelector extends StatelessWidget {
             itemWidgetBuilder: (item) {
               switch (item) {
                 case TransactionStatsType.expense:
-                  return const Text("Expense");
+                  return const Icon(Icons.trending_down);
                 case TransactionStatsType.income:
-                  return const Text("Income");
+                  return const Icon(Icons.trending_up);
               }
             },
           );

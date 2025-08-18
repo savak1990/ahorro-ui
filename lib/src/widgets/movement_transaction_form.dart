@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
 import '../models/balance.dart';
 import '../providers/balances_provider.dart';
 import '../widgets/add_balance_form.dart';

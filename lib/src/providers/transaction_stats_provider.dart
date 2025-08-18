@@ -163,6 +163,15 @@ class TransactionStatsProvider extends ChangeNotifier {
 
   TransactionStatsType get selectedType => _type;
 
+  String get selectedTypeLabel {
+    switch (_type) {
+      case TransactionStatsType.expense:
+        return 'Expense';
+      case TransactionStatsType.income:
+        return 'Income';
+    }
+  }
+
   set selectedGrouping(TransactionStatsGrouping grouping) {
     if (_grouping == grouping) return;
     _grouping = grouping;
