@@ -1,3 +1,4 @@
+import 'package:ahorro_ui/src/widgets/fragments/budgets_overview/budgets_overview_fragment.dart';
 import 'package:ahorro_ui/src/widgets/fragments/transaction_stats/transaction_stats_fragment.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +7,11 @@ class HomeTabNew extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const TransactionStatsFragment();
+    return const Column(
+      children: [
+        Expanded(flex: 5, child: TransactionStatsFragment()),
+        Expanded(flex: 5, child: BudgetsOverviewFragment()),
+      ],
+    );
   }
 }

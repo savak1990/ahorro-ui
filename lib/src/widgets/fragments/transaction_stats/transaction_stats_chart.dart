@@ -103,7 +103,7 @@ class TransactionStatsChart extends StatelessWidget {
             xValueMapper: (_ChartData data, _) => data.label,
             yValueMapper: (_ChartData data, _) => data.amount,
             dataLabelMapper: (_ChartData data, _) =>
-                '${data.label}: ${data.formattedAmount}',
+                '${data.formattedAmount}: ${data.label}',
             dataLabelSettings: const DataLabelSettings(
               isVisible: true,
               labelPosition: ChartDataLabelPosition.outside,
