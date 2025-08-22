@@ -201,11 +201,7 @@ class TransactionStatsChart extends StatelessWidget {
       title: ChartTitle(
         text:
             'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold),
       ),
       legend: const Legend(
         isVisible: true,
