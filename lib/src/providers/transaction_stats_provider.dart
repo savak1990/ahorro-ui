@@ -224,7 +224,6 @@ class TransactionStatsProvider extends ChangeNotifier {
   set selectedChartType(ChartType chartType) {
     if (_selectedChartType == chartType) return;
     _selectedChartType = chartType;
-    _scheduleFetch();
     notifyListeners();
   }
 
