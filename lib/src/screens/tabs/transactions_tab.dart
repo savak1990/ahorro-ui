@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import '../widgets/transaction_tile.dart';
-import '../models/filter_option.dart';
-import '../widgets/add_transaction_bottom_sheet.dart';
-import '../widgets/date_filter_bottom_sheet.dart';
+import '../../models/filter_option.dart';
+import '../../widgets/date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
-import '../models/transaction_display_data.dart';
-import '../models/grouping_type.dart';
-import '../models/date_filter_type.dart';
-import '../widgets/grouped_transactions_sliver.dart';
-import '../widgets/active_filters_summary.dart';
-import '../widgets/active_date_filters_summary.dart';
-import 'transaction_details_screen.dart';
+import '../../models/grouping_type.dart';
+import '../../models/date_filter_type.dart';
+import '../../widgets/grouped_transactions_sliver.dart';
+import '../../widgets/active_filters_summary.dart';
+import '../../widgets/active_date_filters_summary.dart';
+import '../transaction_details_screen.dart';
 import 'package:provider/provider.dart';
-import '../providers/transaction_entries_provider.dart';
-import '../providers/transactions_filter_provider.dart';
-import '../constants/app_constants.dart';
-import '../constants/app_strings.dart';
-import '../widgets/typography.dart';
+import '../../providers/transaction_entries_provider.dart';
+import '../../providers/transactions_filter_provider.dart';
+import '../../constants/app_constants.dart';
+import '../../constants/app_strings.dart';
+import '../../widgets/typography.dart';
+import '../../utils/message_utils.dart';
 
-class TransactionsScreen extends StatefulWidget {
+class TransactionsTab extends StatefulWidget {
   final String? initialType;
   final String? initialCurrency;
   final DateTime? initialStartDate;
   final DateTime? initialEndDate;
-  
-  const TransactionsScreen({
-    super.key, 
+
+  const TransactionsTab({
+    super.key,
     this.initialType,
     this.initialCurrency,
     this.initialStartDate,
@@ -34,10 +31,10 @@ class TransactionsScreen extends StatefulWidget {
   });
 
   @override
-  State<TransactionsScreen> createState() => _TransactionsScreenState();
+  State<TransactionsTab> createState() => _TransactionsTabState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> {
+class _TransactionsTabState extends State<TransactionsTab> {
   bool _showAppBarTitle = false;
   final ScrollController _scrollController = ScrollController();
 
@@ -49,7 +46,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _applyInitialFilters();
     });
-    
+
     // Добавляем слушатель скролла
     _scrollController.addListener(_onScroll);
   }
@@ -72,28 +69,37 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _refreshTransactions() {
-    Provider.of<TransactionEntriesProvider>(context, listen: false).loadEntries();
+    Provider.of<TransactionEntriesProvider>(
+      context,
+      listen: false,
+    ).loadEntries();
   }
 
   void _applyInitialFilters() {
-    final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
-    final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
-    
+    final filter = Provider.of<TransactionsFilterProvider>(
+      context,
+      listen: false,
+    );
+    final entriesProvider = Provider.of<TransactionEntriesProvider>(
+      context,
+      listen: false,
+    );
+
     // Сначала очищаем все фильтры
     filter.clearAllFilters();
-    
+
     // Фильтр по типу транзакции
     if (widget.initialType != null && widget.initialType!.isNotEmpty) {
       filter.toggleType(widget.initialType!, true);
     }
-    
+
     // Фильтр по периоду дат
     if (widget.initialStartDate != null && widget.initialEndDate != null) {
       filter.setDateFilterType(DateFilterType.period);
       filter.setStartDate(widget.initialStartDate);
       filter.setEndDate(widget.initialEndDate);
     }
-    
+
     // Фильтр по валюте (через фильтр аккаунтов, поскольку валюта связана с балансом)
     if (widget.initialCurrency != null && widget.initialCurrency!.isNotEmpty) {
       // Если entries уже загружены, применяем фильтр сразу
@@ -106,28 +112,36 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
-  void _filterAccountsByCurrency(TransactionsFilterProvider filter, String currency) {
+  void _filterAccountsByCurrency(
+    TransactionsFilterProvider filter,
+    String currency,
+  ) {
     // Получаем все доступные аккаунты и находим те, которые связаны с указанной валютой
-    final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+    final entriesProvider = Provider.of<TransactionEntriesProvider>(
+      context,
+      listen: false,
+    );
     if (entriesProvider.entries.isNotEmpty) {
       // Собираем все уникальные комбинации кошелек-валюта
       final walletCurrencyMap = <String, String>{};
       for (final entry in entriesProvider.entries) {
         walletCurrencyMap[entry.balanceTitle] = entry.balanceCurrency;
       }
-      
+
       debugPrint('[TRANSACTIONS] All wallets and currencies:');
       walletCurrencyMap.forEach((wallet, curr) {
         debugPrint('[TRANSACTIONS] - $wallet: $curr');
       });
-      
+
       final accountsWithCurrency = entriesProvider.entries
           .where((entry) => entry.balanceCurrency == currency)
           .map((entry) => entry.balanceTitle)
           .toSet();
-      
-      debugPrint('[TRANSACTIONS] Filtering for currency $currency, found accounts: $accountsWithCurrency');
-      
+
+      debugPrint(
+        '[TRANSACTIONS] Filtering for currency $currency, found accounts: $accountsWithCurrency',
+      );
+
       // Применяем фильтр по найденным аккаунтам
       for (final account in accountsWithCurrency) {
         filter.toggleAccount(account, true);
@@ -135,10 +149,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
-  void _waitForEntriesAndApplyCurrencyFilter(TransactionsFilterProvider filter, String currency) {
+  void _waitForEntriesAndApplyCurrencyFilter(
+    TransactionsFilterProvider filter,
+    String currency,
+  ) {
     // Используем addPostFrameCallback для повторной попытки после следующего кадра
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final entriesProvider = Provider.of<TransactionEntriesProvider>(context, listen: false);
+      final entriesProvider = Provider.of<TransactionEntriesProvider>(
+        context,
+        listen: false,
+      );
       if (entriesProvider.entries.isNotEmpty) {
         _filterAccountsByCurrency(filter, currency);
       } else if (!entriesProvider.isLoading) {
@@ -164,7 +184,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   // Группировка перенесена в провайдер
 
   void _showDateFilterBottomSheet() async {
-    final filter = Provider.of<TransactionsFilterProvider>(context, listen: false);
+    final filter = Provider.of<TransactionsFilterProvider>(
+      context,
+      listen: false,
+    );
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
@@ -187,7 +210,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     if (result != null) {
       final String typeStr = result['filterType'] as String;
-      filter.setDateFilterType(typeStr == 'period' ? DateFilterType.period : DateFilterType.month);
+      filter.setDateFilterType(
+        typeStr == 'period' ? DateFilterType.period : DateFilterType.month,
+      );
       filter.setYear(result['year']);
       filter.setMonth(result['month']);
       filter.setStartDate(result['startDate']);
@@ -196,30 +221,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     }
   }
 
-  void _onTypeFilterChanged(String value, bool selected) {
-    Provider.of<TransactionsFilterProvider>(context, listen: false).toggleType(value, selected);
-  }
-
-  void _onAccountFilterChanged(String value, bool selected) {
-    Provider.of<TransactionsFilterProvider>(context, listen: false).toggleAccount(value, selected);
-  }
-
-  void _onCategoryFilterChanged(String value, bool selected) {
-    Provider.of<TransactionsFilterProvider>(context, listen: false).toggleCategory(value, selected);
-  }
-
   void _clearAllFilters() {
-    Provider.of<TransactionsFilterProvider>(context, listen: false).clearAllFilters();
+    Provider.of<TransactionsFilterProvider>(
+      context,
+      listen: false,
+    ).clearAllFilters();
     _refreshTransactions();
   }
 
   // removed: icon mapping now handled via Category.getCategoryIcon in provider
 
-  List<FilterOption> _getTypeFilterOptions() => Provider.of<TransactionsFilterProvider>(context, listen: false).getTypeFilterOptions();
+  List<FilterOption> _getTypeFilterOptions() =>
+      Provider.of<TransactionsFilterProvider>(
+        context,
+        listen: false,
+      ).getTypeFilterOptions();
 
-  List<FilterOption> _getAccountFilterOptions() => Provider.of<TransactionsFilterProvider>(context, listen: false).getAccountFilterOptions();
+  List<FilterOption> _getAccountFilterOptions() =>
+      Provider.of<TransactionsFilterProvider>(
+        context,
+        listen: false,
+      ).getAccountFilterOptions();
 
-  List<FilterOption> _getCategoryFilterOptions() => Provider.of<TransactionsFilterProvider>(context, listen: false).getCategoryFilterOptions();
+  List<FilterOption> _getCategoryFilterOptions() =>
+      Provider.of<TransactionsFilterProvider>(
+        context,
+        listen: false,
+      ).getCategoryFilterOptions();
 
   // moved to provider
 
@@ -241,16 +269,28 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           typeOptions: _getTypeFilterOptions(),
           accountOptions: _getAccountFilterOptions(),
           categoryOptions: _getCategoryFilterOptions(),
-          initialSelectedTypes: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedTypes,
-          initialSelectedAccounts: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedAccounts,
-          initialSelectedCategories: Provider.of<TransactionsFilterProvider>(context, listen: false).selectedCategories,
+          initialSelectedTypes: Provider.of<TransactionsFilterProvider>(
+            context,
+            listen: false,
+          ).selectedTypes,
+          initialSelectedAccounts: Provider.of<TransactionsFilterProvider>(
+            context,
+            listen: false,
+          ).selectedAccounts,
+          initialSelectedCategories: Provider.of<TransactionsFilterProvider>(
+            context,
+            listen: false,
+          ).selectedCategories,
         ),
       ),
     );
 
     if (result != null) {
       debugPrint('Filters result: $result');
-      Provider.of<TransactionsFilterProvider>(context, listen: false).updateSelections(
+      Provider.of<TransactionsFilterProvider>(
+        context,
+        listen: false,
+      ).updateSelections(
         types: result['types'],
         accounts: result['accounts'],
         categories: result['categories'],
@@ -267,26 +307,49 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Group by',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Group by', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             ListTile(
-              leading: Icon(Icons.calendar_today),
-              title: Text('Date'),
-              trailing: Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType == GroupingType.date ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Date'),
+              trailing:
+                  Provider.of<TransactionsFilterProvider>(
+                        context,
+                        listen: false,
+                      ).groupingType ==
+                      GroupingType.date
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
               onTap: () {
-                Provider.of<TransactionsFilterProvider>(context, listen: false).setGroupingType(GroupingType.date);
+                Provider.of<TransactionsFilterProvider>(
+                  context,
+                  listen: false,
+                ).setGroupingType(GroupingType.date);
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              leading: Icon(Icons.category),
-              title: Text('Category'),
-              trailing: Provider.of<TransactionsFilterProvider>(context, listen: false).groupingType == GroupingType.category ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              leading: const Icon(Icons.category),
+              title: const Text('Category'),
+              trailing:
+                  Provider.of<TransactionsFilterProvider>(
+                        context,
+                        listen: false,
+                      ).groupingType ==
+                      GroupingType.category
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
               onTap: () {
-                Provider.of<TransactionsFilterProvider>(context, listen: false).setGroupingType(GroupingType.category);
+                Provider.of<TransactionsFilterProvider>(
+                  context,
+                  listen: false,
+                ).setGroupingType(GroupingType.category);
                 Navigator.pop(context);
               },
             ),
@@ -301,12 +364,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     final DateTime month = args?['month'] ?? DateTime.now();
 
     return Scaffold(
       appBar: AppBar(
-        title: _showAppBarTitle 
+        title: _showAppBarTitle
             ? Text(
                 AppStrings.transactionsTitle,
                 style: textTheme.titleLarge?.copyWith(
@@ -318,35 +382,83 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         centerTitle: true,
-        bottom: (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters ||
-                Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
+        bottom:
+            (Provider.of<TransactionsFilterProvider>(
+                  context,
+                ).hasActiveDateFilters ||
+                Provider.of<TransactionsFilterProvider>(
+                  context,
+                ).hasActiveNonDateFilters)
             ? PreferredSize(
                 preferredSize: Size.fromHeight(
-                  (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters ? 56 : 0) +
-                      (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters ? 56 : 0) +
-                      (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters && 
-                       Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters ? 4 : 0),
+                  (Provider.of<TransactionsFilterProvider>(
+                            context,
+                          ).hasActiveDateFilters
+                          ? 56
+                          : 0) +
+                      (Provider.of<TransactionsFilterProvider>(
+                            context,
+                          ).hasActiveNonDateFilters
+                          ? 56
+                          : 0) +
+                      (Provider.of<TransactionsFilterProvider>(
+                                context,
+                              ).hasActiveDateFilters &&
+                              Provider.of<TransactionsFilterProvider>(
+                                context,
+                              ).hasActiveNonDateFilters
+                          ? 4
+                          : 0),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters)
+                    if (Provider.of<TransactionsFilterProvider>(
+                      context,
+                    ).hasActiveDateFilters)
                       ActiveDateFiltersSummary(
-                        dateFilterType: Provider.of<TransactionsFilterProvider>(context).dateFilterType,
-                        selectedYear: Provider.of<TransactionsFilterProvider>(context).selectedYear,
-                        selectedMonth: Provider.of<TransactionsFilterProvider>(context).selectedMonth,
-                        startDate: Provider.of<TransactionsFilterProvider>(context).startDate,
-                        endDate: Provider.of<TransactionsFilterProvider>(context).endDate,
-                        onClear: () => Provider.of<TransactionsFilterProvider>(context, listen: false).clearDateFilters(),
+                        dateFilterType: Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).dateFilterType,
+                        selectedYear: Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).selectedYear,
+                        selectedMonth: Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).selectedMonth,
+                        startDate: Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).startDate,
+                        endDate: Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).endDate,
+                        onClear: () => Provider.of<TransactionsFilterProvider>(
+                          context,
+                          listen: false,
+                        ).clearDateFilters(),
                       ),
-                    if (Provider.of<TransactionsFilterProvider>(context).hasActiveDateFilters && 
-                        Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
+                    if (Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).hasActiveDateFilters &&
+                        Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).hasActiveNonDateFilters)
                       const SizedBox(height: 4),
-                    if (Provider.of<TransactionsFilterProvider>(context).hasActiveNonDateFilters)
+                    if (Provider.of<TransactionsFilterProvider>(
+                      context,
+                    ).hasActiveNonDateFilters)
                       ActiveFiltersSummary(
-                        selectedTypes: Provider.of<TransactionsFilterProvider>(context).selectedTypes,
-                        selectedAccounts: Provider.of<TransactionsFilterProvider>(context).selectedAccounts,
-                        selectedCategories: Provider.of<TransactionsFilterProvider>(context).selectedCategories,
+                        selectedTypes: Provider.of<TransactionsFilterProvider>(
+                          context,
+                        ).selectedTypes,
+                        selectedAccounts:
+                            Provider.of<TransactionsFilterProvider>(
+                              context,
+                            ).selectedAccounts,
+                        selectedCategories:
+                            Provider.of<TransactionsFilterProvider>(
+                              context,
+                            ).selectedCategories,
                         onClear: _clearAllFilters,
                       ),
                   ],
@@ -362,10 +474,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             onPressed: _showGroupingOptions,
           ),
           IconButton(
-            icon: Icon(
-              Icons.tune,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            icon: Icon(Icons.tune, color: colorScheme.onSurfaceVariant),
             onPressed: _showFiltersBottomSheet,
           ),
           IconButton(
@@ -387,13 +496,27 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
-                  Text('Error loading transactions', style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface)),
+                  Text(
+                    'Error loading transactions',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _refreshTransactions,
-                    child: Text('Retry', style: textTheme.bodyMedium?.copyWith(color: colorScheme.primary)),
+                    child: Text(
+                      'Retry',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -404,12 +527,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           // Передаём entries провайдеру фильтров после кадра, чтобы избежать notify во время build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             filterProvider.setEntries(entriesProvider.entries);
-            
+
             // Если у нас есть фильтр по валюте, который еще не был применен, применяем его сейчас
-            if (widget.initialCurrency != null && 
-                widget.initialCurrency!.isNotEmpty && 
+            if (widget.initialCurrency != null &&
+                widget.initialCurrency!.isNotEmpty &&
                 filterProvider.selectedAccounts.isEmpty) {
-              _filterAccountsByCurrency(filterProvider, widget.initialCurrency!);
+              _filterAccountsByCurrency(
+                filterProvider,
+                widget.initialCurrency!,
+              );
             }
           });
 
@@ -435,7 +561,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    (filterProvider.hasActiveDateFilters || filterProvider.hasActiveNonDateFilters)
+                    (filterProvider.hasActiveDateFilters ||
+                            filterProvider.hasActiveNonDateFilters)
                         ? 'with current filters'
                         : 'for ${_getMonthName(month)}',
                     style: textTheme.bodyMedium?.copyWith(
@@ -472,15 +599,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 // Список транзакций
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.horizontalPadding, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.horizontalPadding,
+                    vertical: 8,
+                  ),
                   sliver: GroupedTransactionsSliver(
                     groupedTransactions: groupedTransactions,
-                    onTapTransaction: (tx) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => TransactionDetailsScreen(transactionId: tx.id),
-                        ),
-                      );
+                    onTapTransaction: (tx) async {
+                      final result = await Navigator.of(context)
+                          .push<Map<String, dynamic>?>(
+                            MaterialPageRoute(
+                              builder: (context) => TransactionDetailsScreen(
+                                transactionId: tx.id,
+                              ),
+                            ),
+                          );
+
+                      // Handle result from transaction details screen
+                      if (result != null && mounted) {
+                        final bool success = result['success'] ?? false;
+                        final String message = result['message'] ?? '';
+
+                        if (success) {
+                          await MessageUtils.showSuccess(context, message);
+                        } else {
+                          await MessageUtils.showError(context, message);
+                        }
+                      }
                     },
                   ),
                 ),
@@ -489,18 +634,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showAddTransactionBottomSheet(context).then((_) {
-            _refreshTransactions();
-          });
-        },
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -508,8 +641,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   String _getMonthName(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[date.month - 1];
   }
@@ -519,7 +662,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   // moved to provider
 
   void _clearDateFilters() {
-    Provider.of<TransactionsFilterProvider>(context, listen: false).clearDateFilters();
+    Provider.of<TransactionsFilterProvider>(
+      context,
+      listen: false,
+    ).clearDateFilters();
     _refreshTransactions();
   }
 

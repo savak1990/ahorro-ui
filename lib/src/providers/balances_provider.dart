@@ -10,8 +10,15 @@ class BalancesProvider extends BaseProvider {
   static const Duration _cacheDuration = Duration(minutes: 60);
 
   /// Возвращает только активные балансы (без deletedAt)
-  List<Balance> get balances =>
-      _balances.where((balance) => balance.deletedAt == null).toList();
+  List<Balance> get balances {
+    final activeBalances = _balances
+        .where((balance) => balance.deletedAt == null)
+        .toList();
+    debugPrint(
+      '[BalancesProvider]: get balances called - returning ${activeBalances.length} active balances out of ${_balances.length} total',
+    );
+    return activeBalances;
+  }
 
   /// Возвращает все балансы (включая удаленные) - для отладки
   List<Balance> get allBalances => _balances;
@@ -19,21 +26,51 @@ class BalancesProvider extends BaseProvider {
   String? get error => errorMessage;
 
   Future<void> loadBalances({bool forceRefresh = false}) async {
+    debugPrint(
+      '[BalancesProvider]: loadBalances called - forceRefresh: $forceRefresh',
+    );
+    debugPrint(
+      '[BalancesProvider]: Current state - _balances.length: ${_balances.length}, shouldRefresh: ${shouldRefresh(_cacheDuration)}',
+    );
+
     if (!forceRefresh &&
         !shouldRefresh(_cacheDuration) &&
         _balances.isNotEmpty) {
+      debugPrint('[BalancesProvider]: Using cached data, skipping API call');
       return;
     }
+
+    debugPrint('[BalancesProvider]: Starting API call to load balances');
     await execute(() async {
-      _balances = await ApiService.getBalances();
-      final activeBalances =
-          _balances.where((balance) => balance.deletedAt == null).length;
-      debugPrint(
-          '[BalancesProvider]: Loaded ${_balances.length} balances total, $activeBalances active');
+      try {
+        debugPrint('[BalancesProvider]: Calling ApiService.getBalances()');
+        _balances = await ApiService.getBalances();
+
+        final activeBalances = _balances
+            .where((balance) => balance.deletedAt == null)
+            .length;
+
+        debugPrint('[BalancesProvider]: API call successful');
+        debugPrint(
+          '[BalancesProvider]: Loaded ${_balances.length} balances total, $activeBalances active',
+        );
+
+        // Log first few balance titles for debugging
+        if (_balances.isNotEmpty) {
+          final titles = _balances.take(3).map((b) => b.title).join(', ');
+          debugPrint('[BalancesProvider]: Sample balance titles: $titles');
+        }
+      } catch (e) {
+        debugPrint('[BalancesProvider]: API call failed with error: $e');
+        rethrow;
+      }
     });
   }
 
   void clearData() {
+    debugPrint(
+      '[BalancesProvider]: clearData called - clearing ${_balances.length} balances',
+    );
     _balances = [];
     notifyListeners();
   }
@@ -58,7 +95,8 @@ class BalancesProvider extends BaseProvider {
         final newBalance = Balance.fromJson(response);
         _balances.add(newBalance);
         debugPrint(
-            '[BalancesProvider]: Added new balance: ${newBalance.title}');
+          '[BalancesProvider]: Added new balance: ${newBalance.title}',
+        );
       }
     });
   }

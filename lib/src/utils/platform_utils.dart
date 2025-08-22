@@ -1,37 +1,38 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
 class PlatformUtils {
-  // Определение платформы
+  // Platform detection
   static bool get isWeb => kIsWeb;
-  static bool get isAndroid => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-  static bool get isIOS => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static bool get isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  static bool get isIOS =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   static bool get isMobile => isAndroid || isIOS;
   static bool get isDesktop => isWeb;
-  
-  // Дополнительные утилиты для адаптивной навигации
+
+  // Additional utilities for adaptive navigation
   static bool get shouldUseSideNavigation => isWeb;
   static bool get shouldUseBottomNavigation => isMobile;
-  
-  // Определение размера экрана для веб
+
+  // Screen size detection for web
   static bool get isWideScreen {
     if (!isWeb) return false;
-    // Для веб проверяем ширину экрана через MediaQuery
-    return true; // Будет определяться в виджете
+    // For web, check screen width via MediaQuery
+    return true; // Will be determined in the widget
   }
 
-  // Методы для работы с платформо-специфичными стилями
+  // Methods for platform-specific styles
   static double get adaptiveElevation {
-    if (isIOS) return 0.0; // iOS не использует тени
-    if (isAndroid) return 6.0; // Android использует Material Design тени
-    return 2.0; // Web использует средние тени
+    if (isIOS) return 0.0; // iOS does not use shadows
+    if (isAndroid) return 6.0; // Android uses Material Design shadows
+    return 2.0; // Web uses medium shadows
   }
 
   static double get adaptiveBorderRadius {
-    if (isIOS) return 8.0; // iOS использует более мягкие углы
-    if (isAndroid) return 4.0; // Android использует Material Design углы
-    return 6.0; // Web использует средние углы
+    if (isIOS) return 8.0; // iOS uses softer corners
+    if (isAndroid) return 4.0; // Android uses Material Design corners
+    return 6.0; // Web uses medium corners
   }
 
   static EdgeInsets get adaptivePadding {
@@ -40,9 +41,9 @@ class PlatformUtils {
     return const EdgeInsets.all(14.0);
   }
 
-  // Методы для определения системных настроек
+  // Methods for determining system settings
   static bool get isDarkModeSupported {
-    // iOS и Android поддерживают темную тему
+    // iOS and Android support dark theme
     return isMobile;
   }
 
@@ -53,7 +54,7 @@ class PlatformUtils {
     return 'Unknown';
   }
 
-  // Методы для адаптивных стилей
+  // Methods for adaptive styles
   static Map<String, dynamic> get adaptiveStyles {
     return {
       'elevation': adaptiveElevation,
@@ -62,4 +63,4 @@ class PlatformUtils {
       'platform': platformName,
     };
   }
-} 
+}

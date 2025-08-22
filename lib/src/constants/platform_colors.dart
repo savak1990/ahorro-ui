@@ -75,9 +75,9 @@ class PlatformColors {
   // Темная тема (адаптированная под платформу)
   static Color get darkPrimary => isIOS ? _iosPrimary : _androidPrimary;
   static Color get darkBackground => _universalBlack;
-  static Color get darkSurface => Color(0xFF1C1C1E); // iOS Dark Gray
+  static Color get darkSurface => const Color(0xFF1C1C1E); // iOS Dark Gray
   static Color get darkTextPrimary => _universalWhite;
-  static Color get darkTextSecondary => isIOS ? Color(0xFF8E8E93) : Color(0xFFBDBDBD);
+  static Color get darkTextSecondary => isIOS ? const Color(0xFF8E8E93) : const Color(0xFFBDBDBD);
 
   // Метод для получения цвета с учетом платформы и темы
   static Color getColor({

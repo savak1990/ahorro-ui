@@ -6,7 +6,7 @@ class BalanceTile extends StatelessWidget {
   final Balance balance;
   final VoidCallback? onDelete;
   final bool useCardBackground;
-  const BalanceTile({required this.balance, this.onDelete, this.useCardBackground = true, Key? key}) : super(key: key);
+  const BalanceTile({required this.balance, this.onDelete, this.useCardBackground = true, super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -19,36 +19,27 @@ class SettingsListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Row(
           children: [
-            Icon(
-              leadingIcon,
-              color: leadingColor ?? scheme.primary,
-            ),
+            Icon(leadingIcon, color: leadingColor ?? scheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             if (showChevron)
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 18,
-                color: scheme.secondary,
-              ),
+              Icon(Icons.arrow_forward_ios, size: 18, color: scheme.secondary),
           ],
         ),
       ),
     );
   }
 }
-

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
 import '../models/balance.dart';
 import '../providers/balances_provider.dart';
 import '../widgets/add_balance_form.dart';
@@ -312,7 +311,7 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
                     ? '${_getBalanceById(_selectedFromBalanceId!)?.currency} '
                     : '',
                 ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 16),
 
@@ -327,7 +326,7 @@ class MovementTransactionFormState extends State<MovementTransactionForm> {
                       ? '${_getBalanceById(_selectedToBalanceId!)?.currency} '
                       : '',
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 16),
               ],

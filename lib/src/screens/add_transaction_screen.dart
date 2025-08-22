@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
 import 'package:provider/provider.dart';
 
-import '../config/theme.dart';
 import '../constants/app_typography.dart';
-import '../models/category.dart';
 import '../providers/transaction_entries_provider.dart';
 import '../widgets/expense_transaction_form.dart';
 import '../widgets/income_transaction_form.dart';
@@ -48,7 +46,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         date: data.date,
         categoryId: '',
         description: '',
-        merchant: data.merchant,
         transactionEntriesParam: data.entries,
         balanceId: data.balanceId,
       );
@@ -56,27 +53,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         setState(() {
           _isLoading = false;
         });
-        final success = Theme.of(context).extension<SuccessColors>();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Transaction saved!'),
-            backgroundColor: success?.successContainer,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.pop(context, true);
+        // Return success result to parent
+        Navigator.pop(context, {
+          'success': true,
+          'message': 'Transaction saved!',
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        // Return error result to parent
+        Navigator.pop(context, {'success': false, 'message': 'Error: $e'});
       }
     }
   }
@@ -96,7 +85,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         date: data.date,
         categoryId: '',
         description: '',
-        merchant: data.source, // source сохраняем в merchant
         transactionEntriesParam: data.entries,
         balanceId: data.balanceId,
       );
@@ -104,27 +92,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         setState(() {
           _isLoading = false;
         });
-        final success = Theme.of(context).extension<SuccessColors>();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Transaction saved!'),
-            backgroundColor: success?.successContainer,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.pop(context, true);
+        // Return success result to parent
+        Navigator.pop(context, {
+          'success': true,
+          'message': 'Transaction saved!',
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        // Return error result to parent
+        Navigator.pop(context, {'success': false, 'message': 'Error: $e'});
       }
     }
   }
@@ -147,27 +127,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         setState(() {
           _isLoading = false;
         });
-        final success = Theme.of(context).extension<SuccessColors>();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Transfer saved!'),
-            backgroundColor: success?.successContainer,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.pop(context, true);
+        // Return success result to parent
+        Navigator.pop(context, {'success': true, 'message': 'Transfer saved!'});
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        // Return error result to parent
+        Navigator.pop(context, {'success': false, 'message': 'Error: $e'});
       }
     }
   }
@@ -315,31 +284,5 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         ),
       ),
     );
-  }
-}
-
-class _TransactionItem {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController categoryController = TextEditingController();
-  String selectedCategoryId = '';
-  String defaultCategoryId = '';
-  String defaultCategoryName = '';
-  IconData? categoryIcon;
-
-  _TransactionItem({Category? defaultCategory}) {
-    if (defaultCategory != null) {
-      defaultCategoryId = defaultCategory.id;
-      defaultCategoryName = defaultCategory.name;
-      selectedCategoryId = defaultCategory.id;
-      categoryController.text = defaultCategory.name;
-      categoryIcon = defaultCategory.iconData;
-    }
-  }
-
-  void dispose() {
-    nameController.dispose();
-    amountController.dispose();
-    categoryController.dispose();
   }
 }

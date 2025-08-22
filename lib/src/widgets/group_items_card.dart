@@ -42,7 +42,7 @@ class GroupItemsCard extends StatelessWidget {
               isLast: txIndex == items.length - 1,
               onTap: () => onTapTransaction(tx),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

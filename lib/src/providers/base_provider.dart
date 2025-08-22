@@ -52,12 +52,12 @@ abstract class BaseProvider extends ChangeNotifier {
   bool get hasError => _errorMessage != null;
   bool get hasData => _lastLoadedAt != null;
   bool get isInitialized => hasData && !hasError;
-  
+
   bool shouldRefresh(Duration cacheDuration) {
-    return _lastLoadedAt == null || 
-           DateTime.now().difference(_lastLoadedAt!) > cacheDuration;
+    return _lastLoadedAt == null ||
+        DateTime.now().difference(_lastLoadedAt!) > cacheDuration;
   }
-  
+
   void reset() {
     _isLoading = false;
     _errorMessage = null;

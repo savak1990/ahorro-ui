@@ -9,10 +9,10 @@ class MonthlyOverviewCard extends StatelessWidget {
   final void Function(String type)? onTap;
 
   const MonthlyOverviewCard({
-    Key? key,
+    super.key,
     required this.entries,
     this.onTap,
-  }) : super(key: key);
+  });
 
   Map<String, double> _calculateMonthlyTotals(List<TransactionEntryData> entries) {
     final currentMonth = DateTime.now();

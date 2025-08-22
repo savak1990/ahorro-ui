@@ -1,87 +1,72 @@
-class CurrencyStats {
-  final int amount; // В копейках/центах
-  final int transactionsCount;
-  final int transactionEntriesCount;
+import 'package:ahorro_ui/src/models/currencies.dart';
 
-  const CurrencyStats({
+enum TransactionStatsType { expense, income }
+
+enum TransactionStatsGrouping {
+  balance,
+  category,
+  currency,
+  quarter,
+  month,
+  week,
+  day,
+}
+
+class TransactionStatsItem {
+  // The value of specific grouping, e.g., category name, month name
+  final String label;
+  final int amount;
+  final CurrencyCode currency;
+  final int count;
+  final String? icon;
+
+  const TransactionStatsItem({
+    required this.label,
     required this.amount,
-    required this.transactionsCount,
-    required this.transactionEntriesCount,
+    required this.currency,
+    required this.count,
+    this.icon,
   });
 
-  double get amountDecimal => amount / 100.0; // Преобразование в обычные единицы
-
-  factory CurrencyStats.fromJson(Map<String, dynamic> json) {
-    return CurrencyStats(
+  factory TransactionStatsItem.fromJson(Map<String, dynamic> json) {
+    return TransactionStatsItem(
+      icon: json['icon'] as String?, // Handle null values
+      label: json['label'] as String,
       amount: json['amount'] as int,
-      transactionsCount: json['transactionsCount'] as int,
-      transactionEntriesCount: json['transactionEntriesCount'] as int,
+      currency: toCurrencyCode(json['currency'] as String),
+      count: json['count'] as int,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'icon': icon,
+      'label': label,
       'amount': amount,
-      'transactionsCount': transactionsCount,
-      'transactionEntriesCount': transactionEntriesCount,
+      'currency': fromCurrencyCode(currency),
+      'count': count,
     };
   }
-}
 
-class TransactionTypeStats {
-  final Map<String, CurrencyStats> currencies;
-
-  const TransactionTypeStats({
-    required this.currencies,
-  });
-
-  factory TransactionTypeStats.fromJson(Map<String, dynamic> json) {
-    final Map<String, CurrencyStats> currencies = {};
-    json.forEach((currency, stats) {
-      if (stats is Map<String, dynamic>) {
-        currencies[currency] = CurrencyStats.fromJson(stats);
-      }
-    });
-    return TransactionTypeStats(currencies: currencies);
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> result = {};
-    currencies.forEach((currency, stats) {
-      result[currency] = stats.toJson();
-    });
-    return result;
+  String get formattedAmount {
+    return formatAmountInt(amount, currency);
   }
 }
 
 class TransactionStatsResponse {
-  final TransactionTypeStats? expense;
-  final TransactionTypeStats? income;
+  final List<TransactionStatsItem>? items;
 
-  const TransactionStatsResponse({
-    this.expense,
-    this.income,
-  });
+  const TransactionStatsResponse({this.items});
 
   factory TransactionStatsResponse.fromJson(Map<String, dynamic> json) {
-    final totals = json['totals'] as Map<String, dynamic>? ?? {};
-    
     return TransactionStatsResponse(
-      expense: totals['expense'] != null 
-          ? TransactionTypeStats.fromJson(totals['expense'] as Map<String, dynamic>)
-          : null,
-      income: totals['income'] != null 
-          ? TransactionTypeStats.fromJson(totals['income'] as Map<String, dynamic>)
-          : null,
+      items: (json['items'] as List<dynamic>?)
+          ?.map((item) => TransactionStatsItem.fromJson(item))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'totals': {
-        if (expense != null) 'expense': expense!.toJson(),
-        if (income != null) 'income': income!.toJson(),
-      }
-    };
+    return {'items': items?.map((item) => item.toJson()).toList()};
   }
 }

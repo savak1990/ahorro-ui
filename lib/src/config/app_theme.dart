@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import '../constants/app_typography.dart';
 import 'theme.dart' as generated_theme;
+
+CupertinoThemeData materialToCupertino(ThemeData theme) {
+  return CupertinoThemeData(
+    primaryColor: theme.colorScheme.primary,
+    brightness: theme.brightness,
+    // keep it minimal; extend if you want to map text styles / bar colors
+  );
+}
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -9,7 +18,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      
+
       // Color Scheme
       colorScheme: scheme,
 
@@ -47,13 +56,8 @@ class AppTheme {
         color: scheme.surface,
         elevation: kIsWeb ? 2.0 : 4.0,
         shadowColor: Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
 
       // Elevated Button Theme
@@ -62,13 +66,8 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           elevation: kIsWeb ? 1.0 : 2.0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelLarge.copyWith(color: scheme.onPrimary),
         ),
       ),
@@ -78,13 +77,8 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.primary),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelLarge,
         ),
       ),
@@ -93,10 +87,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: scheme.primary,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           textStyle: AppTypography.labelLarge,
         ),
       ),
@@ -125,8 +116,12 @@ class AppTheme {
           horizontal: 16,
           vertical: 12,
         ),
-        labelStyle: AppTypography.bodyMedium.copyWith(color: scheme.onSurfaceVariant),
-        hintStyle: AppTypography.bodyMedium.copyWith(color: scheme.onSurfaceVariant),
+        labelStyle: AppTypography.bodyMedium.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
       ),
 
       // Bottom Navigation Bar Theme
@@ -153,10 +148,12 @@ class AppTheme {
       ),
 
       // Scaffold Background
-      scaffoldBackgroundColor: scheme.background,
+      scaffoldBackgroundColor: scheme.surface,
 
       // Platform-specific adjustments
-      visualDensity: kIsWeb ? VisualDensity.comfortable : VisualDensity.standard,
+      visualDensity: kIsWeb
+          ? VisualDensity.comfortable
+          : VisualDensity.standard,
     );
   }
 
@@ -165,7 +162,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      
+
       // Color Scheme
       colorScheme: scheme,
 
@@ -202,13 +199,8 @@ class AppTheme {
         color: scheme.surface,
         elevation: kIsWeb ? 2.0 : 4.0,
         shadowColor: Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
 
       // Elevated Button Theme
@@ -217,13 +209,8 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           elevation: kIsWeb ? 1.0 : 2.0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelLarge.copyWith(color: scheme.onPrimary),
         ),
       ),
@@ -252,8 +239,12 @@ class AppTheme {
           horizontal: 16,
           vertical: 12,
         ),
-        labelStyle: AppTypography.bodyMedium.copyWith(color: scheme.onSurfaceVariant),
-        hintStyle: AppTypography.bodyMedium.copyWith(color: scheme.onSurfaceVariant),
+        labelStyle: AppTypography.bodyMedium.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
       ),
 
       // Bottom Navigation Bar Theme
@@ -273,10 +264,12 @@ class AppTheme {
       ),
 
       // Scaffold Background
-      scaffoldBackgroundColor: scheme.background,
+      scaffoldBackgroundColor: scheme.surface,
 
       // Platform-specific adjustments
-      visualDensity: kIsWeb ? VisualDensity.comfortable : VisualDensity.standard,
+      visualDensity: kIsWeb
+          ? VisualDensity.comfortable
+          : VisualDensity.standard,
     );
   }
-} 
+}

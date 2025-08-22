@@ -6,6 +6,8 @@ import '../services/auth_service.dart';
 import '../utils/platform_utils.dart';
 
 class AddBalanceForm extends StatefulWidget {
+  const AddBalanceForm({super.key});
+
   @override
   State<AddBalanceForm> createState() => _AddBalanceFormState();
 }
@@ -37,7 +39,7 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
       final provider = Provider.of<BalancesProvider>(context, listen: false);
       // Get userId and groupId from AuthService
       final userId = await AuthService.getUserId();
-      final groupId = AuthService.groupId;
+      const groupId = AuthService.groupId;
       await provider.createBalance(
         userId: userId,
         groupId: groupId,
@@ -167,7 +169,7 @@ class _AddBalanceFormState extends State<AddBalanceForm> {
                 onPressed: _isSubmitting ? null : _submit,
                 child: _isSubmitting
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(AppStrings.createButton),
+                    : const Text(AppStrings.createButton),
               ),
             ),
             const SizedBox(height: 12),

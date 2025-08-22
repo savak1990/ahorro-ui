@@ -79,7 +79,7 @@ class BalanceChips extends StatelessWidget {
                       borderRadius: BorderRadius.circular(PlatformUtils.adaptiveBorderRadius),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
             

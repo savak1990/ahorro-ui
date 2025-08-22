@@ -51,7 +51,7 @@ class FilterChips extends StatelessWidget {
                   children: [
                     if (isSelected) ...[
                       Icon(Icons.check, size: 16, color: colorScheme.primary),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                     ],
                     if (option.icon != null) ...[
                       Icon(
@@ -61,7 +61,7 @@ class FilterChips extends StatelessWidget {
                             ? colorScheme.primary 
                             : colorScheme.onSurfaceVariant,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                     ],
                     Text(option.label),
                   ],
