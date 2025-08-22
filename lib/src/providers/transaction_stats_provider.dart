@@ -5,7 +5,19 @@ import 'package:ahorro_ui/src/models/transaction_stats.dart';
 import 'package:ahorro_ui/src/services/api_service.dart';
 import 'package:flutter/material.dart';
 
-enum TransactionStatsPeriod { year, quarter, month, week, day }
+enum Period { year, quarter, month, week, day }
+
+enum MainFilterOptions {
+  byBalance,
+  byCategory,
+  byCurrency,
+  byQuarter,
+  byMonth,
+  byWeek,
+  byDay,
+}
+
+enum ChartType { pie, bar, donut, line }
 
 class TransactionStatsProvider extends ChangeNotifier {
   TransactionStatsProvider() {
@@ -29,6 +41,7 @@ class TransactionStatsProvider extends ChangeNotifier {
   int _limit = 10;
   String _sort = 'amount';
   String _order = 'desc';
+  ChartType _selectedChartType = ChartType.pie;
 
   // Result state
   bool _loading = false;
@@ -99,29 +112,147 @@ class TransactionStatsProvider extends ChangeNotifier {
     }
   }
 
-  set selectedPeriod(TransactionStatsPeriod period) {
+  set selectedMainFilter(MainFilterOptions option) {
+    TransactionStatsGrouping newGrouping;
+    DateTime? newStartDate;
+    DateTime? newEndDate;
+    final now = DateTime.now();
+
+    switch (option) {
+      case MainFilterOptions.byBalance:
+      case MainFilterOptions.byCategory:
+      case MainFilterOptions.byCurrency:
+        // For byBalance, byCategory, byCurrency: show current month (day 1 to last day)
+        if (option == MainFilterOptions.byBalance) {
+          newGrouping = TransactionStatsGrouping.balance;
+        } else if (option == MainFilterOptions.byCategory) {
+          newGrouping = TransactionStatsGrouping.category;
+        } else {
+          newGrouping = TransactionStatsGrouping.currency;
+        }
+        newStartDate = DateTime(now.year, now.month, 1);
+        newEndDate = DateTime(
+          now.year,
+          now.month + 1,
+          0,
+        ); // Last day of current month
+        break;
+
+      case MainFilterOptions.byQuarter:
+        newGrouping = TransactionStatsGrouping.quarter;
+        // Show last 4 quarters
+        // Current date: 21 Aug 2025 (Q3 2025)
+        // Show: Q4 2024, Q1 2025, Q2 2025, Q3 2025
+        final currentQuarter = _getCurrentQuarter(now);
+        final currentYear = now.year;
+
+        // Start from Q4 of previous year
+        newStartDate = DateTime(currentYear - 1, 10, 1); // Q4 2024 starts Oct 1
+        newEndDate = _getQuarterEndDate(
+          currentYear,
+          currentQuarter,
+        ); // End of current quarter
+        break;
+
+      case MainFilterOptions.byMonth:
+        newGrouping = TransactionStatsGrouping.month;
+        // Show last 6 months
+        final sixMonthsAgo = DateTime(now.year, now.month - 6, 1);
+        newStartDate = sixMonthsAgo;
+        newEndDate = DateTime(
+          now.year,
+          now.month + 1,
+          0,
+        ); // End of current month
+        break;
+
+      case MainFilterOptions.byWeek:
+        newGrouping = TransactionStatsGrouping.week;
+        // Show 8 weeks
+        newStartDate = now.subtract(const Duration(days: 8 * 7));
+        newEndDate = now;
+        break;
+
+      case MainFilterOptions.byDay:
+        newGrouping = TransactionStatsGrouping.day;
+        // Show 1 week (7 days)
+        newStartDate = now.subtract(const Duration(days: 7));
+        newEndDate = now;
+        break;
+    }
+
+    bool hasChanges = false;
+
+    if (_grouping != newGrouping) {
+      _grouping = newGrouping;
+      hasChanges = true;
+    }
+
+    if (_startDate != newStartDate || _endDate != newEndDate) {
+      _startDate = newStartDate;
+      _endDate = newEndDate;
+      hasChanges = true;
+    }
+
+    if (hasChanges) {
+      _scheduleFetch();
+      notifyListeners();
+    }
+  }
+
+  /// Helper method to get current quarter (1-4)
+  int _getCurrentQuarter(DateTime date) {
+    return ((date.month - 1) ~/ 3) + 1;
+  }
+
+  /// Helper method to get the end date of a specific quarter
+  DateTime _getQuarterEndDate(int year, int quarter) {
+    switch (quarter) {
+      case 1: // Q1: Jan-Mar
+        return DateTime(year, 3, 31);
+      case 2: // Q2: Apr-Jun
+        return DateTime(year, 6, 30);
+      case 3: // Q3: Jul-Sep
+        return DateTime(year, 9, 30);
+      case 4: // Q4: Oct-Dec
+        return DateTime(year, 12, 31);
+      default:
+        return DateTime(year, 12, 31);
+    }
+  }
+
+  set selectedChartType(ChartType chartType) {
+    if (_selectedChartType == chartType) return;
+    _selectedChartType = chartType;
+    _scheduleFetch();
+    notifyListeners();
+  }
+
+  ChartType get selectedChartType => _selectedChartType;
+
+  set selectedPeriod(Period period) {
     final now = DateTime.now();
     DateTime? newStartDate;
     DateTime? newEndDate;
 
     switch (period) {
-      case TransactionStatsPeriod.year:
+      case Period.year:
         newStartDate = DateTime(now.year - 1, now.month, now.day);
         newEndDate = now;
         break;
-      case TransactionStatsPeriod.quarter:
+      case Period.quarter:
         newStartDate = DateTime(now.year, now.month - 3, now.day);
         newEndDate = now;
         break;
-      case TransactionStatsPeriod.month:
+      case Period.month:
         newStartDate = DateTime(now.year, now.month - 1, now.day);
         newEndDate = now;
         break;
-      case TransactionStatsPeriod.week:
+      case Period.week:
         newStartDate = now.subtract(const Duration(days: 7));
         newEndDate = now;
         break;
-      case TransactionStatsPeriod.day:
+      case Period.day:
         newStartDate = now.subtract(const Duration(days: 1));
         newEndDate = now;
         break;
@@ -151,6 +282,9 @@ class TransactionStatsProvider extends ChangeNotifier {
   }
 
   String? get selectedCategoryId => _categoryId;
+
+  DateTime? get selectedStartDate => _startDate;
+  DateTime? get selectedEndDate => _endDate;
 
   set selectedBalanceId(String? id) {
     if (_balanceId == id) return;
@@ -185,6 +319,26 @@ class TransactionStatsProvider extends ChangeNotifier {
   }
 
   TransactionStatsGrouping get selectedGrouping => _grouping;
+
+  /// Get the current main filter option based on the grouping
+  MainFilterOptions get selectedMainFilter {
+    switch (_grouping) {
+      case TransactionStatsGrouping.balance:
+        return MainFilterOptions.byBalance;
+      case TransactionStatsGrouping.category:
+        return MainFilterOptions.byCategory;
+      case TransactionStatsGrouping.currency:
+        return MainFilterOptions.byCurrency;
+      case TransactionStatsGrouping.quarter:
+        return MainFilterOptions.byQuarter;
+      case TransactionStatsGrouping.month:
+        return MainFilterOptions.byMonth;
+      case TransactionStatsGrouping.week:
+        return MainFilterOptions.byWeek;
+      case TransactionStatsGrouping.day:
+        return MainFilterOptions.byDay;
+    }
+  }
 
   set selectedCurrency(CurrencyCode currency) {
     if (_currency == currency) return;

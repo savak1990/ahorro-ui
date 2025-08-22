@@ -12,9 +12,11 @@ class TransactionStatsChart extends StatelessWidget {
     final provider = context.watch<TransactionStatsProvider>();
     final data = provider.data?.items ?? []; // Get the transaction stats items
     final isLoading = provider.loading;
+    final typeLabel = provider.selectedTypeLabel;
+    final chartType = provider.selectedChartType;
 
     debugPrint(
-      'TransactionStatsChart: data length = ${data.length}, isLoading = $isLoading',
+      'TransactionStatsChart: data length = ${data.length}, isLoading = $isLoading, chartType = $chartType',
     );
 
     // Consistent container for all states
@@ -24,7 +26,7 @@ class TransactionStatsChart extends StatelessWidget {
       padding: const EdgeInsets.all(
         8.0,
       ), // Reduced padding to give more chart space
-      child: _buildChartContent(isLoading, data, provider.selectedTypeLabel),
+      child: _buildChartContent(isLoading, data, typeLabel, chartType),
     );
   }
 
@@ -32,6 +34,7 @@ class TransactionStatsChart extends StatelessWidget {
     bool isLoading,
     List data,
     String selectedTypeLabel,
+    ChartType chartType,
   ) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -67,74 +70,300 @@ class TransactionStatsChart extends StatelessWidget {
     );
 
     try {
-      debugPrint('Attempting to create Syncfusion PieChart...');
-      return SfCircularChart(
-        title: ChartTitle(
-          text:
-              'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
-          textStyle: const TextStyle(
-            fontSize: 16, // Reduced from 18
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        // Neutral and calm color palette for the entire chart
-        palette: const <Color>[
-          Color(0xFF6B7280), // Cool Gray
-          Color(0xFF8B9DC3), // Muted Blue
-          Color(0xFF9CA3AF), // Light Gray
-          Color(0xFFA7C4A0), // Sage Green
-          Color(0xFFB8A99A), // Warm Beige
-          Color(0xFFC1A9A0), // Dusty Rose
-          Color(0xFFB5A7B8), // Lavender Gray
-          Color(0xFFA8B5B2), // Mint Gray
-          Color(0xFFB4A995), // Taupe
-          Color(0xFF9FB4C7), // Soft Blue Gray
-        ],
-        legend: const Legend(
-          isVisible: true,
-          position: LegendPosition.bottom,
-          overflowMode: LegendItemOverflowMode.wrap, // Enable multiline legend
-          textStyle: TextStyle(fontSize: 10), // Smaller font for more space
-          itemPadding: 4, // Reduced padding for more space
-          padding: 8, // Padding around the legend
-        ),
-        series: <CircularSeries>[
-          PieSeries<_ChartData, String>(
-            dataSource: chartDataList,
-            xValueMapper: (_ChartData data, _) => data.label,
-            yValueMapper: (_ChartData data, _) => data.amount,
-            dataLabelMapper: (_ChartData data, _) =>
-                data.formattedAmount, // Show only amount, not category
-            dataLabelSettings: const DataLabelSettings(
-              isVisible: true,
-              labelPosition: ChartDataLabelPosition.outside,
-              textStyle: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ), // Smaller font
-              connectorLineSettings: ConnectorLineSettings(
-                type: ConnectorType.curve,
-                length: '10%', // Shorter connector lines
-              ),
-              margin: EdgeInsets.all(2), // Reduce margin around labels
-            ),
-            enableTooltip: true,
-            animationDuration: 1000,
-          ),
-        ],
-        tooltipBehavior: TooltipBehavior(
-          enable: true,
-          format: 'point.x: point.y', // Shows "Category: Amount"
-          textStyle: const TextStyle(fontSize: 12),
-          canShowMarker: true,
-          header: '', // Remove header to save space
-        ),
-      );
+      debugPrint('Attempting to create Syncfusion Chart with type: $chartType');
+
+      switch (chartType) {
+        case ChartType.pie:
+          return _buildPieChart(
+            selectedTypeLabel,
+            total,
+            validData,
+            chartDataList,
+          );
+        case ChartType.donut:
+          return _buildDonutChart(
+            selectedTypeLabel,
+            total,
+            validData,
+            chartDataList,
+          );
+        case ChartType.bar:
+          return _buildBarChart(
+            selectedTypeLabel,
+            total,
+            validData,
+            chartDataList,
+          );
+        case ChartType.line:
+          return _buildLineChart(
+            selectedTypeLabel,
+            total,
+            validData,
+            chartDataList,
+          );
+      }
     } catch (e) {
-      debugPrint('Error creating Syncfusion PieChart: $e');
+      debugPrint('Error creating Syncfusion Chart: $e');
       return Center(child: Text('Error: $e'));
     }
+  }
+
+  SfCircularChart _buildPieChart(
+    String selectedTypeLabel,
+    int total,
+    List<dynamic> validData,
+    List<_ChartData> chartDataList,
+  ) {
+    return SfCircularChart(
+      title: ChartTitle(
+        text:
+            'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
+        textStyle: const TextStyle(
+          fontSize: 16, // Reduced from 18
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+      // Neutral and calm color palette for the entire chart
+      palette: const <Color>[
+        Color(0xFF6B7280), // Cool Gray
+        Color(0xFF8B9DC3), // Muted Blue
+        Color(0xFF9CA3AF), // Light Gray
+        Color(0xFFA7C4A0), // Sage Green
+        Color(0xFFB8A99A), // Warm Beige
+        Color(0xFFC1A9A0), // Dusty Rose
+        Color(0xFFB5A7B8), // Lavender Gray
+        Color(0xFFA8B5B2), // Mint Gray
+        Color(0xFFB4A995), // Taupe
+        Color(0xFF9FB4C7), // Soft Blue Gray
+      ],
+      legend: const Legend(
+        isVisible: true,
+        position: LegendPosition.bottom,
+        overflowMode: LegendItemOverflowMode.wrap, // Enable multiline legend
+        textStyle: TextStyle(fontSize: 10), // Smaller font for more space
+        itemPadding: 4, // Reduced padding for more space
+        padding: 8, // Padding around the legend
+      ),
+      series: <CircularSeries>[
+        PieSeries<_ChartData, String>(
+          dataSource: chartDataList,
+          xValueMapper: (_ChartData data, _) => data.label,
+          yValueMapper: (_ChartData data, _) => data.amount,
+          dataLabelMapper: (_ChartData data, _) =>
+              data.formattedAmount, // Show only amount, not category
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            labelPosition: ChartDataLabelPosition.outside,
+            textStyle: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ), // Smaller font
+            connectorLineSettings: ConnectorLineSettings(
+              type: ConnectorType.curve,
+              length: '10%', // Shorter connector lines
+            ),
+            margin: EdgeInsets.all(2), // Reduce margin around labels
+          ),
+          enableTooltip: true,
+          animationDuration: 1000,
+        ),
+      ],
+      tooltipBehavior: TooltipBehavior(
+        enable: true,
+        format: 'point.x: point.y', // Shows "Category: Amount"
+        textStyle: const TextStyle(fontSize: 12),
+        canShowMarker: true,
+        header: '', // Remove header to save space
+      ),
+    );
+  }
+
+  SfCircularChart _buildDonutChart(
+    String selectedTypeLabel,
+    int total,
+    List<dynamic> validData,
+    List<_ChartData> chartDataList,
+  ) {
+    return SfCircularChart(
+      title: ChartTitle(
+        text:
+            'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+      palette: const <Color>[
+        Color(0xFF6B7280), // Cool Gray
+        Color(0xFF8B9DC3), // Muted Blue
+        Color(0xFF9CA3AF), // Light Gray
+        Color(0xFFA7C4A0), // Sage Green
+        Color(0xFFB8A99A), // Warm Beige
+        Color(0xFFC1A9A0), // Dusty Rose
+        Color(0xFFB5A7B8), // Lavender Gray
+        Color(0xFFA8B5B2), // Mint Gray
+        Color(0xFFB4A995), // Taupe
+        Color(0xFF9FB4C7), // Soft Blue Gray
+      ],
+      legend: const Legend(
+        isVisible: true,
+        position: LegendPosition.bottom,
+        overflowMode: LegendItemOverflowMode.wrap,
+        textStyle: TextStyle(fontSize: 10),
+        itemPadding: 4,
+        padding: 8,
+      ),
+      series: <CircularSeries>[
+        DoughnutSeries<_ChartData, String>(
+          dataSource: chartDataList,
+          xValueMapper: (_ChartData data, _) => data.label,
+          yValueMapper: (_ChartData data, _) => data.amount,
+          dataLabelMapper: (_ChartData data, _) => data.formattedAmount,
+          innerRadius: '50%', // Creates the donut hole
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            labelPosition: ChartDataLabelPosition.outside,
+            textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+            connectorLineSettings: ConnectorLineSettings(
+              type: ConnectorType.curve,
+              length: '10%',
+            ),
+            margin: EdgeInsets.all(2),
+          ),
+          enableTooltip: true,
+          animationDuration: 1000,
+        ),
+      ],
+      tooltipBehavior: TooltipBehavior(
+        enable: true,
+        format: 'point.x: point.y',
+        textStyle: const TextStyle(fontSize: 12),
+        canShowMarker: true,
+        header: '',
+      ),
+    );
+  }
+
+  SfCartesianChart _buildBarChart(
+    String selectedTypeLabel,
+    int total,
+    List<dynamic> validData,
+    List<_ChartData> chartDataList,
+  ) {
+    return SfCartesianChart(
+      title: ChartTitle(
+        text:
+            'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+      palette: const <Color>[
+        Color(0xFF6B7280), // Cool Gray
+        Color(0xFF8B9DC3), // Muted Blue
+        Color(0xFF9CA3AF), // Light Gray
+        Color(0xFFA7C4A0), // Sage Green
+        Color(0xFFB8A99A), // Warm Beige
+        Color(0xFFC1A9A0), // Dusty Rose
+        Color(0xFFB5A7B8), // Lavender Gray
+        Color(0xFFA8B5B2), // Mint Gray
+        Color(0xFFB4A995), // Taupe
+        Color(0xFF9FB4C7), // Soft Blue Gray
+      ],
+      primaryXAxis: const CategoryAxis(
+        labelStyle: TextStyle(fontSize: 10),
+        labelRotation: -45, // Rotate labels for better fit
+      ),
+      primaryYAxis: const NumericAxis(labelStyle: TextStyle(fontSize: 10)),
+      legend: const Legend(
+        isVisible:
+            false, // Hide legend for bar chart as categories are on x-axis
+      ),
+      series: <CartesianSeries>[
+        ColumnSeries<_ChartData, String>(
+          dataSource: chartDataList,
+          xValueMapper: (_ChartData data, _) => data.label,
+          yValueMapper: (_ChartData data, _) => data.amount,
+          dataLabelMapper: (_ChartData data, _) => data.formattedAmount,
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            textStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+            labelAlignment: ChartDataLabelAlignment.top,
+          ),
+          enableTooltip: true,
+          animationDuration: 1000,
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
+        ),
+      ],
+      tooltipBehavior: TooltipBehavior(
+        enable: true,
+        format: 'point.x: point.y',
+        textStyle: const TextStyle(fontSize: 12),
+        canShowMarker: true,
+        header: '',
+      ),
+    );
+  }
+
+  SfCartesianChart _buildLineChart(
+    String selectedTypeLabel,
+    int total,
+    List<dynamic> validData,
+    List<_ChartData> chartDataList,
+  ) {
+    return SfCartesianChart(
+      title: ChartTitle(
+        text:
+            'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+      primaryXAxis: const CategoryAxis(
+        labelStyle: TextStyle(fontSize: 10),
+        labelRotation: -45,
+      ),
+      primaryYAxis: const NumericAxis(labelStyle: TextStyle(fontSize: 10)),
+      legend: const Legend(isVisible: false),
+      series: <CartesianSeries>[
+        LineSeries<_ChartData, String>(
+          dataSource: chartDataList,
+          xValueMapper: (_ChartData data, _) => data.label,
+          yValueMapper: (_ChartData data, _) => data.amount,
+          dataLabelMapper: (_ChartData data, _) => data.formattedAmount,
+          color: const Color(0xFF6B7280),
+          width: 3,
+          markerSettings: const MarkerSettings(
+            isVisible: true,
+            shape: DataMarkerType.circle,
+            width: 8,
+            height: 8,
+            borderWidth: 2,
+            borderColor: Colors.white,
+          ),
+          dataLabelSettings: const DataLabelSettings(
+            isVisible: true,
+            textStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+            labelAlignment: ChartDataLabelAlignment.top,
+          ),
+          enableTooltip: true,
+          animationDuration: 1000,
+        ),
+      ],
+      tooltipBehavior: TooltipBehavior(
+        enable: true,
+        format: 'point.x: point.y',
+        textStyle: const TextStyle(fontSize: 12),
+        canShowMarker: true,
+        header: '',
+      ),
+    );
   }
 }
 

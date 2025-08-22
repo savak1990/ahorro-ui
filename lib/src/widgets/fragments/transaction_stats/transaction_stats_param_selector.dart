@@ -1,5 +1,7 @@
 import 'package:ahorro_ui/src/widgets/adaptive/adaptive_button.dart';
-import 'package:ahorro_ui/src/widgets/fragments/transaction_stats/transaction_stats_grouping_selector.dart';
+import 'package:ahorro_ui/src/widgets/fragments/transaction_stats/transacction_stats_chart_type_selector.dart';
+import 'package:ahorro_ui/src/widgets/fragments/transaction_stats/transaction_stats_currency_selector.dart';
+import 'package:ahorro_ui/src/widgets/fragments/transaction_stats/transaction_stats_main_filter_selector.dart';
 import 'package:ahorro_ui/src/widgets/fragments/transaction_stats/transaction_stats_type_selector.dart';
 import 'package:flutter/material.dart';
 
@@ -19,8 +21,14 @@ class TransactionStatsParamSelector extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const TransactionStatsTypeSelector(),
-          const SizedBox(width: 16),
-          const TransactionStatsGroupingSelector(),
+          const SizedBox(width: 8),
+          const TransactionStatsMainFilterSelector(),
+          const SizedBox(width: 8),
+          const TransactionStatsCurrencySelector(),
+          if (!showFullscreenButton) ...[
+            const SizedBox(width: 8),
+            const TransactionStatsChartTypeSelector(),
+          ],
           if (showFullscreenButton) ...[
             const Spacer(),
             AdaptiveIconButton(
