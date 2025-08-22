@@ -31,9 +31,29 @@ class TransactionStatsChart extends StatelessWidget {
           // Trigger a manual refresh
           await provider.refresh();
         },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: _buildChartContent(isLoading, data, typeLabel, chartType),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                height:
+                    constraints.maxHeight +
+                    1, // Make it slightly taller to enable scrolling for refresh
+                width: constraints.maxWidth,
+                child: SizedBox(
+                  height: constraints
+                      .maxHeight, // Chart takes exact available height
+                  width: constraints.maxWidth,
+                  child: _buildChartContent(
+                    isLoading,
+                    data,
+                    typeLabel,
+                    chartType,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -127,11 +147,7 @@ class TransactionStatsChart extends StatelessWidget {
       title: ChartTitle(
         text:
             'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
-        textStyle: const TextStyle(
-          fontSize: 16, // Reduced from 18
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold),
       ),
       // Neutral and calm color palette for the entire chart
       palette: const <Color>[

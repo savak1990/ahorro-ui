@@ -10,7 +10,7 @@ class HomeTabNew extends StatelessWidget {
     return const Column(
       children: [
         Expanded(flex: 5, child: TransactionStatsFragment()),
-        Expanded(flex: 5, child: BudgetsOverviewFragment()),
+        Expanded(flex: 4, child: BudgetsOverviewFragment()),
       ],
     );
   }

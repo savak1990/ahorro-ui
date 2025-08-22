@@ -18,19 +18,16 @@ class TransactionStatsParamSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const TransactionStatsTypeSelector(),
-          const SizedBox(width: 8),
           const TransactionStatsMainFilterSelector(),
-          const SizedBox(width: 8),
           const TransactionStatsCurrencySelector(),
           if (!showFullscreenButton) ...[
-            const SizedBox(width: 8),
             const TransactionStatsChartTypeSelector(),
           ],
           if (showFullscreenButton) ...[
-            const Spacer(),
             AdaptiveIconButton(
               onPressed: () {
                 Navigator.of(context).pushNamed('/transactions/stats');
@@ -41,7 +38,6 @@ class TransactionStatsParamSelector extends StatelessWidget {
               iconSize: 28,
             ),
           ],
-          if (!showFullscreenButton) const Spacer(),
         ],
       ),
     );

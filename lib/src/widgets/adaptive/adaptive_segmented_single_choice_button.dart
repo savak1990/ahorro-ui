@@ -33,6 +33,13 @@ class AdaptiveSegmentedSingleChoiceButton<T extends Object>
       return SegmentedButton<T>(
         multiSelectionEnabled: false,
         emptySelectionAllowed: false,
+        style: SegmentedButton.styleFrom(
+          minimumSize: const Size(0, 24), // Reduce height from default ~48
+          maximumSize: const Size(double.infinity, 24),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          textStyle: const TextStyle(fontSize: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
         segments: items.map((item) {
           return ButtonSegment(value: item, label: itemWidgetBuilder(item));
         }).toList(),
