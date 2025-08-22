@@ -71,29 +71,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     return theme.colorScheme.primary;
   }
 
-  IconData _typeIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'income':
-        return Icons.trending_up;
-      case 'expense':
-        return Icons.trending_down;
-      case 'movement':
-        return Icons.swap_horiz;
-      default:
-        return Icons.category;
-    }
-  }
-
   // Используем общий маппинг иконок категорий из getCategoryIcon (category_picker_dialog.dart)
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    final type = transactionDetails?.type ?? '-';
-    final displayType = type.isNotEmpty
-        ? type[0].toUpperCase() + type.substring(1)
-        : '-';
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
@@ -142,20 +125,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         '[TX_DETAILS] Building UI: type=$typeStr, entries=${entries.length}',
       );
     }
-    final mainEntry = entries.isNotEmpty ? entries[0] : null;
-    final date = tx.transactedAt ?? tx.approvedAt ?? tx.createdAt;
     final balanceTitle = tx.balanceTitle ?? tx.balance?.title ?? '-';
     final currency = tx.balanceCurrency ?? tx.balance?.currency ?? 'EUR';
-    final parsedDate = date;
-    final formattedDate = parsedDate != null
-        ? DateFormat('dd.MM.yyyy HH:mm').format(parsedDate)
-        : '-';
     final transactedAt = tx.transactedAt;
     final formattedTransactedAt = transactedAt != null
         ? DateFormat('dd.MM.yyyy').format(transactedAt)
         : '-';
-
-    Color valueColor = theme.colorScheme.onSurfaceVariant;
 
     return SingleChildScrollView(
       child: Padding(
@@ -455,7 +430,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         .toList();
     final currentBalanceId =
         transactionDetails?.balanceId ?? transactionDetails?.balance?.balanceId;
-    final tx = transactionDetails!;
     String? selectedBalanceId = currentBalanceId;
     bool submitting = false;
     await showModalBottomSheet(
@@ -751,59 +725,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     }
   }
 
-  Future<void> _updateApprovedDate(DateTime newApprovedAt) async {
-    final tx = transactionDetails;
-    if (tx == null) return;
-
-    try {
-      // Show loading indicator
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => const Center(child: CircularProgressIndicator()),
-        );
-      }
-
-      // Create complete payload with the new approved date
-      final payload = _createCompletePayload(newApprovedAt: newApprovedAt);
-
-      debugPrint('[TX_DETAILS] === UPDATE APPROVED DATE ===');
-      debugPrint(
-        '[TX_DETAILS] Current approvedAt: ${tx.approvedAt?.toIso8601String()}',
-      );
-      debugPrint(
-        '[TX_DETAILS] New approvedAt: ${newApprovedAt.toIso8601String()}',
-      );
-      debugPrint(
-        '[TX_DETAILS] Complete payload: ${jsonEncode(payload.toJson())}',
-      );
-
-      await ApiService.updateTransaction(
-        transactionId: widget.transactionId,
-        payload: payload,
-      );
-
-      // Update transaction entries provider to reflect changes
-      if (mounted) {
-        final entriesProvider = context.read<TransactionEntriesProvider>();
-        await entriesProvider.refreshAfterTransactionUpdate();
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        await MessageUtils.showSuccess(context, 'Date is changed');
-        await fetchTransactionDetails(); // Refresh transaction data
-      }
-    } catch (e) {
-      debugPrint('[TX_DETAILS] Failed to update approved date: $e');
-      if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        await MessageUtils.showError(context, 'Error updating date: $e');
-      }
-    }
-  }
-
   Future<void> _showAddEntrySheet(BuildContext context) async {
     final categoriesProvider = context.read<CategoriesProvider>();
 
@@ -1035,7 +956,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       await categoriesProvider.loadCategories(forceRefresh: true);
     }
 
-    final tx = transactionDetails!;
     String? selectedCategoryId = entry.categoryId ?? entry.category?.categoryId;
     String selectedCategoryName =
         entry.categoryName ??
@@ -1576,8 +1496,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
       if (mounted) {
         Navigator.of(context).pop(); // Close loading dialog
-        Navigator.of(context).pop(); // Go back to transactions screen
-        await MessageUtils.showSuccess(context, AppStrings.transactionDeleted);
+        // Navigate back with success result
+        Navigator.of(
+          context,
+        ).pop({'success': true, 'message': AppStrings.transactionDeleted});
       }
     } catch (e) {
       debugPrint('[TX_DETAILS] Failed to delete transaction: $e');

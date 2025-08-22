@@ -24,13 +24,17 @@ class MessageUtils {
         // For iOS, use a simple dialog
         await showPlatformDialog(
           context: context,
-          builder: (_) => PlatformAlertDialog(
+          builder: (dialogContext) => PlatformAlertDialog(
             title: Text(title ?? (isSuccess ? 'Success' : 'Error')),
             content: Text(message),
             actions: [
               PlatformDialogAction(
                 child: const Text('OK'),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  if (Navigator.canPop(dialogContext)) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
               ),
             ],
           ),
@@ -40,7 +44,7 @@ class MessageUtils {
         // For Android, try to use ScaffoldMessenger if available
         try {
           final messenger = ScaffoldMessenger.maybeOf(context);
-          if (messenger != null) {
+          if (messenger != null && context.mounted) {
             messenger.showSnackBar(
               SnackBar(
                 content: Text(message),
@@ -53,19 +57,25 @@ class MessageUtils {
             return true;
           } else {
             // Fallback to dialog if ScaffoldMessenger is not available
-            await showPlatformDialog(
-              context: context,
-              builder: (_) => PlatformAlertDialog(
-                title: Text(title ?? (isSuccess ? 'Success' : 'Error')),
-                content: Text(message),
-                actions: [
-                  PlatformDialogAction(
-                    child: const Text('OK'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            );
+            if (context.mounted) {
+              await showPlatformDialog(
+                context: context,
+                builder: (dialogContext) => PlatformAlertDialog(
+                  title: Text(title ?? (isSuccess ? 'Success' : 'Error')),
+                  content: Text(message),
+                  actions: [
+                    PlatformDialogAction(
+                      child: const Text('OK'),
+                      onPressed: () {
+                        if (Navigator.canPop(dialogContext)) {
+                          Navigator.of(dialogContext).pop();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }
             return true;
           }
         } catch (e) {
@@ -73,19 +83,25 @@ class MessageUtils {
             '[MessageUtils] ScaffoldMessenger error: $e, falling back to dialog',
           );
           // Fallback to dialog if ScaffoldMessenger throws an error
-          await showPlatformDialog(
-            context: context,
-            builder: (_) => PlatformAlertDialog(
-              title: Text(title ?? (isSuccess ? 'Success' : 'Error')),
-              content: Text(message),
-              actions: [
-                PlatformDialogAction(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          );
+          if (context.mounted) {
+            await showPlatformDialog(
+              context: context,
+              builder: (dialogContext) => PlatformAlertDialog(
+                title: Text(title ?? (isSuccess ? 'Success' : 'Error')),
+                content: Text(message),
+                actions: [
+                  PlatformDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      if (Navigator.canPop(dialogContext)) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          }
           return true;
         }
       }

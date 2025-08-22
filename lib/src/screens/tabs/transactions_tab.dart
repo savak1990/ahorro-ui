@@ -14,6 +14,7 @@ import '../../providers/transactions_filter_provider.dart';
 import '../../constants/app_constants.dart';
 import '../../constants/app_strings.dart';
 import '../../widgets/typography.dart';
+import '../../utils/message_utils.dart';
 
 class TransactionsTab extends StatefulWidget {
   final String? initialType;
@@ -218,27 +219,6 @@ class _TransactionsTabState extends State<TransactionsTab> {
       filter.setEndDate(result['endDate']);
       _refreshTransactions();
     }
-  }
-
-  void _onTypeFilterChanged(String value, bool selected) {
-    Provider.of<TransactionsFilterProvider>(
-      context,
-      listen: false,
-    ).toggleType(value, selected);
-  }
-
-  void _onAccountFilterChanged(String value, bool selected) {
-    Provider.of<TransactionsFilterProvider>(
-      context,
-      listen: false,
-    ).toggleAccount(value, selected);
-  }
-
-  void _onCategoryFilterChanged(String value, bool selected) {
-    Provider.of<TransactionsFilterProvider>(
-      context,
-      listen: false,
-    ).toggleCategory(value, selected);
   }
 
   void _clearAllFilters() {
@@ -625,13 +605,27 @@ class _TransactionsTabState extends State<TransactionsTab> {
                   ),
                   sliver: GroupedTransactionsSliver(
                     groupedTransactions: groupedTransactions,
-                    onTapTransaction: (tx) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              TransactionDetailsScreen(transactionId: tx.id),
-                        ),
-                      );
+                    onTapTransaction: (tx) async {
+                      final result = await Navigator.of(context)
+                          .push<Map<String, dynamic>?>(
+                            MaterialPageRoute(
+                              builder: (context) => TransactionDetailsScreen(
+                                transactionId: tx.id,
+                              ),
+                            ),
+                          );
+
+                      // Handle result from transaction details screen
+                      if (result != null && mounted) {
+                        final bool success = result['success'] ?? false;
+                        final String message = result['message'] ?? '';
+
+                        if (success) {
+                          await MessageUtils.showSuccess(context, message);
+                        } else {
+                          await MessageUtils.showError(context, message);
+                        }
+                      }
                     },
                   ),
                 ),
