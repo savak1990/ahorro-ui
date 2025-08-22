@@ -149,19 +149,6 @@ class TransactionStatsChart extends StatelessWidget {
             'Total $selectedTypeLabel: ${formatAmountInt(total, validData.first.currency)}',
         textStyle: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      // Neutral and calm color palette for the entire chart
-      palette: const <Color>[
-        Color(0xFF6B7280), // Cool Gray
-        Color(0xFF8B9DC3), // Muted Blue
-        Color(0xFF9CA3AF), // Light Gray
-        Color(0xFFA7C4A0), // Sage Green
-        Color(0xFFB8A99A), // Warm Beige
-        Color(0xFFC1A9A0), // Dusty Rose
-        Color(0xFFB5A7B8), // Lavender Gray
-        Color(0xFFA8B5B2), // Mint Gray
-        Color(0xFFB4A995), // Taupe
-        Color(0xFF9FB4C7), // Soft Blue Gray
-      ],
       legend: const Legend(
         isVisible: true,
         position: LegendPosition.bottom,
@@ -220,18 +207,6 @@ class TransactionStatsChart extends StatelessWidget {
           color: Colors.black87,
         ),
       ),
-      palette: const <Color>[
-        Color(0xFF6B7280), // Cool Gray
-        Color(0xFF8B9DC3), // Muted Blue
-        Color(0xFF9CA3AF), // Light Gray
-        Color(0xFFA7C4A0), // Sage Green
-        Color(0xFFB8A99A), // Warm Beige
-        Color(0xFFC1A9A0), // Dusty Rose
-        Color(0xFFB5A7B8), // Lavender Gray
-        Color(0xFFA8B5B2), // Mint Gray
-        Color(0xFFB4A995), // Taupe
-        Color(0xFF9FB4C7), // Soft Blue Gray
-      ],
       legend: const Legend(
         isVisible: true,
         position: LegendPosition.bottom,
@@ -287,18 +262,6 @@ class TransactionStatsChart extends StatelessWidget {
           color: Colors.black87,
         ),
       ),
-      palette: const <Color>[
-        Color(0xFF6B7280), // Cool Gray
-        Color(0xFF8B9DC3), // Muted Blue
-        Color(0xFF9CA3AF), // Light Gray
-        Color(0xFFA7C4A0), // Sage Green
-        Color(0xFFB8A99A), // Warm Beige
-        Color(0xFFC1A9A0), // Dusty Rose
-        Color(0xFFB5A7B8), // Lavender Gray
-        Color(0xFFA8B5B2), // Mint Gray
-        Color(0xFFB4A995), // Taupe
-        Color(0xFF9FB4C7), // Soft Blue Gray
-      ],
       primaryXAxis: const CategoryAxis(
         labelStyle: TextStyle(fontSize: 10),
         labelRotation: -45, // Rotate labels for better fit
