@@ -1,6 +1,6 @@
 import 'package:ahorro_ui/src/screens/balances_screen.dart';
 import 'package:ahorro_ui/src/screens/main_screen.dart';
-import 'package:ahorro_ui/src/screens/tabs/transactions_tab.dart';
+import 'package:ahorro_ui/src/widgets/fragments/home_tabs/transactions_tab.dart';
 import 'package:ahorro_ui/src/screens/default_balance_currency_screen.dart';
 import 'package:ahorro_ui/src/screens/transaction_stats_screen.dart';
 import 'package:flutter/material.dart';

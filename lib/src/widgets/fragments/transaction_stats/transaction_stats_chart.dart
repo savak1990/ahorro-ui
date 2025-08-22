@@ -26,7 +26,16 @@ class TransactionStatsChart extends StatelessWidget {
       padding: const EdgeInsets.all(
         8.0,
       ), // Reduced padding to give more chart space
-      child: _buildChartContent(isLoading, data, typeLabel, chartType),
+      child: RefreshIndicator(
+        onRefresh: () async {
+          // Trigger a manual refresh
+          await provider.refresh();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: _buildChartContent(isLoading, data, typeLabel, chartType),
+        ),
+      ),
     );
   }
 

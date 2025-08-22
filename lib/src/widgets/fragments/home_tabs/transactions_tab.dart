@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import '../../models/filter_option.dart';
-import '../../widgets/date_filter_bottom_sheet.dart';
+import '../../../models/filter_option.dart';
+import '../../date_filter_bottom_sheet.dart';
 import 'package:ahorro_ui/src/widgets/filters_bottom_sheet.dart';
-import '../../models/grouping_type.dart';
-import '../../models/date_filter_type.dart';
-import '../../widgets/grouped_transactions_sliver.dart';
-import '../../widgets/active_filters_summary.dart';
-import '../../widgets/active_date_filters_summary.dart';
-import '../transaction_details_screen.dart';
+import '../../../models/grouping_type.dart';
+import '../../../models/date_filter_type.dart';
+import '../../grouped_transactions_sliver.dart';
+import '../../active_filters_summary.dart';
+import '../../active_date_filters_summary.dart';
+import '../../../screens/transaction_details_screen.dart';
 import 'package:provider/provider.dart';
-import '../../providers/transaction_entries_provider.dart';
-import '../../providers/transactions_filter_provider.dart';
-import '../../constants/app_constants.dart';
-import '../../constants/app_strings.dart';
-import '../../widgets/typography.dart';
-import '../../utils/message_utils.dart';
+import '../../../providers/transaction_entries_provider.dart';
+import '../../../providers/transactions_filter_provider.dart';
+import '../../../constants/app_constants.dart';
+import '../../../constants/app_strings.dart';
+import '../../typography.dart';
+import '../../../utils/message_utils.dart';
 
 class TransactionsTab extends StatefulWidget {
   final String? initialType;

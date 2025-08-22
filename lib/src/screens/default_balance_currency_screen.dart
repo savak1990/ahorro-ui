@@ -9,10 +9,12 @@ class DefaultBalanceCurrencyScreen extends StatefulWidget {
   const DefaultBalanceCurrencyScreen({super.key});
 
   @override
-  State<DefaultBalanceCurrencyScreen> createState() => _DefaultBalanceCurrencyScreenState();
+  State<DefaultBalanceCurrencyScreen> createState() =>
+      _DefaultBalanceCurrencyScreenState();
 }
 
-class _DefaultBalanceCurrencyScreenState extends State<DefaultBalanceCurrencyScreen> {
+class _DefaultBalanceCurrencyScreenState
+    extends State<DefaultBalanceCurrencyScreen> {
   String? _selectedCurrency;
   bool _isLoading = false;
   String? _error;
@@ -36,41 +38,63 @@ class _DefaultBalanceCurrencyScreenState extends State<DefaultBalanceCurrencyScr
               const SizedBox(height: 24),
               Wrap(
                 spacing: 12,
-                children: _currencies.map((currency) => ChoiceChip(
-                  label: Text(currency),
-                  selected: _selectedCurrency == currency,
-                  onSelected: (selected) {
-                    setState(() => _selectedCurrency = currency);
-                  },
-                )).toList(),
+                children: _currencies
+                    .map(
+                      (currency) => ChoiceChip(
+                        label: Text(currency),
+                        selected: _selectedCurrency == currency,
+                        onSelected: (selected) {
+                          setState(() => _selectedCurrency = currency);
+                        },
+                      ),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 32),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
               ElevatedButton(
-                onPressed: _selectedCurrency == null || _isLoading ? null : () async {
-                  setState(() { _isLoading = true; _error = null; });
-                  try {
-                    final userId = await AuthService.getUserId();
-                    const groupId = AuthService.groupId;
-                    await provider.createBalance(
-                      userId: userId,
-                      groupId: groupId,
-                      currency: _selectedCurrency!,
-                      title: 'Default',
-                    );
-                    if (mounted) Navigator.of(context).pushReplacementNamed('/');
-                  } catch (e) {
-                    setState(() { _error = e.toString(); });
-                  } finally {
-                    if (mounted) setState(() { _isLoading = false; });
-                  }
-                },
+                onPressed: _selectedCurrency == null || _isLoading
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isLoading = true;
+                          _error = null;
+                        });
+                        try {
+                          final userId = await AuthService.getUserId();
+                          const groupId = AuthService.groupId;
+                          await provider.createBalance(
+                            userId: userId,
+                            groupId: groupId,
+                            currency: _selectedCurrency!,
+                            title: 'Default',
+                          );
+                          if (mounted)
+                            Navigator.of(context).pushReplacementNamed('/');
+                        } catch (e) {
+                          setState(() {
+                            _error = e.toString();
+                          });
+                        } finally {
+                          if (mounted)
+                            setState(() {
+                              _isLoading = false;
+                            });
+                        }
+                      },
                 child: _isLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Create balance'),
               ),
             ],
@@ -79,4 +103,4 @@ class _DefaultBalanceCurrencyScreenState extends State<DefaultBalanceCurrencyScr
       ),
     );
   }
-} 
+}

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../src/screens/balances_screen.dart';
-import '../../../src/widgets/typography.dart';
-import '../../../src/constants/app_strings.dart';
-import '../../../src/widgets/settings_section_card.dart';
-import '../../../src/widgets/settings_list_item.dart';
-import '../../../src/providers/amplify_provider.dart';
+import '../../../screens/balances_screen.dart';
+import '../../typography.dart';
+import '../../../constants/app_strings.dart';
+import '../../settings_section_card.dart';
+import '../../settings_list_item.dart';
+import '../../../providers/amplify_provider.dart';
 
 class AccountTab extends StatefulWidget {
   const AccountTab({super.key});

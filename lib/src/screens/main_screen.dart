@@ -1,9 +1,9 @@
 import 'package:ahorro_ui/src/providers/balances_provider.dart';
 import 'package:ahorro_ui/src/screens/add_transaction_screen.dart';
-import 'package:ahorro_ui/src/screens/tabs/account_tab.dart';
-import 'package:ahorro_ui/src/screens/tabs/home_tab_new.dart';
+import 'package:ahorro_ui/src/widgets/fragments/home_tabs/account_tab.dart';
+import 'package:ahorro_ui/src/widgets/fragments/home_tabs/home_tab_new.dart';
 import 'package:ahorro_ui/src/screens/templates/app_shell.dart';
-import 'package:ahorro_ui/src/screens/tabs/transactions_tab.dart';
+import 'package:ahorro_ui/src/widgets/fragments/home_tabs/transactions_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
